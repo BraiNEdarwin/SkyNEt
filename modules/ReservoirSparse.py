@@ -9,7 +9,6 @@ can be trained to output a desired signal.
 # Third-party libraries
 import numpy as np
 from scipy import sparse
-import math
 
 
 class Network(object):
