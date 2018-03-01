@@ -9,6 +9,7 @@ can be trained to output a desired signal.
 # Third-party libraries
 import numpy as np
 from scipy import sparse
+from scipy.sparse import linalg as splinalg
 
 
 class Network(object):
@@ -27,7 +28,7 @@ class Network(object):
         self.reservoir_weights = 2 * \
             sparse.rand(sizes[1], sizes[1], density=weightdensity)
         self.reservoir_weights.data += -1
-        self.eval, self.evecs = sparse.linalg.eigs(
+        self.eval, self.evecs = splinalg.eigs(
             self.reservoir_weights, k=1, which='LM')
         print("Largest eigenvalue magnitude before normalizing: " + str(
             self.eval))
@@ -35,7 +36,7 @@ class Network(object):
             np.linalg.norm(self.eval)
         self.output_weights = np.random.randn(sizes[2], sizes[1])
         self.collect_state = np.empty((0, sizes[1]))
-        self.eval, self.evecs = sparse.linalg.eigs(
+        self.eval, self.evecs = splinalg.eigs(
             self.reservoir_weights, k=1, which='LM')
         print("Spectral radius of the weight matrix is " +
               str(np.linalg.norm(self.eval)))
