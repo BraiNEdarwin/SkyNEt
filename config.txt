@@ -10,6 +10,7 @@ rralpha = 1e-3
 
 # I/O settings
 SampleFreq = 100
+benchmark = 'wr'  #'wr' for waveform regression benchmark
 
 # Evolution settings
 genes = 4

@@ -1,5 +1,5 @@
 '''
-This generates input data for a waveform regression benchmark test. Basically 
+This generates input data for a waveform regression benchmark test. Basically
 various function definitions for various waveforms.
 '''
 
@@ -7,10 +7,11 @@ import numpy as np
 from scipy import signal
 
 
-#benchmark parameters
+# benchmark parameters
 frequency = 1e3
 amplitude = 1
 nPoints = 1e10
+
 
 def sineWave(Fs):
     t = np.linspace(0, nPoints * Fs, nPoints)
@@ -25,5 +26,3 @@ def squareWave(Fs):
 def sawTooth(Fs):
     t = np.linspace(0, nPoints * Fs, nPoints)
     return amplitude * signal.sawtooth(2 * np.pi * frequency * t)
-
-

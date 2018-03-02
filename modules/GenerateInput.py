@@ -14,7 +14,7 @@ def hardwareInput(benchmark, Fs):
 
 def softwareInput(benchmark, Fs):
     if(benchmark == 'wr'):
-    	return wr.sineWave(Fs)
+        return wr.sineWave(Fs)
 
 
 def targetOutput(benchmark, Fs):

@@ -4,6 +4,7 @@ Main handler of the SkyNEt platform
 # Import packages
 import modules.ReservoirSparse as Reservoir
 import modules.PlotBuilder as PlotBuilder
+import modules.GenerateInput as GenerateInput
 import math
 # temporary imports
 import numpy as np
@@ -15,9 +16,8 @@ exec(open("config.txt").read())
 print("Initializing the reservoir...")
 res = Reservoir.Network(nodes, inputscaling, spectralradius, weightdensity)
 
-# temporary sine wave
-x = np.linspace(0, 10 * np.pi, 1000)
-inp = np.sin(x)
+# Obtain benchmark input
+inp = GenerateInput.softwareInput(benchmark, SampleFreq)
 
 print("Feeding the input signal...")
 printcounter = 0
