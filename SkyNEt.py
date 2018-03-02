@@ -17,7 +17,11 @@ print("Initializing the reservoir...")
 res = Reservoir.Network(nodes, inputscaling, spectralradius, weightdensity)
 
 # Obtain benchmark input
-inp = GenerateInput.softwareInput(benchmark, SampleFreq)
+[t, inp] = GenerateInput.softwareInput(benchmark, SampleFreq)
+
+# Obtain benchmark output
+[t, outp] = GenerateInput.targetOutput(benchmark, SampleFreq)
+
 
 print("Feeding the input signal...")
 printcounter = 0
@@ -30,8 +34,8 @@ for i in range(len(inp)):
     res.update_reservoir(inp[i])
 
 # temporary plot
-y = np.empty((len(x), 5))
+y = np.empty((len(t), 5))
 for i in range(5):
     y[:,i] = res.collect_state[:, i]
 
-PlotBuilder.genericPlot(x, y, 'Time (A.U.)', 'Output (A.U.)', 'Example reservoir states')
+PlotBuilder.genericPlot(t, y, 'Time (A.U.)', 'Output (A.U.)', 'Example reservoir states')

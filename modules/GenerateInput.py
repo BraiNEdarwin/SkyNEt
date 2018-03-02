@@ -3,13 +3,13 @@ Generates integer (0 to 65535) array of the benchmark data.
 Also passes to be trained output (ideal data) to the main script
 '''
 
-from benchmarks import WaveformRegression as wr
+import modules.benchmarks.WaveformRegression as wr
 
 
 def hardwareInput(benchmark, Fs):
     if(benchmark == 'wr'):
-        x = wr.sineWave(Fs)
-        return float_to_int(x)
+        [t, x] = wr.sineWave(Fs)
+        return [t, float_to_int(x)]
 
 
 def softwareInput(benchmark, Fs):
