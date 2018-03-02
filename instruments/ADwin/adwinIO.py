@@ -1,6 +1,6 @@
 '''
 This module provides an input/output function for communicating with the
-ADwin. 
+ADwin.
 '''
 from ADwin import ADwin, ADwinError
 import sys
@@ -98,3 +98,4 @@ def IO(x, Fs):
 	ArrayFloat = [20 * (a - (65536 / 2)) / 65536 for a in ArrayFloat]  #convert int to float
 
 	return ArrayFloat
+	
