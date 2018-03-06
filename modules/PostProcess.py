@@ -26,4 +26,4 @@ def trainNetwork(method, output, target, a):
 
 
 def fitness(x, target):
-    return (np.linalg.norm(x - target, 2)) ** 2 * (1 / len(x))
+    return 1 / ((np.linalg.norm(x - target, 2)) ** 2 * (1 / len(x)))

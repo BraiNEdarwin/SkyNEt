@@ -11,7 +11,7 @@ class GenePool(object):
         self.genes = genes
         self.genomes = genomes
         self.pool = np.random.rand(genes, genomes)
-        self.fitness = np.empty([1, genomes])
+        self.fitness = np.empty(genomes)
 
     def nextGen(self):
         indices = np.argsort(self.fitness)
@@ -75,7 +75,10 @@ class GenePool(object):
                     newPool[j, i + 3 * quarter] = np.random.rand()
  
         # replace pool
-        self.pool = newPool
+        self.pool = newPool   
+        
+        #empty fitness
+        self.fitness = np.empty(self.genomes) 
 
     def returnPool(self):
         return self.pool

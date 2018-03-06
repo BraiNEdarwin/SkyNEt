@@ -24,15 +24,15 @@ class Network(object):
         self.input_weights = inputscaling * self.input_weights / \
             np.linalg.norm(max(self.input_weights))
         self.reservoir_weights = -1 + 2 * np.random.rand(sizes[1], sizes[1])
-        print("Largest eigenvalue magnitude before normalizing " + str(
-            np.linalg.norm(max(np.linalg.eigvals(self.reservoir_weights)))))
+        # print("Largest eigenvalue magnitude before normalizing " + str(
+        #     np.linalg.norm(max(np.linalg.eigvals(self.reservoir_weights)))))
         self.reservoir_weights = spectralradius * self.reservoir_weights / \
             (np.linalg.norm(max(np.linalg.eigvals(self.reservoir_weights))))
         self.output_weights = -1 + 2 * np.random.rand(sizes[2], sizes[1])
         self.collect_state = np.empty((0, sizes[1]))
-        print("Spectral radius of the weight matrix is " +
-              str(np.linalg.norm(
-                  max(np.linalg.eigvals(self.reservoir_weights)))))
+        # print("Spectral radius of the weight matrix is " +
+        #       str(np.linalg.norm(
+        #           max(np.linalg.eigvals(self.reservoir_weights)))))
 
     def update_reservoir(self, input_val):
         # Build the input for each reservoir node

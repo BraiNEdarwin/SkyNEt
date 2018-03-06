@@ -2,43 +2,64 @@
 Main handler of the SkyNEt platform
 '''
 # Import packages
-import modules.ReservoirSparse as Reservoir
+import modules.ReservoirFull as Reservoir
 import modules.PlotBuilder as PlotBuilder
 import modules.GenerateInput as GenerateInput
+import modules.Evolution as Evolution
+import modules.PostProcess as PostProcess
 import math
 # temporary imports
 import numpy as np
 
+
+def mapGenes(generange, gene):
+    return generange[0] + gene * (generange[1] - generange[0])
+
+
 # Read config.txt file
 exec(open("config.txt").read())
 
-# Init software reservoir
-print("Initializing the reservoir...")
-res = Reservoir.Network(nodes, inputscaling, spectralradius, weightdensity)
+# initialize genepool
+genePool = Evolution.GenePool(genes, genomes)
+fitnessArray = np.empty(genomes)
 
-# Obtain benchmark input
-[t, inp] = GenerateInput.softwareInput(benchmark, SampleFreq, WavePeriods, WaveFrequency)
-# Obtain benchmark output
-[t, outp] = GenerateInput.targetOutput(benchmark, SampleFreq, WavePeriods, WaveFrequency)
+for i in range(generations):
 
-print("Feeding the input signal...")
-printcounter = 0
-for i in range(len(inp)):
-    if (printcounter == math.floor(len(inp) / 10)):
-        print('%d%% completed' % ((i / len(inp)) * 100), end='\r')
-        printcounter = 0
-    else:
-        printcounter += 1
-    res.update_reservoir(inp[i])
+    for j in range(genomes):
 
-trained_output = res.train_reservoir_ridgereg(outp, rralpha, skipstates)
-# trained_output = res.train_reservoir_pseudoinv(outp, skipstates)
-trainplusideal = np.c_[trained_output, outp[skipstates:]]
+        nodes[1] = mapGenes(generange[0], genePool.pool[0, j])
+        nodes[1] = int(nodes[1])
+        inputscaling = mapGenes(generange[1], genePool.pool[1, j])
+        spectralradius = mapGenes(generange[2], genePool.pool[2, j])
+        print(nodes)
+        print(inputscaling)
+        print(spectralradius)
 
-# temporary plot
-y = np.empty((len(t), 5))
-for i in range(5):
-    y[:,i] = res.collect_state[:, i]
+        # Init software reservoir
+        res = Reservoir.Network(nodes, inputscaling,
+                                spectralradius, weightdensity)
 
-PlotBuilder.genericPlot(t, y, 'Time (A.U.)', 'Output (A.U.)', 'Example reservoir states')
-PlotBuilder.genericPlot(t[skipstates:], trainplusideal, 'Time (A.U.)', 'Output (A.U.)', 'trained_output')
+        # Obtain benchmark input
+        [t, inp] = GenerateInput.softwareInput(
+            benchmark, SampleFreq, WavePeriods, WaveFrequency)
+        # Obtain benchmark output
+        [t, outp] = GenerateInput.targetOutput(
+            benchmark, SampleFreq, WavePeriods, WaveFrequency)
+
+        for k in range(len(inp)):
+            res.update_reservoir(inp[k])
+
+        trained_output = res.train_reservoir_ridgereg(
+            outp, rralpha, skipstates)
+        # trained_output = res.train_reservoir_pseudoinv(outp, skipstates)
+        fitnessArray[j] = PostProcess.fitness(trained_output, outp[skipstates:])
+        print(fitnessArray)
+
+    genePool.fitness = fitnessArray
+    genePool.nextGen()
+    print("Generation nr. " + str(i + 1) + " completed")
+    #print("Highest fitness: " + str(max(genePool.fitness[0])))
+    #print(genePool.fitness)
+
+PlotBuilder.genericPlot1D(t[skipstates:], trained_output, 'time', 'y', 'test')
+PlotBuilder.showPlot()

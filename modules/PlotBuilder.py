@@ -6,7 +6,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def genericPlot(x, y, xlabel, ylabel, title):
+def genericPlot1D(x, y, xlabel, ylabel, title):
+    plt.figure()
+    plt.plot(x, y)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.tight_layout()
+
+def genericPlot2D(x, y, xlabel, ylabel, title):
     length, dim = np.shape(y)
     plt.figure()
     for i in range(dim):
@@ -15,4 +23,6 @@ def genericPlot(x, y, xlabel, ylabel, title):
     plt.ylabel(ylabel)
     plt.title(title)
     plt.tight_layout()
+
+def showPlot():
     plt.show()
