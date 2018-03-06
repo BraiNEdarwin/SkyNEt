@@ -8,21 +8,24 @@ from scipy import signal
 
 
 # benchmark parameters
-frequency = 1
 amplitude = 1
-nPoints = 1e4
 
 
-def sineWave(Fs):
-    t = np.linspace(0, nPoints / Fs, nPoints)
+def sineWave(Fs, periods, frequency):
+    t = np.linspace(0, periods / frequency, (Fs / frequency) * periods)
     return [t, amplitude * np.sin(2 * np.pi * frequency * t)]
 
 
-def squareWave(Fs):
-    t = np.linspace(0, nPoints / Fs, nPoints)
+def squareWave(Fs, periods, frequency):
+    t = np.linspace(0, periods / frequency, (Fs / frequency) * periods)
     return [t, amplitude * signal.square(2 * np.pi * frequency * t)]
 
 
-def sawTooth(Fs):
-    t = np.linspace(0, nPoints / Fs, nPoints)
+def sawTooth(Fs, periods, frequency):
+    t = np.linspace(0, periods / frequency, (Fs / frequency) * periods)
     return [t, amplitude * signal.sawtooth(2 * np.pi * frequency * t)]
+
+
+def doubleFrequency(Fs, periods, frequency):
+    t = np.linspace(0, periods / frequency, (Fs / frequency) * periods)
+    return [t, amplitude * np.sin(2 * np.pi * frequency * t)]

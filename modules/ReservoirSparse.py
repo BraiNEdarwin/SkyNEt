@@ -56,7 +56,7 @@ class Network(object):
 
     def train_reservoir_pseudoinv(self, target, skipstates):
         self.trained_weights = np.transpose(np.dot(
-            np.linalg.pinv(self.collect_state[skipstates:]), target))
+            np.linalg.pinv(self.collect_state[skipstates:]), target[skipstates:]))
         trained_output = np.dot(self.trained_weights,
                                 self.collect_state[skipstates:].transpose())
         return trained_output
@@ -64,7 +64,7 @@ class Network(object):
     def train_reservoir_ridgereg(self, target, alpha, skipstates):
         R = np.dot(self.collect_state[skipstates:].transpose(
         ), self.collect_state[skipstates:])
-        P = np.dot(self.collect_state[skipstates:].transpose(), target)
+        P = np.dot(self.collect_state[skipstates:].transpose(), target[skipstates:])
         Id = np.identity(self.sizes[1])
         self.trained_weights = np.dot(np.linalg.inv(R + alpha ** 2 * Id), P)
         trained_output = np.dot(self.trained_weights,

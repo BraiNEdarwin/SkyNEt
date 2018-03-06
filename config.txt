@@ -7,10 +7,15 @@ spectralradius = 0.99
 weightdensity = 1  # 1 is fully connected matrix
 trainwith = 'ridgeregression'  # or pseudoinverse
 rralpha = 1e-3
+skipstates = 200
+
+# Benchmarks settings
+benchmark = 'wr'  #'wr' for waveform regression benchmark
+WavePeriods = 15
+WaveFrequency = 1
 
 # I/O settings
 SampleFreq = 100
-benchmark = 'wr'  #'wr' for waveform regression benchmark
 
 # Evolution settings
 genes = 4

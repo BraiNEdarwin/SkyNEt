@@ -6,20 +6,20 @@ Also passes to be trained output (ideal data) to the main script
 import modules.benchmarks.WaveformRegression as wr
 
 
-def hardwareInput(benchmark, Fs):
+def hardwareInput(benchmark, Fs, periods, frequency):
     if(benchmark == 'wr'):
-        [t, x] = wr.sineWave(Fs)
+        [t, x] = wr.sineWave(Fs, periods, frequency)
         return [t, float_to_int(x)]
 
 
-def softwareInput(benchmark, Fs):
+def softwareInput(benchmark, Fs, periods, frequency):
     if(benchmark == 'wr'):
-        return wr.sineWave(Fs)
+        return wr.sineWave(Fs, periods, frequency)
 
 
-def targetOutput(benchmark, Fs):
+def targetOutput(benchmark, Fs, periods, frequency):
     if(benchmark == 'wr'):
-        return wr.squareWave(Fs)
+        return wr.doubleFrequency(Fs, 3 * periods, 3 * frequency)
 
 
 def float_to_int(x):
