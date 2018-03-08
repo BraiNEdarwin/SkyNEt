@@ -20,5 +20,5 @@ SampleFreq = 100
 # Evolution settings
 genes = 4
 genomes = 20
-generations = 200
+generations = 5
 generange = [[3, 30], [0, 50], [0, 2], [0, 1]]
