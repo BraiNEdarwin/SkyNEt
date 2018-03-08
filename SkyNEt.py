@@ -23,6 +23,16 @@ exec(open("config.txt").read())
 genePool = Evolution.GenePool(genes, genomes)
 fitnessArray = np.empty(genomes)
 
+#initialize benchmark
+# Obtain benchmark input
+[t, inp] = GenerateInput.softwareInput(
+    benchmark, SampleFreq, WavePeriods, WaveFrequency)
+# Obtain benchmark output
+[t, outp] = GenerateInput.targetOutput(
+    benchmark, SampleFreq, WavePeriods, WaveFrequency)
+
+outputs = np.empty((len(inp),genomes))
+
 for i in range(generations):
 
     for j in range(genomes):
@@ -31,20 +41,11 @@ for i in range(generations):
         nodes[1] = int(nodes[1])
         inputscaling = mapGenes(generange[1], genePool.pool[1, j])
         spectralradius = mapGenes(generange[2], genePool.pool[2, j])
-        print(nodes)
-        print(inputscaling)
-        print(spectralradius)
+        weightdensity = mapGenes(generange[3], genePool.pool[3, j])
 
         # Init software reservoir
         res = Reservoir.Network(nodes, inputscaling,
                                 spectralradius, weightdensity)
-
-        # Obtain benchmark input
-        [t, inp] = GenerateInput.softwareInput(
-            benchmark, SampleFreq, WavePeriods, WaveFrequency)
-        # Obtain benchmark output
-        [t, outp] = GenerateInput.targetOutput(
-            benchmark, SampleFreq, WavePeriods, WaveFrequency)
 
         for k in range(len(inp)):
             res.update_reservoir(inp[k])
@@ -53,13 +54,21 @@ for i in range(generations):
             outp, rralpha, skipstates)
         # trained_output = res.train_reservoir_pseudoinv(outp, skipstates)
         fitnessArray[j] = PostProcess.fitness(trained_output, outp[skipstates:])
-        print(fitnessArray)
-
+        outputs[:,j] = trained_output
+        
+        
+#        if(fitnessArray[j] > 100):
+#            PlotBuilder.genericPlot1D(t[skipstates:], trained_output, 'time', 'y', 'test')
+#            PlotBuilder.showPlot()
+#            print(genePool.pool[:,j])
+            
     genePool.fitness = fitnessArray
-    genePool.nextGen()
     print("Generation nr. " + str(i + 1) + " completed")
-    #print("Highest fitness: " + str(max(genePool.fitness[0])))
+    print("Highest fitness: " + str(max(genePool.fitness)))
+    genePool.nextGen()
+    
     #print(genePool.fitness)
 
-PlotBuilder.genericPlot1D(t[skipstates:], trained_output, 'time', 'y', 'test')
-PlotBuilder.showPlot()
+#PlotBuilder.genericPlot1D(t[skipstates:], trained_output, 'time', 'y', 'test')
+#PlotBuilder.genericPlot1D(t[skipstates:], outp[skipstates:], 'time', 'y', 'test')
+#PlotBuilder.showPlot()
