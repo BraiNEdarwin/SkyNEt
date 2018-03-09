@@ -33,8 +33,12 @@ def bigDaddy(geneArray, fitnessArray):
 	bigDaddyArray = np.empty((geneArray.shape[0], genes))
 	for i in range(generations):
 		bigDaddyArray[i,:] = geneArray[i, :, np.argmax(fitnessArray[i, :])]
-		
+
 	for i in range(genes):
 		plt.subplot(genes, 1, i + 1)
 		plt.plot(bigDaddyArray[:,i])
+	plt.show()
+
+def genePoolVisual(genePool):
+	plt.matshow(genePool)
 	plt.show()
