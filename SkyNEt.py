@@ -77,6 +77,7 @@ for i in range(generations):
     #evolve the next generation
     genePool.nextGen()
     
+PlotBuilder.bigDaddy(geneArray, fitnessArray)
 
 #PlotBuilder.genericPlot1D(t[skipstates:], trained_output, 'time', 'y', 'test')
 #PlotBuilder.genericPlot1D(t[skipstates:], outp[skipstates:], 'time', 'y', 'test')

@@ -26,3 +26,15 @@ def genericPlot2D(x, y, xlabel, ylabel, title):
 
 def showPlot():
     plt.show()
+
+def bigDaddy(geneArray, fitnessArray):
+	generations = geneArray.shape[0]
+	genes = geneArray.shape[1]
+	bigDaddyArray = np.empty((geneArray.shape[0], genes))
+	for i in range(generations):
+		bigDaddyArray[i,:] = geneArray[i, :, np.argmax(fitnessArray[i, :])]
+		
+	for i in range(genes):
+		plt.subplot(genes, 1, i + 1)
+		plt.plot(bigDaddyArray[:,i])
+	plt.show()
