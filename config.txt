@@ -20,6 +20,6 @@ SampleFreq = 100
 # Evolution settings
 genes = 4
 genomes = 20
-generations = 10
+generations = 20
 generange = [[3, 30], [0, 50], [0, 2], [0, 1]]
-fitnessAvg = 10  #amount of runs per genome
+fitnessAvg = 1  #amount of runs per genome

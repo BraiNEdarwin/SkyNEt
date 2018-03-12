@@ -8,6 +8,7 @@ import modules.GenerateInput as GenerateInput
 import modules.Evolution as Evolution
 import modules.PostProcess as PostProcess
 import math
+import time
 # temporary imports
 import numpy as np
 
@@ -23,7 +24,7 @@ exec(open("config.txt").read())
 genePool = Evolution.GenePool(genes, genomes)
 fitnessArray = np.empty(genomes)
 
-#initialize benchmark
+# initialize benchmark
 # Obtain benchmark input
 [t, inp] = GenerateInput.softwareInput(
     benchmark, SampleFreq, WavePeriods, WaveFrequency)
@@ -31,16 +32,17 @@ fitnessArray = np.empty(genomes)
 [t, outp] = GenerateInput.targetOutput(
     benchmark, SampleFreq, WavePeriods, WaveFrequency)
 
-#np arrays to save genePools, outputs and fitness
+# np arrays to save genePools, outputs and fitness
 geneArray = np.empty((generations, genes, genomes))
 outputArray = np.empty((generations, len(inp) - skipstates, genomes))
 fitnessArray = np.empty((generations, genomes))
 
-#temporary arrays, overwritten each generation
+# temporary arrays, overwritten each generation
 fitnessTemp = np.empty((genomes, fitnessAvg))
 trained_output = np.empty((len(inp) - skipstates, fitnessAvg))
 outputTemp = np.empty((len(inp) - skipstates, genomes))
 
+mainFig = PlotBuilder.initMainFig(genes, generations)
 
 for i in range(generations):
 
@@ -56,34 +58,31 @@ for i in range(generations):
             # Init software reservoir
             res = Reservoir.Network(nodes, inputscaling,
                                     spectralradius, weightdensity)
-    
+
             for k in range(len(inp)):
                 res.update_reservoir(inp[k])
-    
+
             trained_output[:, avgIndex] = res.train_reservoir_ridgereg(
                 outp, rralpha, skipstates)
             # trained_output = res.train_reservoir_pseudoinv(outp, skipstates)
-                 
-            fitnessTemp[j, avgIndex] = PostProcess.fitness(trained_output[:, avgIndex], outp[skipstates:]) 
-            
-        outputTemp[:, j] = trained_output[:, np.argmin(fitnessTemp[j,:])]
-            
+
+            fitnessTemp[j, avgIndex] = PostProcess.fitness(
+                trained_output[:, avgIndex], outp[skipstates:])
+
+        outputTemp[:, j] = trained_output[:, np.argmin(fitnessTemp[j, :])]
+
     genePool.fitness = fitnessTemp.min(1)
     print("Generation nr. " + str(i + 1) + " completed")
     print("Highest fitness: " + str(max(genePool.fitness)))
 
-    #save generation data
+    # save generation data
     geneArray[i, :, :] = genePool.returnPool()
     outputArray[i, :, :] = outputTemp
     fitnessArray[i, :] = fitnessTemp.min(1)
 
-    #evolve the next generation
+    PlotBuilder.updateMainFig(mainFig, geneArray, fitnessArray, outputArray, i + 1, t[skipstates:], outp[skipstates:])
+
+    # evolve the next generation
     genePool.nextGen()
-    
-PlotBuilder.genePoolVisual(genePool.returnPool())
 
-#PlotBuilder.bigDaddy(geneArray, fitnessArray)
-
-#PlotBuilder.genericPlot1D(t[skipstates:], trained_output, 'time', 'y', 'test')
-#PlotBuilder.genericPlot1D(t[skipstates:], outp[skipstates:], 'time', 'y', 'test')
-#PlotBuilder.showPlot()
+PlotBuilder.finalMain(mainFig)
