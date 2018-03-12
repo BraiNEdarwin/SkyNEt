@@ -7,7 +7,9 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 import math
 
-plt.ion()
+
+def mapGenes(generange, gene):
+    return generange[0] + gene * (generange[1] - generange[0])
 
 
 def genericPlot1D(x, y, xlabel, ylabel, title):
@@ -54,7 +56,7 @@ def bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration):
         bigDaddyArray[i, :] = geneArray[i, :, np.argmax(fitnessArray[i, :])]
 
     for i in range(genes):
-        mainFig.axes[i].plot(range(1, currentGeneration + 1),
+        mainFig.axes[i * 2].plot(range(1, currentGeneration + 1),
                              bigDaddyArray[0:currentGeneration, i], 'r-x')
 
     plt.pause(0.01)
@@ -67,23 +69,28 @@ def fitnessMain(mainFig, fitnessArray, currentGeneration):
 
 
 def outputMain(mainFig, t, target, outputArray, fitnessArray, currentGeneration):
-    mainFig.axes[-1].clear()
-    mainFig.axes[-1].grid()
+    mainFig.axes[-1].lines.clear()
     mainFig.axes[-1].plot(t, outputArray[currentGeneration - 1,
                                          :, np.argmax(fitnessArray[currentGeneration - 1])], 'r')
     mainFig.axes[-1].plot(t, target, 'b--')
+    mainFig.axes[-1].legend(['Trained output', 'Target'], loc = 1)
     plt.pause(0.01)
 
+def statsMain(mainFig, geneArray, currentGeneration):    
+	generations = geneArray.shape[0]
+	statstext = mainFig.text(0.5, 0.8, 'hello')
 
 def genePoolVisual(genePool):
     plt.matshow(genePool)
     plt.show()
 
 
-def initMainFig(genes, generations):
+def initMainFig(genes, generations, genelabels, generange):
     # plt.ion()
     plt.ioff()
     mainFig = plt.figure()
+    figManager = plt.get_current_fig_manager()
+    figManager.window.showMaximized()
     plt.pause(0.01)
     spec = gridspec.GridSpec(ncols=3, nrows=genes)
     # big daddy (i.e. best genom) plots
@@ -92,15 +99,23 @@ def initMainFig(genes, generations):
         ax.set_xlim(1, generations)
         ax.set_ylim(0, 1)
         ax.grid()
+        ax.set_title(genelabels[i])
+
+        twinax = ax.twinx()
+        twinax.set_ylim(mapGenes(generange[i], 0), mapGenes(generange[i], 1))
+        twinax.tick_params('y', colors='r')
 
     axFitness = mainFig.add_subplot(
         spec[0:math.floor(genes / 2), 1:])  # fitness history
     axFitness.set_xlim(1, generations)
     axFitness.grid()
+    axFitness.set_title('Fitness')
 
     axOutput = mainFig.add_subplot(
         spec[math.ceil(genes / 2):, 1:])  # current best output
     axOutput.grid()
+    axOutput.set_title('Best output of last generation')
+
 
     mainFig.subplots_adjust(hspace=0.4, wspace=0.4)
     plt.pause(0.01)
@@ -112,6 +127,7 @@ def updateMainFig(mainFig, geneArray, fitnessArray, outputArray, currentGenerati
     fitnessMain(mainFig, fitnessArray, currentGeneration)
     outputMain(mainFig, t, target, outputArray,
                fitnessArray, currentGeneration)
+    #statsMain(mainFig, geneArray, currentGeneration)
 
 
 def finalMain(mainFig):

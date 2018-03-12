@@ -42,7 +42,7 @@ fitnessTemp = np.empty((genomes, fitnessAvg))
 trained_output = np.empty((len(inp) - skipstates, fitnessAvg))
 outputTemp = np.empty((len(inp) - skipstates, genomes))
 
-mainFig = PlotBuilder.initMainFig(genes, generations)
+mainFig = PlotBuilder.initMainFig(genes, generations, genelabels, generange)
 
 for i in range(generations):
 

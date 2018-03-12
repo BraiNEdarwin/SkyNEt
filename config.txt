@@ -20,6 +20,10 @@ SampleFreq = 100
 # Evolution settings
 genes = 4
 genomes = 20
-generations = 20
-generange = [[3, 30], [0, 50], [0, 2], [0, 1]]
-fitnessAvg = 1  #amount of runs per genome
+generations = 200
+generange = [[3, 20], [0, 50], [0, 2], [0, 1]]
+genelabels = ['Nodes','Input scaling','Spectral radius','Weight density']
+fitnessAvg = 2  #amount of runs per genome
+
+# Save settings
+#filepath = 'C:\Users\bram\Documents\uni\master_thesis\SkyNEt\trial_scripts\'
