@@ -16,16 +16,16 @@ class GenePool(object):
     def nextGen(self):
         indices = np.argsort(self.fitness)
         indices = indices[::-1]
-        quarter = int(self.genomes / 4)
+        fifth = int(self.genomes / 5)
         newPool = self.pool
-        # promote fittest quarter of the pool
-        for i in range(quarter):
+        # promote fittest fifth of the pool
+        for i in range(fifth):
             newPool[:, i] = self.pool[:, indices[i]]
 
-        # generate second quarter
-        for i in range(quarter):
-            parent1 = newPool[:, i] * 1.01
-            parent2 = newPool[:, i] * 0.99
+        # generate second fifth
+        for i in range(fifth):
+            parent1 = newPool[:, i] * 1.05
+            parent2 = newPool[:, i] * 0.95
 
             # check that genes are in [0,1]
             for j in range(self.genes):
@@ -41,39 +41,44 @@ class GenePool(object):
             for j in range(self.genes):
                 # crossover
                 if(np.random.rand() < 0.5):
-                    newPool[j, i + quarter] = parent1[j]
+                    newPool[j, i + fifth] = parent1[j]
                 else:
-                    newPool[j, i + quarter] = parent2[j]
+                    newPool[j, i + fifth] = parent2[j]
 
                 # mutation
                 if(np.random.rand() < 0.1):
-                    newPool[j, i + quarter] = np.random.rand()
+                    newPool[j, i + fifth] = np.random.rand()
 
-        # generate third quarter
-        for i in range(quarter):
+        # generate third fifth
+        for i in range(fifth):
             for j in range(self.genes):
                 if(np.random.rand() < 0.5):
-                    newPool[j, i + 2 * quarter] = self.pool[j, indices[i]]
+                    newPool[j, i + 2 * fifth] = self.pool[j, indices[i]]
                 else:
-                    newPool[j, i + 2 * quarter] = self.pool[j, indices[i + 1]]
+                    newPool[j, i + 2 * fifth] = self.pool[j, indices[i + 1]]
 
                 # mutation
                 if(np.random.rand() < 0.1):
-                    newPool[j, i + 2 * quarter] = np.random.rand()
+                    newPool[j, i + 2 * fifth] = np.random.rand()
 
-        # generate fourth quarter
-        for i in range(quarter):
+        # generate fourth fifth
+        for i in range(fifth):
             for j in range(self.genes):
                 if(np.random.rand() < 0.5):
-                    newPool[j, i + 3 * quarter] = newPool[j, i]
+                    newPool[j, i + 3 * fifth] = newPool[j, i]
                 else:
-                    newPool[j, i + 3 * quarter] = self.pool[j,
+                    newPool[j, i + 3 * fifth] = self.pool[j,
                                                             np.random.randint(self.genomes)]
 
                 # mutation
                 if(np.random.rand() < 0.1):
-                    newPool[j, i + 3 * quarter] = np.random.rand()
- 
+                    newPool[j, i + 3 * fifth] = np.random.rand()
+
+        # generate fifth fifth
+        for i in range(fifth):
+            for j in range(self.genes):
+                newPool[j, i + 4 * fifth] = np.random.rand()
+
         # replace pool
         self.pool = newPool   
         
