@@ -2,7 +2,7 @@
 This module provides an input/output function for communicating with the
 ADwin.
 '''
-from ADwin import ADwin, ADwinError
+from instruments.ADwin.adwin import ADwin, ADwinError
 import sys
 import os
 import numpy as np
@@ -14,13 +14,18 @@ PROCESS = 'ADbasic_1Read_1Write.TB1'
 ArrayFloat = []
 
 
-def IO(x, Fs):
+def initInstrument():
+    adw = ADwin(DEVICENUMBER, RAISE_EXCEPTIONS)
+    return adw
+
+
+def IO(adw, x, Fs):
     InputBin = x
     InputSize = len(x)
 
     # trail zeros if data is shorter than buffer
     try:
-        adw = ADwin(DEVICENUMBER, RAISE_EXCEPTIONS)
+        #adw = ADwin(DEVICENUMBER, RAISE_EXCEPTIONS)
         if os.name == 'posix':
             adw.Boot(str('adwin' + PROCESSORTYPE + '.btl'))
         else:

@@ -1,5 +1,5 @@
 ''''
-Main handler of the SkyNEt platform
+Measurement script to perform a simple RC experiment.
 '''
 # Import packages
 import modules.ReservoirFull as Reservoir
@@ -8,6 +8,8 @@ import modules.GenerateInput as GenerateInput
 import modules.Evolution as Evolution
 import modules.PostProcess as PostProcess
 import modules.SaveLib as SaveLib
+from instruments.ADwin import adwinIO
+from instruments.DAC import IVVIrack
 
 # temporary imports
 import numpy as np
@@ -22,7 +24,6 @@ exec(open("config.txt").read())
 
 # initialize genepool
 genePool = Evolution.GenePool(genes, genomes)
-fitnessArray = np.empty(genomes)
 
 # initialize benchmark
 # Obtain benchmark input
@@ -41,35 +42,31 @@ fitnessArray = np.empty((generations, genomes))
 fitnessTemp = np.empty((genomes, fitnessAvg))
 trained_output = np.empty((len(inp) - skipstates, fitnessAvg))
 outputTemp = np.empty((len(inp) - skipstates, genomes))
+controlVoltages = np.empty(genes)
 
 # initialize main figure
 mainFig = PlotBuilder.initMainFig(genes, generations, genelabels, generange)
+
+# initialize instruments
+adw = adwinIO.initInstrument()
+ivvi = IVVIrack.initInstrument()
 
 for i in range(generations):
 
     for j in range(genomes):
 
-        # obtain genome parameters
-        nodes[1] = mapGenes(generange[0], genePool.pool[0, j])
-        nodes[1] = int(nodes[1])
-        inputscaling = mapGenes(generange[1], genePool.pool[1, j])
-        spectralradius = mapGenes(generange[2], genePool.pool[2, j])
-        weightdensity = mapGenes(generange[3], genePool.pool[3, j])
+        # set the DAC voltages
+        for k in range(genes):
+            controlVoltages[k] = mapGenes(generange[k], genePool.pool[k, j])
+        IVVIrack.setControlVoltages(ivvi, controlVoltages)
 
         for avgIndex in range(fitnessAvg):
 
-            # Init software reservoir
-            res = Reservoir.Network(nodes, inputscaling,
-                                    spectralradius, weightdensity)
-
-            # Update software reservoir
-            for k in range(len(inp)):
-                res.update_reservoir(inp[k])
+            # feed input to adwin
+            output = adwinIO.IO(adw, inp, SampleFreq)
 
             # Train output
-            trained_output[:, avgIndex] = res.train_reservoir_ridgereg(
-                outp, rralpha, skipstates)
-            # trained_output = res.train_reservoir_pseudoinv(outp, skipstates)
+            trained_output = output  # empty for now, as we have only one output node
 
             fitnessTemp[j, avgIndex] = PostProcess.fitness(
                 trained_output[:, avgIndex], outp[skipstates:])

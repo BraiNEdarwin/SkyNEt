@@ -1,4 +1,4 @@
-from ADwin import ADwin, ADwinError
+from adwin import ADwin, ADwinError
 import sys
 import os
 import time
