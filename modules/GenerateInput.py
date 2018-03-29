@@ -19,8 +19,8 @@ def softwareInput(benchmark, Fs, periods, frequency):
 
 def targetOutput(benchmark, Fs, periods, frequency):
     if(benchmark == 'wr'):
-        return wr.doubleFrequency(Fs, 2 * periods, 2 * frequency)
-        #return wr.squareWave(Fs, periods, frequency)
+        #return wr.doubleFrequency(Fs, 2 * periods, 2 * frequency)
+        return wr.squareWave(Fs, periods, frequency)
 
 
 def float_to_int(x):

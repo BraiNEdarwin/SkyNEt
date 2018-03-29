@@ -18,7 +18,7 @@ def mapGenes(generange, gene):
 
 
 # Read config.txt file
-exec(open("config.txt").read())
+exec(open("config_software.txt").read())
 
 # initialize genepool
 genePool = Evolution.GenePool(genes, genomes)
