@@ -13,5 +13,5 @@ def initInstrument():
 
 def setControlVoltages(ivvi, controlVoltages):
 	for i in range(len(controlVoltages)):
-		command = 'ivvi.dac{}({})'.format(i,controlVoltages(i))
+		command = 'ivvi.dac{}({})'.format(i+1,controlVoltages[i])
 		exec(command)

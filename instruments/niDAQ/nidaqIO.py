@@ -6,8 +6,8 @@ For now it is one output, one input.
 import nidaqmx
 
 
-def IO(x, Fs):
-    N = len(x)
+def IO(y, Fs):
+    N = len(y)
     with nidaqmx.Task() as output_task, nidaqmx.Task() as input_task: 
         #define ao/ai channels
         output_task.ao_channels.add_ao_voltage_chan('Dev1/ao0', 'ao0', -10, 10)
@@ -35,3 +35,5 @@ def IO(x, Fs):
         input_task.close()
         output_task.stop()
         output_task.close()
+		
+    return data
