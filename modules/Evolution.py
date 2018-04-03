@@ -4,6 +4,10 @@ Handles evolution using fitness from post-process
 import numpy as np
 
 
+def mapGenes(generange, gene):
+    return generange[0] + gene * (generange[1] - generange[0])
+
+
 class GenePool(object):
 
     def __init__(self, genes, genomes):

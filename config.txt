@@ -7,10 +7,10 @@ spectralradius = 0.99
 weightdensity = 1  # 1 is fully connected matrix
 trainwith = 'ridgeregression'  # or pseudoinverse
 rralpha = 1e-3
-skipstates = 200
+skipstates = 0
 
 # Benchmarks settings
-benchmark = 'wr'  #'wr' for waveform regression benchmark
+benchmark = ['bl', 'AND']  #'wr' for waveform regression benchmark
 WavePeriods = 15
 WaveFrequency = 5
 
@@ -22,7 +22,7 @@ genes = 5
 genomes = 25
 generations = 200
 generange = [[-2000, 2000], [-2000, 2000], [-2000, 2000], [-2000, 2000], [-2000, 2000]]
-genelabels = ['CV1','CV2','CV3','CV4','CV4']
+genelabels = ['CV1','CV2','CV3','CV4','CV5']
 fitnessAvg = 1  #amount of runs per genome
 
 # Save settings
