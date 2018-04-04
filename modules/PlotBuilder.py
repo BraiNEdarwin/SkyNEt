@@ -67,6 +67,11 @@ def fitnessMain(mainFig, fitnessArray, currentGeneration):
                           np.max(fitnessArray, 1)[0:currentGeneration], 'r-x')
     plt.pause(0.01)
 
+def fitnessMainEvolution(mainFig, fitnessArray, currentGeneration):
+    mainFig.axes[-3].plot(range(1, currentGeneration + 1),
+                          np.max(fitnessArray, 1)[0:currentGeneration], 'r-x')
+    plt.pause(0.01)
+
 
 def outputMain(mainFig, t, target, outputArray, fitnessArray, currentGeneration):
     mainFig.axes[-1].lines.clear()
@@ -74,6 +79,27 @@ def outputMain(mainFig, t, target, outputArray, fitnessArray, currentGeneration)
                                          :, np.argmax(fitnessArray[currentGeneration - 1])], 'r')
     mainFig.axes[-1].plot(t, target, 'b--')
     mainFig.axes[-1].legend(['Trained output', 'Target'], loc = 1)
+    plt.pause(0.01)
+
+def outputMainEvolution(mainFig, t, target, outputArray, fitnessArray, currentGeneration):
+    mainFig.axes[-2].lines.clear()
+    mainFig.axes[-2].plot(t, outputArray[currentGeneration - 1,
+                                         :, np.argmax(fitnessArray[currentGeneration - 1])], 'r')
+    mainFig.axes[-2].plot(t, target, 'b--')
+    mainFig.axes[-2].legend(['Best output', 'Target'], loc = 1)
+    plt.pause(0.01)
+
+def currentOutputEvolution(mainFig, t, target, currentOutput, genome, currentGeneration, fitness):
+    mainFig.axes[-1].lines.clear()
+    mainFig.axes[-1].plot(t, currentOutput, 'r')
+    mainFig.axes[-1].plot(t, target, 'b--')
+    mainFig.axes[-1].legend(['Current output', 'Target'], loc = 1)
+    mainFig.axes[-1].set_title('Genome ' + str(genome) + '/Generation ' + str(currentGeneration) + '/fitness ' + '{0:.2f}'.format(fitness))
+    plt.pause(0.01)
+
+def currentGenomeEvolution(mainFig, genome):
+    mainFig.axes[-4].lines.clear()
+    mainFig.axes[-4].plot(range(1, len(genome) + 1), genome, 'r-x')
     plt.pause(0.01)
 
 def statsMain(mainFig, geneArray, currentGeneration):    
@@ -121,6 +147,57 @@ def initMainFig(genes, generations, genelabels, generange):
     plt.pause(0.01)
     return mainFig
 
+def initMainFigEvolution(genes, generations, genelabels, generange):
+    # plt.ion()
+    plt.ioff()
+    mainFig = plt.figure()
+    figManager = plt.get_current_fig_manager()
+    figManager.window.showMaximized()
+    plt.pause(0.01)
+    spec = gridspec.GridSpec(ncols=3, nrows=genes + 1)
+    
+    # big daddy (i.e. best genom) plots
+    for i in range(genes):
+        ax = mainFig.add_subplot(spec[i, 0])
+        ax.set_xlim(1, generations)
+        ax.set_ylim(0, 1)
+        ax.grid()
+        ax.set_title(genelabels[i])
+
+        twinax = ax.twinx()
+        twinax.set_ylim(mapGenes(generange[i], 0), mapGenes(generange[i], 1))
+        twinax.tick_params('y', colors='r')
+    
+    # current genome plot
+    ax = mainFig.add_subplot(spec[genes, 0])
+    ax.set_xlim(1, genes)
+    ax.set_ylim(0,1)
+    ax.grid()
+    ax.set_title('Current genome')
+
+    #fitness history plot
+    axFitness = mainFig.add_subplot(
+        spec[0:math.floor(genes / 3) + 1, 1:])  # fitness history
+    axFitness.set_xlim(1, generations)
+    axFitness.grid()
+    axFitness.set_title('Fitness')
+
+    #best output of last generation
+    axOutput = mainFig.add_subplot(
+        spec[math.floor(genes / 3) + 1: 2 * math.floor(genes / 3) + 2, 1:])  # current best output
+    axOutput.grid()
+    axOutput.set_title('Best output of last generation')
+
+    #current output
+    axCurrentOutput = mainFig.add_subplot(
+        spec[2 * math.floor(genes / 3) + 2: , 1:])  # current best output
+    axCurrentOutput.grid()
+    axCurrentOutput.set_title('Current genome output')
+
+    mainFig.subplots_adjust(hspace=0.8, wspace=0.8)
+    plt.pause(0.01)
+    return mainFig
+
 
 def updateMainFig(mainFig, geneArray, fitnessArray, outputArray, currentGeneration, t, target):
     bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration)
@@ -129,6 +206,14 @@ def updateMainFig(mainFig, geneArray, fitnessArray, outputArray, currentGenerati
                fitnessArray, currentGeneration)
     #statsMain(mainFig, geneArray, currentGeneration)
 
+
+def updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, currentGeneration, t, target, currentOutput):
+    bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration)
+    fitnessMainEvolution(mainFig, fitnessArray, currentGeneration)
+    outputMainEvolution(mainFig, t, target, outputArray,
+               fitnessArray, currentGeneration)
+    #currentOutputEvolution(mainFig, t, target, currentOutput)
+    #statsMain(mainFig, geneArray, currentGeneration)
 
 def finalMain(mainFig):
     plt.show()
