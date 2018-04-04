@@ -27,6 +27,8 @@ def targetOutput(benchmark, Fs, periods, frequency):
     if(benchmark[0] == 'bl'):
     	if(benchmark[1] == 'AND'):
     		return bl.AND(Fs)
+    	if(benchmark[1] == 'NAND'):
+    		return bl.NAND(Fs)
 
 
 def float_to_int(x):

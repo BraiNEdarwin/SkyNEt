@@ -10,7 +10,7 @@ rralpha = 1e-3
 skipstates = 0
 
 # Benchmarks settings
-benchmark = ['bl', 'AND']  #'wr' for waveform regression benchmark
+benchmark = ['bl', 'NAND']  #'wr' for waveform regression benchmark
 WavePeriods = 15
 WaveFrequency = 5
 
