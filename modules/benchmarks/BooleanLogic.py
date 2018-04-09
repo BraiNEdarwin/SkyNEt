@@ -14,6 +14,7 @@ def InputSignals(Fs, signalLength = signalLength, edgeLength = edgeLength):
     samples = 4 * round(Fs * signalLength / 4) + 3 * round(Fs * edgeLength)
     x = np.empty(samples)
     y = np.empty(samples)
+    W = np.empty(samples)
     t = np.linspace(0, samples/Fs, samples)
 
     x[0:round(Fs * signalLength / 4)] = 0
@@ -32,7 +33,15 @@ def InputSignals(Fs, signalLength = signalLength, edgeLength = edgeLength):
     y[3 * round(Fs * signalLength / 4) + 2 * round(Fs * edgeLength) : 3 * round(Fs * signalLength / 4) + 3 * round(Fs * edgeLength)] = 1
     y[3 * round(Fs * signalLength / 4) + 3 * round(Fs * edgeLength) : 4 * round(Fs * signalLength / 4) + 3 * round(Fs * edgeLength)] = 1
 
-    return t, x, y
+    #define weight signal
+    W[0:round(Fs * signalLength / 4)] = 1
+    W[round(Fs * signalLength / 4) : round(Fs * signalLength / 4) + round(Fs * edgeLength)] = 0
+    W[round(Fs * signalLength / 4) + round(Fs * edgeLength) : 2 * round(Fs * signalLength / 4) + round(Fs * edgeLength)] = 1
+    W[2 * round(Fs * signalLength / 4) + round(Fs * edgeLength) : 2 * round(Fs * signalLength / 4) + 2 * round(Fs * edgeLength)] = 0
+    W[2 * round(Fs * signalLength / 4) + 2 * round(Fs * edgeLength) : 3 * round(Fs * signalLength / 4) + 2 * round(Fs * edgeLength)] = 1
+    W[3 * round(Fs * signalLength / 4) + 2 * round(Fs * edgeLength) : 3 * round(Fs * signalLength / 4) + 3 * round(Fs * edgeLength)] = 0
+    W[3 * round(Fs * signalLength / 4) + 3 * round(Fs * edgeLength) : 4 * round(Fs * signalLength / 4) + 3 * round(Fs * edgeLength)] = 1
+    return t, x, y, W
 
 def AND(Fs, signalLength = signalLength, edgeLength = edgeLength):
     samples = 4 * round(Fs * signalLength / 4) + 3 * round(Fs * edgeLength)

@@ -27,3 +27,24 @@ def trainNetwork(method, output, target, a):
 
 def fitness(x, target):
     return 1 / ((np.linalg.norm(x - target, 2)) ** 2 * (1 / len(x)))
+
+def fitnessEvolution(x, target, W):
+    
+    #extract fit data with weights W
+    indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)
+    indices = indices[0]  #extract np array
+
+    x_weighed = np.empty(len(indices))
+    target_weighed = np.empty(len(indices))
+    for i in range(len(indices)):
+    	x_weighed = x[i]
+    	target_weighed = target[i]
+
+
+	#fit x = m * target + c to minimize res
+    A = np.vstack([target, np.ones(len(indices))]).T  #write x = m*target + c as x = A*target 
+    m, c = np.linalg.lstsq(A, x_weighed)[0]	
+    res = np.linalg.lstsq(A, x_weighed)[1]
+    
+    return target_weighed
+    #determine fitness quality
