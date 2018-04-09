@@ -18,10 +18,13 @@ def saveConfig(filepath):
 
 
 def saveMain(filepath, geneArray, outputArray, fitnessArray, t, inp, outp):
-    datetime = time.strftime("%d_%m_%Y_%H%M")
-    filepath = filepath + '_' + datetime
-    if not os.path.exists(filepath):
-        os.makedirs(filepath)
-
     saveArrays(filepath, geneArray, outputArray, fitnessArray, t, inp, outp)
     saveConfig(filepath)
+
+	
+def createSaveDirectory(filepath, name):
+    datetime = time.strftime("%d_%m_%Y_%H%M")
+    filepath = filepath + '\\' + datetime + '_' + name
+    if not os.path.exists(filepath):
+        os.makedirs(filepath)	
+    return filepath

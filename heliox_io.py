@@ -25,7 +25,7 @@ exec(open("config.txt").read())
 
 
 # initialize benchmark
-# Obtain benchmark input
+Obtain benchmark input
 [t, inp] = GenerateInput.softwareInput(
     benchmark, SampleFreq, WavePeriods, WaveFrequency)
 # Obtain benchmark output

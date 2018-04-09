@@ -26,4 +26,5 @@ genelabels = ['CV1','CV2','CV3','CV4','CV5']
 fitnessAvg = 1  #amount of runs per genome
 
 # Save settings
-filepath = 'C:\\Users\\bram\\Documents\\uni\\master_thesis\\SkyNEt\\rc_test'
+filepath = 'D:\\data\\BramdW'
+name = 'Heliox_test'

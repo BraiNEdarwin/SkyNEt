@@ -6,7 +6,7 @@ from qcodes.instrument_drivers.QuTech.IVVI import IVVI
 
 
 def initInstrument():
-	ivvi = IVVI("ivvi", "COM5")
+	ivvi = IVVI("ivvi", "COM5", dac_step = 500, dac_delay=.01)
 	ivvi.set_dacs_zero()  #safety
 	return ivvi
 
