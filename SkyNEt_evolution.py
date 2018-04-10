@@ -25,8 +25,8 @@ genePool = Evolution.GenePool(genes, genomes)
 
 # initialize benchmark
 # Obtain benchmark input (P and Q are input1, input2)
-[t, P, Q] = GenerateInput.softwareInput(
-    benchmark, SampleFreq, WavePeriods, WaveFrequency)
+[t, P, Q, W] = GenerateInput.softwareInput(benchmark, SampleFreq, WavePeriods, WaveFrequency)
+
 # format for nidaq
 x = np.empty((2, len(P)))
 x[0,:] = P * 0.5
@@ -78,8 +78,8 @@ for i in range(generations):
             trained_output[:, avgIndex] = output  # empty for now, as we have only one output node
 
             # Calculate fitness
-            fitnessTemp[j, avgIndex] = PostProcess.fitness(
-                trained_output[:, avgIndex], target[skipstates:])
+            fitnessTemp[j, avgIndex] = PostProcess.fitnessEvolution(
+                trained_output[:, avgIndex], target[skipstates:], W, fitnessParameters)
 
             #plot output
             PlotBuilder.currentOutputEvolution(mainFig, t, target, output, j + 1, i + 1, fitnessTemp[j, avgIndex])

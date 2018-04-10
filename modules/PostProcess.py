@@ -48,8 +48,8 @@ def fitnessEvolution(x, target, W, par):
 
 	#fit x = m * target + c to minimize res
     A = np.vstack([target_weighed, np.ones(len(indices))]).T  #write x = m*target + c as x = A*(m, c)
-    m, c = np.linalg.lstsq(A, x_weighed, rcond=None)[0]	
-    res = np.linalg.lstsq(A, x_weighed, rcond=None)[1]
+    m, c = np.linalg.lstsq(A, x_weighed)[0]	
+    res = np.linalg.lstsq(A, x_weighed)[1]
     res = res[0]
 
     #determine fitness quality
@@ -66,5 +66,5 @@ def fitnessEvolution(x, target, W, par):
     else:
         Q = (min(x1) - max(x0)) / (max(x1) - min(x0) + abs(min(x0)))
     F = par[0] * m / (res**(.5) + par[3] * abs(c)) + par[1] / res + par[2] * Q
-    return F, m, c
+    return F
 

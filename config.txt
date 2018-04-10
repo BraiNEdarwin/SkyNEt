@@ -10,7 +10,8 @@ rralpha = 1e-3
 skipstates = 0
 
 # Benchmarks settings
-benchmark = ['bl', 'NAND']  #'wr' for waveform regression benchmark
+benchmark = ['bl', 'NAND']
+  #'wr' for waveform regression benchmark
 WavePeriods = 15
 WaveFrequency = 5
 
@@ -24,7 +25,8 @@ generations = 200
 generange = [[-2000, 2000], [-2000, 2000], [-2000, 2000], [-2000, 2000], [-2000, 2000]]
 genelabels = ['CV1','CV2','CV3','CV4','CV5']
 fitnessAvg = 1  #amount of runs per genome
+fitnessParameters = [1, 0, 0, 0.1]
 
 # Save settings
 filepath = 'D:\\data\\BramdW'
-name = 'Heliox_test'
+name = 'fitness_test'
