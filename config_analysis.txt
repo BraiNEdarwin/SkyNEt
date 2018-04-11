@@ -1,0 +1,2 @@
+filename = C/Users/VenB/Desktop/python/data/04_04_2018_1519_Heliox_test/nparrays.npz
+Big_daddy_gen = 1
