@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 
 # temporary imports
 import numpy as np
+import scipy.fftpack
+
 
 
 # Read config.txt file
@@ -26,11 +28,19 @@ exec(open("config.txt").read())
 
 # initialize benchmark
 # Obtain benchmark input (P and Q are input1, input2)
-[t, P, Q] = GenerateInput.softwareInput(benchmark, SampleFreq, WavePeriods, WaveFrequency)
+[t, inp1] = GenerateInput.softwareInput(benchmark, SampleFreq, WavePeriods, WaveFrequency)
+
+WavePeriods2 = (WavePeriods/WaveFrequency)*WaveFrequency2
+
+[t, inp2] = GenerateInput.softwareInput(benchmark, SampleFreq, WavePeriods2, WaveFrequency2)
+
+inp = np.empty((2,len(inp2)))
+inp[0,:]=inp1
+inp[1,:]=inp2
 # format for nidaq
-x = np.empty((2, len(P)))
-x[0,:] = P * 0.1
-x[1,:] = Q * 0.1
+# x = np.empty((2, len(P)))
+# x[0,:] = P * 0.1
+# x[1,:] = Q * 0.1
 # Obtain benchmark target
 #[t, target] = GenerateInput.targetOutput(
 #    benchmark, SampleFreq, WavePeriods, WaveFrequency)
@@ -47,21 +57,30 @@ x[1,:] = Q * 0.1
 # controlVoltages = np.empty(genes)
 
 # initialize save directory
-saveDirectory = SaveLib.createSaveDirectory(filepath, name)
+# saveDirectory = SaveLib.createSaveDirectory(filepath, name)
 
 # initialize main figure
-mainFig = PlotBuilder.initMainFigEvolution(genes, generations, genelabels, generange)
+# mainFig = PlotBuilder.initMainFigEvolution(genes, generations, genelabels, generange)
 
 
 # initialize instruments
 #ivvi = IVVIrack.initInstrument()
 
 # feed input to adwin
-output = nidaqIO.IO_2D(x, SampleFreq)
-
+output = nidaqIO.IO_2D(inp, SampleFreq)
+# 2.0/len(output) * np.abs(y[:len(output)//2])
 #plot output
-plt.plot(output, t)
 
+
+plt.plot(t, output)
+
+plt.show()
+
+
+# y = scipy.fftpack.fft(output)
+# x = np.linspace(0.0, 1.0/(2.0*(1/1000)), len(output)/2)
+# plt.plot(x, 2.0/len(output) * np.abs(y[:len(output)//2]))
+# plt.show()
 '''
 for i in range(generations):
 
@@ -111,6 +130,6 @@ for i in range(generations):
     genePool.nextGen()
 '''
 
-# SaveLib.saveMain(filepath, geneArray, outputArray, fitnessArray, t, x, target)
+np.savetxt('D:/data/BramdW/HH/test_in_1_in_3_8.5Hz_18.5Hz_out_11', (output,t)) 
 
-PlotBuilder.finalMain(mainFig)
+# PlotBuilder.finalMain(mainFig)

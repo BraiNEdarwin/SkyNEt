@@ -9,7 +9,7 @@ high_range = 2
 # determine wich file to plot.
 Big_daddy_gen = 1
 # loads .npz file.
-data = np.load('C:/Users/VenB/Desktop/python/data/04_04_2018_1519_Heliox_test/nparrays.npz')
+data = np.load('D:/data/BramdW/10_04_2018_2036_fitness_test/nparrays.npz')
 
 
 
@@ -22,7 +22,7 @@ while n <= Big_daddy_gen-1:
 	#find position of highest value and save it in the fitness_Array.
 	fitness = f.argmax()
 	Array_length = np.shape(f)
-	Array_highest = math.floor(fitness/Array_length[1])
+	Array_highest = int(math.floor(fitness/Array_length[1]))
 	Positon_highest = f[Array_highest].argmax()
 	Fitness_Array[n] = f[Array_highest,Positon_highest]
 

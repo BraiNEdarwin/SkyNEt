@@ -12,8 +12,11 @@ skipstates = 0
 # Benchmarks settings
 benchmark = ['bl', 'NAND']
   #'wr' for waveform regression benchmark
-WavePeriods = 15
-WaveFrequency = 5
+WavePeriods = 50
+WaveFrequency = 8.5
+# WavePeriods2 = 0
+WaveFrequency2 = 18.5
+
 
 # I/O settings
 SampleFreq = 1000
@@ -21,12 +24,12 @@ SampleFreq = 1000
 # Evolution settings
 genes = 5
 genomes = 25
-generations = 200
-generange = [[-2000, 2000], [-2000, 2000], [-2000, 2000], [-2000, 2000], [-2000, 2000]]
+generations = 300
+generange = [[-1000, 1000], [-1000, 1000], [-1000, 1000], [-1000, 1000], [-1000, 1000]]
 genelabels = ['CV1','CV2','CV3','CV4','CV5']
 fitnessAvg = 1  #amount of runs per genome
-fitnessParameters = [1, 0, 0, 0.1]
+fitnessParameters = [1, 0, 0, 0.01]
 
 # Save settings
-filepath = 'D:\\data\\BramdW'
+filepath = 'D:\data\BramdW\FitnessTest_Apr12'
 name = 'fitness_test'
