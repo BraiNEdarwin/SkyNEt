@@ -87,6 +87,7 @@ def outputMainEvolution(mainFig, t, target, outputArray, fitnessArray, currentGe
                                          :, np.argmax(fitnessArray[currentGeneration - 1])], 'r')
     mainFig.axes[-2].plot(t, target, 'b--')
     mainFig.axes[-2].legend(['Best output', 'Target'], loc = 1)
+    mainFig.axes[-2].set_title('Best output of last generation / fitness ' + str(np.max(fitnessArray[currentGeneration - 1])) )
     plt.pause(0.01)
 
 def currentOutputEvolution(mainFig, t, target, currentOutput, genome, currentGeneration, fitness):
@@ -184,13 +185,13 @@ def initMainFigEvolution(genes, generations, genelabels, generange):
 
     #best output of last generation
     axOutput = mainFig.add_subplot(
-        spec[math.floor(genes / 3) + 1: 2 * math.floor(genes / 3) + 2, 1:])  # current best output
+        spec[math.floor(genes / 3) + 1: 2 * math.floor(genes / 3) + 1, 1:])  # current best output
     axOutput.grid()
     axOutput.set_title('Best output of last generation')
 
     #current output
     axCurrentOutput = mainFig.add_subplot(
-        spec[2 * math.floor(genes / 3) + 2: , 1:])  # current best output
+        spec[2 * math.floor(genes / 3) + 1: , 1:])  # current best output
     axCurrentOutput.grid()
     axCurrentOutput.set_title('Current genome output')
 

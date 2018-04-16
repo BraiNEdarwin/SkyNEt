@@ -10,9 +10,9 @@ rralpha = 1e-3
 skipstates = 0
 
 # Benchmarks settings
-benchmark = ['bl', 'NAND']
+benchmark = ['bl', 'XOR']
   #'wr' for waveform regression benchmark
-WavePeriods = 50
+WavePeriods = 15
 WaveFrequency = 8.5
 # WavePeriods2 = 0
 WaveFrequency2 = 18.5
@@ -22,14 +22,18 @@ WaveFrequency2 = 18.5
 SampleFreq = 1000
 
 # Evolution settings
-genes = 5
+genes = 6
 genomes = 25
-generations = 300
-generange = [[-1000, 1000], [-1000, 1000], [-1000, 1000], [-1000, 1000], [-1000, 1000]]
-genelabels = ['CV1','CV2','CV3','CV4','CV5']
+generations = 700
+generange = [[-2000, 2000], [-2000, 2000], [-2000, 2000], [-2000, 2000], [-2000, 2000], [0.1, 2]]
+genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
 fitnessAvg = 1  #amount of runs per genome
 fitnessParameters = [1, 0, 0, 0.01]
 
+# input1 = t1/e5
+# input2 = t3/e6
+# output = t11/e1
+
 # Save settings
-filepath = 'D:\data\BramdW\FitnessTest_Apr12'
-name = 'fitness_test'
+filepath = 'D:\data\BramdW\FitnessTest_Apr16_2DeviceXOR_W.O_FQ'
+name = 'XOR'

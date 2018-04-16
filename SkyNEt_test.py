@@ -35,8 +35,8 @@ WavePeriods2 = (WavePeriods/WaveFrequency)*WaveFrequency2
 [t, inp2] = GenerateInput.softwareInput(benchmark, SampleFreq, WavePeriods2, WaveFrequency2)
 
 inp = np.empty((2,len(inp2)))
-inp[0,:]=inp1
-inp[1,:]=inp2
+inp[0,:]=inp1*2.5
+inp[1,:]=inp2*2.5
 # format for nidaq
 # x = np.empty((2, len(P)))
 # x[0,:] = P * 0.1
@@ -64,7 +64,10 @@ inp[1,:]=inp2
 
 
 # initialize instruments
-#ivvi = IVVIrack.initInstrument()
+# ivvi = IVVIrack.initInstrument()
+
+# IVVIrack.setControlVoltages(ivvi, [1])
+
 
 # feed input to adwin
 output = nidaqIO.IO_2D(inp, SampleFreq)
@@ -130,6 +133,6 @@ for i in range(generations):
     genePool.nextGen()
 '''
 
-np.savetxt('D:/data/BramdW/HH/test_in_1_in_3_8.5Hz_18.5Hz_out_11', (output,t)) 
+np.savetxt('D:/data/BramdW/HH/test_Hin_3_8.5Hz_18.5Hz_out_1', (output,t)) 
 
 # PlotBuilder.finalMain(mainFig)
