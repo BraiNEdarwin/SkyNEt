@@ -9,73 +9,60 @@ import modules.GenerateInput as GenerateInput
 import modules.Evolution as Evolution
 import modules.PostProcess as PostProcess
 import modules.SaveLib as SaveLib
+import modules.NeuralNetTraining as NN
 from instruments.niDAQ import nidaqIO
 from instruments.DAC import IVVIrack
+import time
 
 # temporary imports
 import numpy as np
 
+# config
 filepath = ''
 name = ''
+voltageGrid = [-2000, -1600, -1200, -800, -400, 0, 400, 800, 1200, 1600, 2000]
+controls = 5 #amount of controls used to set voltages
+acqTime = 0.01 
+samples = 50
 
-voltageGrid = [-2000, -1600, -1200, -800, -400, 0, 400, 800, 1600, 2000]
+#construct configuration array
+blockSize = len(voltageGrid) ** controls
+controlVoltages = np.empty((4 * blockSize, 7))
 
-controlVoltages = np.empty(genes)
+controlVoltages[0:blockSize,0] = 0
+controlVoltages[blockSize:2*blockSize,0] = 1
+controlVoltages[2*blockSize:3*blockSize,0] = 0
+controlVoltages[3*blockSize:4*blockSize,0] = 1
+
+controlVoltages[0:blockSize,1] = 0
+controlVoltages[blockSize:2*blockSize,1] = 0
+controlVoltages[2*blockSize:3*blockSize,1] = 1
+controlVoltages[3*blockSize:4*blockSize,1] = 1
+
+controlVoltages[0:blockSize, 2:2+controls] = NN.initTraj(controls, voltageGrid)
+controlVoltages[blockSize:2*blockSize, 2:2+controls] = NN.initTraj(controls, voltageGrid)
+controlVoltages[2*blockSize:3*blockSize, 2:2+controls] = NN.initTraj(controls, voltageGrid)
+controlVoltages[3*blockSize:4*blockSize, 2:2+controls] = NN.initTraj(controls, voltageGrid)
+
+# init data container
+data = np.empty((4 * blockSize, samples))
+
 
 # initialize save directory
 saveDirectory = SaveLib.createSaveDirectory(filepath, name)
 
-
 # initialize instruments
 ivvi = IVVIrack.initInstrument()
 
-for i in range(generations):
 
-    for j in range(genomes):
+#main acquisition loop
+for j in range(4):
+    IVVIrack.setControlVoltages(ivvi, controlVoltages[j * blockSize, :])
+    time.sleep(1)  #extra delay to account for changing the input voltages
+    for i in range(blocksize):
+        IVVIrack.setControlVoltages(ivvi, controlVoltages[j * blockSize + i, :])
+        time.sleep(0.01)  #tune this to avoid transients
+        data[j * blockSize + i, :] = nidaqIO.IO(np.zeros(samples), samples/acqTime)
 
-        # set the DAC voltages
-        for k in range(genes):
-            controlVoltages[k] = Evolution.mapGenes(
-                generange[k], genePool.pool[k, j])
-        IVVIrack.setControlVoltages(ivvi, controlVoltages)
+# some save command to finish off...
 
-        for avgIndex in range(fitnessAvg):
-
-            # feed input to adwin
-            output = nidaqIO.IO_2D(x, SampleFreq)
-
-            # plot genome
-            PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[:, j])
-            
-            # Train output
-            trained_output[:, avgIndex] = output  # empty for now, as we have only one output node
-
-            # Calculate fitness
-            fitnessTemp[j, avgIndex] = PostProcess.fitnessEvolution(
-                trained_output[:, avgIndex], target[skipstates:], W, fitnessParameters)
-
-            #plot output
-            PlotBuilder.currentOutputEvolution(mainFig, t, target, output, j + 1, i + 1, fitnessTemp[j, avgIndex])
-
-        outputTemp[:, j] = trained_output[:, np.argmin(fitnessTemp[j, :])]
-
-    genePool.fitness = fitnessTemp.min(1)
-    print("Generation nr. " + str(i + 1) + " completed")
-    print("Highest fitness: " + str(max(genePool.fitness)))
-
-    # save generation data
-    geneArray[i, :, :] = genePool.returnPool()
-    outputArray[i, :, :] = outputTemp
-    fitnessArray[i, :] = fitnessTemp.min(1)
-
-    PlotBuilder.updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, i + 1, t, target, output)
-	
-	#save generation
-    SaveLib.saveMain(saveDirectory, geneArray, outputArray, fitnessArray, t, x, target)
-	
-    # evolve the next generation
-    genePool.nextGen()
-
-SaveLib.saveMain(filepath, geneArray, outputArray, fitnessArray, t, x, target)
-
-PlotBuilder.finalMain(mainFig)
