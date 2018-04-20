@@ -35,7 +35,8 @@ def targetOutput(benchmark, Fs, periods, frequency):
             return bl.NOR(Fs)
         if(benchmark[1] == 'XOR'):
             return bl.XOR(Fs)
-
+        if(benchmark[1] == 'XNOR'):
+            return bl.XNOR(Fs)
 
 def float_to_int(x):
     x = (x + 10) / 20 * 65536

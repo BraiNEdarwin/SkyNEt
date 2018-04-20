@@ -7,9 +7,9 @@ import math
 low_range = -2
 high_range = 2
 # determine wich file to plot.
-Big_daddy_gen = 1
+Big_daddy_gen = 65
 # loads .npz file.
-data = np.load('D:/data/BramdW/10_04_2018_2036_fitness_test/nparrays.npz')
+data = np.load('D:/data/Ren/Evolution/19_04_2018_164956_AND/nparrays.npz')
 
 
 
@@ -37,9 +37,8 @@ print( Fitness_Array[n-1])
 print('V1-V5')
 print(data.f.geneArray[Array_highest,:,Positon_highest]*(high_range-low_range)+low_range)
 #plot different parts of the measurement.
-plt.plot(data.f.t,data.f.outp)
+# plt.plot(data.f.t,data.f.o)
 plt.plot(data.f.t,data.f.outputArray[Array_highest,:,Positon_highest])
 plt.plot(data.f.t,data.f.inp[0])
 plt.plot(data.f.t,data.f.inp[1])
 plt.show()
-

@@ -17,6 +17,7 @@ import time
 # temporary imports
 import numpy as np
 
+# print (list(iter.product(a, repeat=6)))
 
 # Read config.txt file
 exec(open("config.txt").read())
@@ -30,8 +31,8 @@ genePool = Evolution.GenePool(genes, genomes)
 
 # format for nidaq
 x = np.empty((2, len(P)))
-x[0,:] = P 
-x[1,:] = Q 
+x[0,:] = P
+x[1,:] = Q
 # Obtain benchmark target
 [t, target] = GenerateInput.targetOutput(
     benchmark, SampleFreq, WavePeriods, WaveFrequency)
@@ -82,10 +83,10 @@ for i in range(generations):
             PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[:, j])
             
             # Train output
-            trained_output[:, avgIndex] = output  # empty for now, as we have only one output node
+            trained_output[:, avgIndex] =10 * np.asarray(output)  # empty for now, as we have only one output node
 
             # Calculate fitness
-            fitnessTemp[j, avgIndex] = PostProcess.fitnessEvolution(
+            fitnessTemp[j, avgIndex]= PostProcess.fitnessEvolution(
                 trained_output[:, avgIndex], target[skipstates:], W, fitnessParameters)
 
             #plot output
