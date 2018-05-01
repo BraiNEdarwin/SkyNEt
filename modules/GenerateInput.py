@@ -5,6 +5,7 @@ Also passes to be trained output (ideal data) to the main script
 
 import modules.benchmarks.WaveformRegression as wr
 import modules.benchmarks.BooleanLogic as bl
+import modules.benchmarks.Manifold as mf
 
 
 def hardwareInput(benchmark, Fs, periods, frequency):
@@ -18,6 +19,8 @@ def softwareInput(benchmark, Fs, periods, frequency):
         return wr.sineWave(Fs, periods, frequency)
     if(benchmark[0] == 'bl'):
     	return bl.InputSignals(Fs)
+    if(benchmark[0] == 'mf'):
+        return mf.InputSignals(Fs)
 
 
 def targetOutput(benchmark, Fs, periods, frequency):
@@ -29,6 +32,8 @@ def targetOutput(benchmark, Fs, periods, frequency):
     		return bl.AND(Fs)
     	if(benchmark[1] == 'NAND'):
     		return bl.NAND(Fs)
+    if(benchmark[0] == 'mf'):
+        return mf.TargetSignal(Fs)
 
 
 def float_to_int(x):

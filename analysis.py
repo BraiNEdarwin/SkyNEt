@@ -7,9 +7,9 @@ import math
 low_range = -2
 high_range = 2
 # determine wich file to plot.
-Big_daddy_gen = 1
+Big_daddy_gen = 474
 # loads .npz file.
-data = np.load('C:/Users/VenB/Desktop/python/data/04_04_2018_1519_Heliox_test/nparrays.npz')
+data = np.load('C:/Users/VenB/Desktop/python/data/Higher_harmonics/nparrays.npz')
 
 
 
@@ -39,7 +39,11 @@ print(data.f.geneArray[Array_highest,:,Positon_highest]*(high_range-low_range)+l
 #plot different parts of the measurement.
 plt.plot(data.f.t,data.f.outp)
 plt.plot(data.f.t,data.f.outputArray[Array_highest,:,Positon_highest])
-plt.plot(data.f.t,data.f.inp[0])
-plt.plot(data.f.t,data.f.inp[1])
+# plt.plot(data.f.t,data.f.inp[0])
+# plt.plot(data.f.t,data.f.inp[1])
+plt.rcParams.update({'font.size': 14})
+plt.suptitle('Evolution output', fontsize=16)
+plt.xlabel('time (s)', fontsize=16)
+plt.ylabel('current (nA)', fontsize=16)
 plt.show()
 
