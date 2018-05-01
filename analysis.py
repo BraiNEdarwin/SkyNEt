@@ -7,17 +7,10 @@ import math
 low_range = -2
 high_range = 2
 # determine wich file to plot.
-<<<<<<< HEAD
+
 Big_daddy_gen = 474
 # loads .npz file.
 data = np.load('C:/Users/VenB/Desktop/python/data/Higher_harmonics/nparrays.npz')
-=======
-Big_daddy_gen = 65
-# loads .npz file.
-data = np.load('D:/data/Ren/Evolution/19_04_2018_164956_AND/nparrays.npz')
->>>>>>> bd3265c8893527db7816001e7a4286559548178f
-
-
 
 Fitness_Array = np.zeros(Big_daddy_gen)
 #save the fitness matrix as f.
