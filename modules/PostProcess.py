@@ -66,5 +66,12 @@ def fitnessEvolution(x, target, W, par):
     else:
         Q = (min(x1) - max(x0)) / (max(x1) - min(x0) + abs(min(x0)))
     F = par[0] * m / (res**(.5) + par[3] * abs(c)) + par[1] / res + par[2] * Q
+    clipcounter = 0
+    for i in range(len(x_weighed)):
+        if(abs(x_weighed[i]) > 3.1*10):
+            clipcounter = clipcounter + 1
+            F = -100
+    # F = F - clipcounter *  0.1
+    clipcounter = 0            
     return F
 

@@ -5,7 +5,7 @@ This holds some functions to perform basic operations on the DACs of the IVVI ra
 from qcodes.instrument_drivers.QuTech.IVVI import IVVI
 
 
-def initInstrument():
+def initInstrument(dac_step = 500, dac_delay = 0.01):
 	ivvi = IVVI("ivvi", "COM5", dac_step = 500, dac_delay=.01)
 	ivvi.set_dacs_zero()  #safety
 	return ivvi

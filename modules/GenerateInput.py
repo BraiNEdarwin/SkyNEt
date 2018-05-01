@@ -18,9 +18,13 @@ def softwareInput(benchmark, Fs, periods, frequency):
     if(benchmark[0] == 'wr'):
         return wr.sineWave(Fs, periods, frequency)
     if(benchmark[0] == 'bl'):
+<<<<<<< HEAD
     	return bl.InputSignals(Fs)
     if(benchmark[0] == 'mf'):
         return mf.InputSignals(Fs)
+=======
+        return bl.InputSignals(Fs)
+>>>>>>> bd3265c8893527db7816001e7a4286559548178f
 
 
 def targetOutput(benchmark, Fs, periods, frequency):
@@ -28,6 +32,7 @@ def targetOutput(benchmark, Fs, periods, frequency):
         #return wr.doubleFrequency(Fs, 2 * periods, 2 * frequency)
         return wr.squareWave(Fs, periods, frequency)
     if(benchmark[0] == 'bl'):
+<<<<<<< HEAD
     	if(benchmark[1] == 'AND'):
     		return bl.AND(Fs)
     	if(benchmark[1] == 'NAND'):
@@ -35,6 +40,20 @@ def targetOutput(benchmark, Fs, periods, frequency):
     if(benchmark[0] == 'mf'):
         return mf.TargetSignal(Fs)
 
+=======
+        if(benchmark[1] == 'OR'):
+            return bl.OR(Fs)
+        if(benchmark[1] == 'AND'):
+            return bl.AND(Fs)
+        if(benchmark[1] == 'NAND'):
+            return bl.NAND(Fs)
+        if(benchmark[1] == 'NOR'):
+            return bl.NOR(Fs)
+        if(benchmark[1] == 'XOR'):
+            return bl.XOR(Fs)
+        if(benchmark[1] == 'XNOR'):
+            return bl.XNOR(Fs)
+>>>>>>> bd3265c8893527db7816001e7a4286559548178f
 
 def float_to_int(x):
     x = (x + 10) / 20 * 65536

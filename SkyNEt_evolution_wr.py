@@ -17,7 +17,6 @@ import time
 # temporary imports
 import numpy as np
 
-# print (list(iter.product(a, repeat=6)))
 
 # Read config.txt file
 exec(open("config.txt").read())
@@ -27,25 +26,32 @@ genePool = Evolution.GenePool(genes, genomes)
 
 # initialize benchmark
 # Obtain benchmark input (P and Q are input1, input2)
-[t, P, Q, W] = GenerateInput.softwareInput(benchmark, SampleFreq, WavePeriods, WaveFrequency)
+[t, inp1] = GenerateInput.softwareInput(benchmark, SampleFreq, WavePeriods, WaveFrequency)
+
+WavePeriods2 = (WavePeriods/WaveFrequency)*WaveFrequency2
+
+[t, inp2] = GenerateInput.softwareInput(benchmark, SampleFreq, WavePeriods2, WaveFrequency2)
+
+inp = np.empty((2,len(inp2)))
+inp[0,:]=inp1*2
+inp[1,:]=inp2*2
 
 # format for nidaq
-x = np.empty((2, len(P)))
-x[0,:] = P
-x[1,:] = Q
+#x = np.empty((2, len(P)))
+
 # Obtain benchmark target
 [t, target] = GenerateInput.targetOutput(
     benchmark, SampleFreq, WavePeriods, WaveFrequency)
 
 # np arrays to save genePools, outputs and fitness
 geneArray = np.empty((generations, genes, genomes))
-outputArray = np.empty((generations, len(P) - skipstates, genomes))
+outputArray = np.empty((generations, len(inp) - skipstates, genomes))
 fitnessArray = np.empty((generations, genomes))
 
 # temporary arrays, overwritten each generation
 fitnessTemp = np.empty((genomes, fitnessAvg))
-trained_output = np.empty((len(P) - skipstates, fitnessAvg))
-outputTemp = np.empty((len(P) - skipstates, genomes))
+trained_output = np.empty((len(inp) - skipstates, fitnessAvg))
+outputTemp = np.empty((len(inp) - skipstates, genomes))
 controlVoltages = np.empty(genes)
 
 # initialize save directory
@@ -69,7 +75,7 @@ for i in range(generations):
         IVVIrack.setControlVoltages(ivvi, controlVoltages)
 
         #set the input scaling
-        x_scaled = x * Evolution.mapGenes(generange[-1], genePool.pool[genes-1, j])
+        #x_scaled = x * Evolution.mapGenes(generange[-1], genePool.pool[genes-1, j])
 
         #wait after setting DACs
         time.sleep(1)
@@ -77,17 +83,16 @@ for i in range(generations):
         for avgIndex in range(fitnessAvg):
 
             # feed input to adwin
-            output = nidaqIO.IO_2D(x_scaled, SampleFreq)
+            output = nidaqIO.IO_2D(inp, SampleFreq)
 
             # plot genome
             PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[:, j])
             
             # Train output
-            trained_output[:, avgIndex] =10 * np.asarray(output)  # empty for now, as we have only one output node
+            trained_output[:, avgIndex] = output[0]  # empty for now, as we have only one output node
 
             # Calculate fitness
-            fitnessTemp[j, avgIndex]= PostProcess.fitnessEvolution(
-                trained_output[:, avgIndex], target[skipstates:], W, fitnessParameters)
+            fitnessTemp[j, avgIndex] = PostProcess.fitness(trained_output[:, avgIndex], target[skipstates:][1])
 
             #plot output
             PlotBuilder.currentOutputEvolution(mainFig, t, target, output, j + 1, i + 1, fitnessTemp[j, avgIndex])
@@ -107,11 +112,11 @@ for i in range(generations):
     PlotBuilder.updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, i + 1, t, target, output)
 	
 	#save generation
-    SaveLib.saveMain(saveDirectory, geneArray, outputArray, fitnessArray, t, x, target)
+    SaveLib.saveMain(saveDirectory, geneArray, outputArray, fitnessArray, t, inp, target)
 	
     # evolve the next generation
     genePool.nextGen()
 
-SaveLib.saveMain(filepath, geneArray, outputArray, fitnessArray, t, x, target)
+SaveLib.saveMain(filepath, geneArray, outputArray, fitnessArray, t, inp, target)
 
 PlotBuilder.finalMain(mainFig)
