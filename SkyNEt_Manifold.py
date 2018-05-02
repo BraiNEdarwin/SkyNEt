@@ -25,14 +25,9 @@ genePool = Evolution.GenePool(genes, genomes)
 
 # initialize benchmark
 # Obtain benchmark input (P and Q are input1, input2)
-[t, P, Q, R, S, W] = GenerateInput.softwareInput(benchmark, SampleFreq, WavePeriods, WaveFrequency)
+x = np.matrix('1, 0, 1, 0, 1, 0; 0, 1, 0, 1, 1, 0; 1, 0, 0, 1, 0, 1; 0, 1, 1, 0, 0, 1')
 
-# format for nidaq
-x = np.empty((4, len(P)))
-x[0,:] = P 
-x[1,:] = Q 
-x[2,:] = R 
-x[3,:] = S
+
 # Obtain benchmark target
 [t, target] = GenerateInput.targetOutput(
     benchmark, SampleFreq, WavePeriods, WaveFrequency)
@@ -74,11 +69,11 @@ for i in range(generations):
 
         #wait after setting DACs
         time.sleep(1)
-        
+
         for avgIndex in range(fitnessAvg):
 
             # feed input to adwin
-            output = nidaqIO.IO_2D(x, SampleFreq)
+            output = nidaqIO.IO_2D(x, target, SampleFreq)
 
             # plot genome
             PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[:, j])

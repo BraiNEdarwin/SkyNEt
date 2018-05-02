@@ -80,21 +80,16 @@ def InputSignals(Fs, signalLength = signalLength, edgeLength = edgeLength):
 
 
 def TargetSignal(Fs, signalLength = signalLength, edgeLength = edgeLength):
-    samples = 6 * round(Fs * signalLength / 6) + 6 * round(Fs * edgeLength)
+    samples = 6 * round(Fs * signalLength / 6)
     x = np.empty(samples)
     t = np.linspace(0, samples/Fs, samples)
 
-    x[0:round(Fs * signalLength / 6)] = -1
-    x[round(Fs * signalLength / 6) : round(Fs * signalLength / 6) + round(Fs * edgeLength)] = np.linspace(-1, 1, round(Fs * edgeLength))
-    x[round(Fs * signalLength / 6) + round(Fs * edgeLength) : 2 * round(Fs * signalLength / 6) + round(Fs * edgeLength)] = 1
-    x[2 * round(Fs * signalLength / 6) + round(Fs * edgeLength) : 2 * round(Fs * signalLength / 6) + 2 * round(Fs * edgeLength)] = np.linspace(1, 0, round(Fs * edgeLength))
-    x[2 * round(Fs * signalLength / 6) + 2 * round(Fs * edgeLength) : 3 * round(Fs * signalLength / 6) + 2 * round(Fs * edgeLength)] = 0
-    x[3 * round(Fs * signalLength / 6) + 2 * round(Fs * edgeLength) : 3 * round(Fs * signalLength / 6) + 3 * round(Fs * edgeLength)] = 0
-    x[3 * round(Fs * signalLength / 6) + 3 * round(Fs * edgeLength) : 4 * round(Fs * signalLength / 6) + 3 * round(Fs * edgeLength)] = 0
-    x[4 * round(Fs * signalLength / 6) + 3 * round(Fs * edgeLength) : 4 * round(Fs * signalLength / 6) + 4 * round(Fs * edgeLength)] = np.linspace(0, 1, round(Fs * edgeLength))
-    x[4 * round(Fs * signalLength / 6) + 4 * round(Fs * edgeLength) : 5 * round(Fs * signalLength / 6) + 5 * round(Fs * edgeLength)] = 1
-    x[5 * round(Fs * signalLength / 6) + 4 * round(Fs * edgeLength) : 5 * round(Fs * signalLength / 6) + 5 * round(Fs * edgeLength)] = np.linspace(1, -1, round(Fs * edgeLength))
-    x[5 * round(Fs * signalLength / 6) + 5 * round(Fs * edgeLength) : 6 * round(Fs * signalLength / 6) + 6 * round(Fs * edgeLength)] = -1
+    x[0:round(Fs * signalLength / 6)] = 1
+    x[round(Fs * signalLength / 6) : 2 * round(Fs * signalLength / 6) ] = 1
+    x[2 * round(Fs * signalLength / 6) : 3 * round(Fs * signalLength / 6)] = 0
+    x[3 * round(Fs * signalLength / 6) : 4 * round(Fs * signalLength / 6)] = 0
+    x[4 * round(Fs * signalLength / 6) : 5 * round(Fs * signalLength / 6)] = -1
+    x[5 * round(Fs * signalLength / 6) : 6 * round(Fs * signalLength / 6)] = -1
 
     return t, x
 
