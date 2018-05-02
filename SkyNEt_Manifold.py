@@ -29,10 +29,10 @@ genePool = Evolution.GenePool(genes, genomes)
 
 # format for nidaq
 x = np.empty((4, len(P)))
-x[0,:] = P * 0.5
-x[1,:] = Q * 0.5
-x[2,:] = R * 0.5
-x[3,:] = S * 0.5
+x[0,:] = P 
+x[1,:] = Q 
+x[2,:] = R 
+x[3,:] = S
 # Obtain benchmark target
 [t, target] = GenerateInput.targetOutput(
     benchmark, SampleFreq, WavePeriods, WaveFrequency)
