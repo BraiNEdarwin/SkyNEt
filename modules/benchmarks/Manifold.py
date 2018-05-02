@@ -97,3 +97,5 @@ def TargetSignal(Fs, signalLength = signalLength, edgeLength = edgeLength):
     x[5 * round(Fs * signalLength / 6) + 5 * round(Fs * edgeLength) : 6 * round(Fs * signalLength / 6) + 6 * round(Fs * edgeLength)] = -1
 
     return t, x
+
+    

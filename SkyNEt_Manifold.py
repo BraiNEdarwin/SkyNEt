@@ -68,6 +68,13 @@ for i in range(generations):
                 generange[k], genePool.pool[k, j])
         IVVIrack.setControlVoltages(ivvi, controlVoltages)
 
+         #set the input scaling
+        x_scaled = x * Evolution.mapGenes(generange[-1], genePool.pool[genes-1, j])
+
+
+        #wait after setting DACs
+        time.sleep(1)
+        
         for avgIndex in range(fitnessAvg):
 
             # feed input to adwin
