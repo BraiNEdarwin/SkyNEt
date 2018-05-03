@@ -18,8 +18,7 @@ def DacMeasure(x, target, Fs):
 
 
 		data = nidaqIO.IO(singlemeas, Fs)
-		output[i*data+1:i*data+data] = data  # missing out on 0 but need the +1 to not remove the last digit of the first set do better.
-
+		output[i*len(data):i*len(data)+len(data)-1] = data  # missing out on 0 but need the +1 to not remove the last digit of the first set do better.
 
 
 	return output
