@@ -2,6 +2,8 @@
 import time
 # temporary imports
 import numpy as np
+from instruments.niDAQ import nidaqIO
+from instruments.DAC import IVVIrack
 
 
 def DacMeasure(x, target, Fs):

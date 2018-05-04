@@ -12,6 +12,7 @@ import modules.PostProcess as PostProcess
 import modules.SaveLib as SaveLib
 from instruments.niDAQ import nidaqIO
 from instruments.DAC import IVVIrack
+from modules.benchmarks import DACevo
 
 # temporary imports
 import numpy as np
@@ -73,7 +74,7 @@ for i in range(generations):
         for avgIndex in range(fitnessAvg):
 
             # feed input to adwin
-            output = nidaqIO.IO_2D(x, target, SampleFreq)
+            output = DACevo.DacMeasure(x, target, SampleFreq)
 
             # plot genome
             PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[:, j])
