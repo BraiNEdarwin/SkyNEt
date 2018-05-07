@@ -6,6 +6,10 @@ from instruments.niDAQ import nidaqIO
 from instruments.DAC import IVVIrack
 from instruments.Keithley2000 import Keithley_2000
 
+ivvi = IVVIrack.initInstrument()
+Keithley_2000.__init__(elkeef, "GPIB:17")
+
+
 inputvoltages = np.array([500])
 IVVIrack.setinputVoltages(ivvi, inputVoltages)
 time.sleep(1)
