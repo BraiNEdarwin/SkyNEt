@@ -74,7 +74,7 @@ for i in range(generations):
         for avgIndex in range(fitnessAvg):
 
             # feed input to adwin
-            output = DACevo.DacMeasure(x, target, SampleFreq)
+            output = DACevo.DacMeasure(x,_scaled, target, SampleFreq)
 
             # plot genome
             PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[:, j])
