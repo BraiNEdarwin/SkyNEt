@@ -4,6 +4,7 @@ import time
 import numpy as np
 from instruments.niDAQ import nidaqIO
 from instruments.DAC import IVVIrack
+from instruments.Keithley2000 import Keithley_2000
 
 
 def DacMeasuremani(x, target, Fs):
@@ -38,20 +39,20 @@ def DacMeasuredigit(x, target, Fs):
 		for i in range(len(x)):
 			inputvoltages = x[i,:]
 			print(inputvoltages)
-			# IVVIrack.setinputVoltages(ivvi, inputVoltages)
-			# time.sleep(1)
+			IVVIrack.setinputVoltages(ivvi, inputVoltages)
+			time.sleep(1)
 
-			# measure using desire module.
+			measureddata = Keithley_2000._read_next_value() 
 
-			# output[i, n] = measureddata fill output in in array
+			output[i, n] = measureddata 
 
 		for j in range(len(x)):
 			inputvoltages = x[:,j].T
 			print(inputvoltages)
-			# IVVIrack.setinputVoltages(ivvi, inputVoltages)
-			# time.sleep(1)
+			IVVIrack.setinputVoltages(ivvi, inputVoltages)
+			time.sleep(1)
 	
-			# # measure using desire module.
+			measureddata = Keithley_2000._read_next_value() 
 
-			# output[i+j+1, n] = measureddata 
+			output[i+j+1, n] = measureddata 
 
