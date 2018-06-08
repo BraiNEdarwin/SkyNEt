@@ -138,3 +138,4 @@ def XNOR(Fs, signalLength = signalLength, edgeLength = edgeLength):
     x[3 * round(Fs * signalLength / 4) + 3 * round(Fs * edgeLength) : 4 * round(Fs * signalLength / 4) + 3 * round(Fs * edgeLength)] = 1
 
     return t, x
+

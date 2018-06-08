@@ -27,6 +27,7 @@ def softwareInput(benchmark, Fs, periods, frequency):
 
 
 
+
 def targetOutput(benchmark, Fs, periods, frequency):
     if(benchmark[0] == 'wr'):
         #return wr.doubleFrequency(Fs, 2 * periods, 2 * frequency)
@@ -56,7 +57,8 @@ def targetOutput(benchmark, Fs, periods, frequency):
 def float_to_int(x):
     x = (x + 10) / 20 * 65536
 
-def SpiralInput(n_points, sp_offset):
+def SpiralInput(n_points, sp_offset, waveperiods):
+    t = np.linspace(0, WavePeriods/n_points, WavePeriods)
     x = np.linspace(0, 4*np.pi, n_points)
     
     x_spiral1 = x*np.sin(x)+sp_offset
@@ -65,4 +67,6 @@ def SpiralInput(n_points, sp_offset):
     x_spiral2 = -x*np.sin(x)-sp_offset
     y_spiral2 = -x*np.cos(x)
 
-    return [x_spiral1, y_spiral1, x_spiral2, y_spiral2]
+    return [t, x_spiral1, y_spiral1, x_spiral2, y_spiral2]
+
+def SpiralOutput(Fs, WavePeriods)
