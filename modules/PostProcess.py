@@ -103,7 +103,7 @@ def fitnessEvolutionSpiral(x, target, W, par):
     m, c = np.linalg.lstsq(A, x_weighed)[0] 
     res = np.linalg.lstsq(A, x_weighed)[1]
     res = res[0]
-    
+
         
     F = par[0] * m / (res**(.5) + par[3] * abs(c)) - par[1] * (m-1)^2 + par[2]*signsum
     clipcounter = 0
@@ -114,3 +114,17 @@ def fitnessEvolutionSpiral(x, target, W, par):
     # F = F - clipcounter *  0.1
     clipcounter = 0            
     return F
+
+
+def fitnessEvolutionCalssif(x)
+    y = np.zeros(len(x))
+    z = np.zeros(len(y)-1)
+    for i in range(len(x)):
+        y[i] = np.average(x[i,:])
+    y = sorted(y)
+    for j in range(len(y)-1):
+        z[j] = abs(y[j+1]-y[j])
+    F = np.amin(z)
+    return F
+
+    

@@ -69,4 +69,4 @@ def SpiralInput(n_points, sp_offset, waveperiods):
 
     return [t, x_spiral1, y_spiral1, x_spiral2, y_spiral2]
 
-def SpiralOutput(Fs, WavePeriods)
+
