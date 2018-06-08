@@ -27,18 +27,20 @@ genePool = Evolution.GenePool(genes, genomes)
 
 # initialize benchmark
 # Obtain benchmark input (P and Q are input1, input2)
-[x_spiral1, y_spiral1, x_spiral2, y_spiral2] = GenerateInput.SpiralInput(SampleFreq, SpiralOffset, WavePeriods)
+[x_spiral1, y_spiral1, x_spiral2, y_spiral2] = GenerateInput.SpiralInput(n_points, SpiralOffset)
 
 # format for nidaq
 x = np.empty((2, len(x_spiral1)))
 x[0,:] = x_spiral1
 x[1,:] = y_spiral1
 
+
+t = np.linspace(0, len(x_spiral1)/samplefreq ,len(x_spiral1))
 w = np.ones(len(x_spiral1))
 
 
 # Obtain benchmark target
-[t, target] = GenerateInput.SpiralOutput(SampleFreq, WavePeriods)
+target = t
 
 # np arrays to save genePools, outputs and fitness
 geneArray = np.empty((generations, genes, genomes))
