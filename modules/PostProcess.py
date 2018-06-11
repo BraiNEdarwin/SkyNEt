@@ -116,7 +116,7 @@ def fitnessEvolutionSpiral(x, target, W, par):
     return F
 
 
-def fitnessEvolutionCalssif(x)
+def fitnessEvolutionCalssif(x):
     y = np.zeros(len(x))
     z = np.zeros(len(y)-1)
     for i in range(len(x)):

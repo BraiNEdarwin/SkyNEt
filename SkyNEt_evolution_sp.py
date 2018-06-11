@@ -1,4 +1,4 @@
-''''
+''''if(benchmark[1] == 'NAND'):
 Measurement script to perform an evolution experiment of a selected
 gate. This will initially be tested on the Heliox (with nidaq) setup.
 '''
@@ -10,8 +10,9 @@ import modules.GenerateInput as GenerateInput
 import modules.Evolution as Evolution
 import modules.PostProcess as PostProcess
 import modules.SaveLib as SaveLib
-from instruments.niDAQ import nidaqIO
-from instruments.DAC import IVVIrack
+import matplotlib.pyplot as plt
+# from instruments.niDAQ import nidaqIO
+# from instruments.DAC import IVVIrack
 import time
 
 # temporary imports
@@ -35,22 +36,23 @@ x[0,:] = x_spiral1 * 800
 x[1,:] = y_spiral1 * 800
 
 
-t = np.linspace(0, len(x_spiral1)/samplefreq ,len(x_spiral1))
+t = np.linspace(0, len(x_spiral1)/SampleFreq ,len(x_spiral1))
 w = np.ones(len(x_spiral1))
-
+# plt.plot(t,x[0,:],'.')
+# plt.show()
 
 # Obtain benchmark target
 target = t
 
 # np arrays to save genePools, outputs and fitness
 geneArray = np.empty((generations, genes, genomes))
-outputArray = np.empty((generations, len(P) - skipstates, genomes))
+outputArray = np.empty((generations, len(x_spiral1) - skipstates, genomes))
 fitnessArray = np.empty((generations, genomes))
 
 # temporary arrays, overwritten each generation
 fitnessTemp = np.empty((genomes, fitnessAvg))
-trained_output = np.empty((len(P) - skipstates, fitnessAvg))
-outputTemp = np.empty((len(P) - skipstates, genomes))
+trained_output = np.empty((len(x_spiral1) - skipstates, fitnessAvg))
+outputTemp = np.empty((len(x_spiral1) - skipstates, genomes))
 controlVoltages = np.empty(genes)
 
 # initialize save directory

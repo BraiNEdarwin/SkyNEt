@@ -32,6 +32,7 @@ fitnessParameters = [1, 0, 0, 0.01]
 
 #spiralsettings
 SpiralOffset = 0
+n_points = 1000
 
 # input1 = t1/e5
 # input2 = t3/e6

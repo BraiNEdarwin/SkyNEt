@@ -57,8 +57,8 @@ def targetOutput(benchmark, Fs, periods, frequency):
 def float_to_int(x):
     x = (x + 10) / 20 * 65536
 
-def SpiralInput(n_points, sp_offset, waveperiods):
-    t = np.linspace(0, WavePeriods/n_points, WavePeriods)
+def SpiralInput(n_points, sp_offset):
+
     x = np.linspace(0, 4*np.pi, n_points)
     
     x_spiral1 = x*np.sin(x)+sp_offset
@@ -71,6 +71,6 @@ def SpiralInput(n_points, sp_offset, waveperiods):
     y_spiral2 = -x*np.cos(x)
     y_spiral2 = y_spiral2/np.min(y_spiral2)
 
-    return [t, x_spiral1, y_spiral1, x_spiral2, y_spiral2]
+    return [x_spiral1, y_spiral1, x_spiral2, y_spiral2]
 
 
