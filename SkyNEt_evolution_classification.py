@@ -103,7 +103,7 @@ for i in range(generations):
             trained_output[:, avgIndex] =10 * np.asarray(output)  # empty for now, as we have only one output node
 
             # Calculate fitness
-            fitnessTemp[j, avgIndex]= PostProcess.fitnessEvolutionCalssif(trained_output[:, avgIndex])
+            fitnessTemp[j, avgIndex]= PostProcess.fitnessEvolutionCalssif(trained_output[:, avgIndex], fitnessParameters)
 
             #plot output
             PlotBuilder.currentOutputEvolution(mainFig, t, target, output, j + 1, i + 1, fitnessTemp[j, avgIndex])
