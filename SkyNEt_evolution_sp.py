@@ -31,8 +31,8 @@ genePool = Evolution.GenePool(genes, genomes)
 
 # format for nidaq
 x = np.empty((2, len(x_spiral1)))
-x[0,:] = x_spiral1
-x[1,:] = y_spiral1
+x[0,:] = x_spiral1 * 800
+x[1,:] = y_spiral1 * 800
 
 
 t = np.linspace(0, len(x_spiral1)/samplefreq ,len(x_spiral1))

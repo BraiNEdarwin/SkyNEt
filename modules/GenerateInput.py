@@ -2,7 +2,7 @@
 Generates integer (0 to 65535) array of the benchmark data.
 Also passes to be trained output (ideal data) to the main script
 '''
-
+import numpy as np
 import modules.benchmarks.WaveformRegression as wr
 import modules.benchmarks.BooleanLogic as bl
 import modules.benchmarks.Manifold as mf
@@ -62,10 +62,14 @@ def SpiralInput(n_points, sp_offset, waveperiods):
     x = np.linspace(0, 4*np.pi, n_points)
     
     x_spiral1 = x*np.sin(x)+sp_offset
+    x_spiral1 = x_spiral1/np.min(x_spiral1)
     y_spiral1 = x*np.cos(x)
+    y_spiral1 = y_spiral1 / np.max(y_spiral1)
 
     x_spiral2 = -x*np.sin(x)-sp_offset
+    x_spiral2 = x_spiral2/np.max(x_spiral2)
     y_spiral2 = -x*np.cos(x)
+    y_spiral2 = y_spiral2/np.min(y_spiral2)
 
     return [t, x_spiral1, y_spiral1, x_spiral2, y_spiral2]
 

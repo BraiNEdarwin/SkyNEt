@@ -105,7 +105,7 @@ def fitnessEvolutionSpiral(x, target, W, par):
     res = res[0]
 
         
-    F = par[0] * m / (res**(.5) + par[3] * abs(c)) - par[1] * (m-1)^2 + par[2]*signsum
+    F = par[0] * m / (res**(.5) + par[3] * abs(c)) - par[1] * (m-1)^2 + par[2]*signsum / (len(x)-1)
     clipcounter = 0
     for i in range(len(x_weighed)):
         if(abs(x_weighed[i]) > 3.1*10):
