@@ -28,20 +28,23 @@ genePool = Evolution.GenePool(genes, genomes)
 # initialize benchmark
 # Obtain benchmark input (P and Q are input1, input2)
 # win is the convolution window, 16 possiblities
-win = np.array([[0,0,0,0],[0,0,0,1],[0,0,1,0],[0,0,1,1],[0,1,0,0],[0,1,0,1],[0,1,1,0],[0,1,1,1],[1,0,0,0],[1,0,0,1],[1,0,1,0],[1,0,1,1],[1,1,0,0],[1,1,0,1],[1,1,1,0],[1,1,1,1]])
+import itertools
+
+a = [0, 1]
+b = [-1,0,1]
+c = 24
+win = np.array(list(itertools.product(*[a,a,a,b])))
+print(win)
+# win = np.array([[0,0,0,0],[0,0,0,1],[0,0,1,0],[0,0,1,1],[0,1,0,0],[0,1,0,1],[0,1,1,0],[0,1,1,1],[1,0,0,0],[1,0,0,1],[1,0,1,0],[1,0,1,1],[1,1,0,0],[1,1,0,1],[1,1,1,0],[1,1,1,1],[-1,0,0,0],[-1,1,0,0]])
 wtest = 10
 fs = 1000
 vin=800
 y = np.zeros([100])
-winout = np.zeros([wtest,16])
-winoutsd = np.zeros([2,16])
-
-
-w = np.ones(len(x_spiral1))
-
+winout = np.zeros([wtest,c])
+winoutsd = np.zeros([2,c])
 
 # Obtain benchmark target
-target = t
+
 
 # np arrays to save genePools, outputs and fitness
 geneArray = np.empty((generations, genes, genomes))
@@ -83,7 +86,7 @@ for i in range(generations):
         for avgIndex in range(fitnessAvg):
 
             # feed input to adwin
-            for n in range(16):
+            for n in range(c):
                 inputVoltages = [(win[n,0]-0.5)*2*vin, (win[n,1]-0.5)*2*vin, (win[n,2]-0.5)*2*vin, (win[n,3]-0.5)*2*vin, va,vb]
                 print(inputVoltages)
                 IVVIrack.setControlVoltages(ivvi, inputVoltages)

@@ -117,9 +117,9 @@ def fitnessEvolutionSpiral(x, target, W, par):
 
 
 def fitnessEvolutionCalssif(x, par):
-    y = np.zeros(len(x))
+    y = np.zeros(len(x[0]))
     z = np.zeros(len(y)-1)
-    for i in range(len(x)):
+    for i in range(len(x[0])):
         y[i] = np.average(x[i,:])
     y = sorted(y)
     for j in range(len(y)-1):
