@@ -117,14 +117,18 @@ def fitnessEvolutionSpiral(x, target, W, par):
 
 
 def fitnessEvolutionCalssif(x, par):
-    y = np.zeros(len(x[0]))
+    y = np.zeros(len(x))
     z = np.zeros(len(y)-1)
-    for i in range(len(x[0])):
-        y[i] = np.average(x[i,:])
+
+    for i in range(len(x)):
+        y[i] = np.average(x[i])
     y = sorted(y)
+
     for j in range(len(y)-1):
         z[j] = abs(y[j+1]-y[j])
-    Difference = np.max(x)-np.min(x)    
+
+    Difference = np.max(x)-np.min(x)  
+
     F = par[0] * np.amin(z) + par[1] * Difference
     for i in range(len(x)):
         if(abs(x[i])>3.1*10)

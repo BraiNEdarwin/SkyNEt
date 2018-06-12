@@ -34,7 +34,7 @@ a = [0, 1]
 b = [-1,0,1]
 c = 24
 win = np.array(list(itertools.product(*[a,a,a,b])))
-print(win)
+
 # win = np.array([[0,0,0,0],[0,0,0,1],[0,0,1,0],[0,0,1,1],[0,1,0,0],[0,1,0,1],[0,1,1,0],[0,1,1,1],[1,0,0,0],[1,0,0,1],[1,0,1,0],[1,0,1,1],[1,1,0,0],[1,1,0,1],[1,1,1,0],[1,1,1,1],[-1,0,0,0],[-1,1,0,0]])
 wtest = 10
 fs = 1000
@@ -44,17 +44,17 @@ winout = np.zeros([wtest,c])
 winoutsd = np.zeros([2,c])
 
 # Obtain benchmark target
-
+t = range(10)
 
 # np arrays to save genePools, outputs and fitness
 geneArray = np.empty((generations, genes, genomes))
-outputArray = np.empty((generations, len(P) - skipstates, genomes))
+outputArray = np.empty((generations, len(P) - skipstates, genomes)) 
 fitnessArray = np.empty((generations, genomes))
 
 # temporary arrays, overwritten each generation
 fitnessTemp = np.empty((genomes, fitnessAvg))
-trained_output = np.empty((len(P) - skipstates, fitnessAvg))
-outputTemp = np.empty((len(P) - skipstates, genomes))
+# trained_output = np.empty((len(P) - skipstates, fitnessAvg)) !!!!!!!!!!!!!!!!!!
+# outputTemp = np.empty((len(P) - skipstates, genomes)) !!!!!!!!!!!!!!!!!!!
 controlVoltages = np.zeros(genes+4)
 
 # initialize save directory
@@ -97,21 +97,22 @@ for i in range(generations):
                     measureddata = np.average(measureddata)
           #   print('measured output current is')
                 
-                    output[m,n]=np.transpose(measureddata)
+                    output[n,m]=np.transpose(measureddata)
     
             # plot genome
             PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[:, j])
             
             # Train output
-            trained_output[:, avgIndex] =10 * np.asarray(output)  # empty for now, as we have only one output node
+            # trained_output[:, avgIndex] =10 * np.asarray(output)  # empty for now, as we have only one output node
 
             # Calculate fitness
-            fitnessTemp[j, avgIndex]= PostProcess.fitnessEvolutionCalssif(trained_output[:, avgIndex], fitnessParameters)
-
+            fitnessTemp[j, avgIndex]= PostProcess.fitnessEvolutionCalssif(output, fitnessParameters)
+            for l in range(len(output)):
+                y[l] = np.average(output[l])
             #plot output
             PlotBuilder.currentOutputEvolution(mainFig, t, target, output, j + 1, i + 1, fitnessTemp[j, avgIndex])
 
-        outputTemp[:, j] = trained_output[:, np.argmin(fitnessTemp[j, :])]
+        outputTemp[:, j] = output[:, np.argmin(fitnessTemp[j, :])]
 
     genePool.fitness = fitnessTemp.min(1)
     print("Generation nr. " + str(i + 1) + " completed")
@@ -119,18 +120,18 @@ for i in range(generations):
 
     # save generation data
     geneArray[i, :, :] = genePool.returnPool()
-    outputArray[i, :, :] = outputTemp
+    outputArray[i, :, :] = y[:, np.argmin(fitnessTemp[j, :])]
     fitnessArray[i, :] = fitnessTemp.min(1)
 
     PlotBuilder.currentOutputEvolution(mainFig, t, target, output, j + 1, i + 1, fitnessTemp[j, avgIndex])
     PlotBuilder.updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, i + 1, t, target, output)
 	
 	#save generation
-    SaveLib.saveMain(saveDirectory, geneArray, outputArray, fitnessArray, t, x, target)
+    SaveLib.saveMain(saveDirectory, geneArray, outputArray, fitnessArray, t, x, output)
 	
     # evolve the next generation
     genePool.nextGen()
 
-SaveLib.saveMain(filepath, geneArray, outputArray, fitnessArray, t, x, target)
+SaveLib.saveMain(filepath, geneArray, outputArray, fitnessArray, t, x, output)
 
 PlotBuilder.finalMain(mainFig)
