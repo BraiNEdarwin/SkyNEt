@@ -31,7 +31,7 @@ genePool = Evolution.GenePool(genes, genomes)
 import itertools
 
 a = [0, 1]
-b = [-1,0,1]
+b = [0, 1, -1]
 c = 24
 win = np.array(list(itertools.product(*[a,a,a,b])))
 
@@ -110,7 +110,7 @@ for i in range(generations):
             for l in range(len(output)):
                 y[l] = np.average(output[l])
             #plot output
-            PlotBuilder.currentOutputEvolution(mainFig, t, target, output, j + 1, i + 1, fitnessTemp[j, avgIndex])
+            PlotBuilder.currentOutputEvolution(mainFig, output, t, j + 1, i + 1, fitnessTemp[j, avgIndex])
 
         outputTemp[:, j] = output[:, np.argmin(fitnessTemp[j, :])]
 
@@ -123,15 +123,19 @@ for i in range(generations):
     outputArray[i, :, :] = y[:, np.argmin(fitnessTemp[j, :])]
     fitnessArray[i, :] = fitnessTemp.min(1)
 
-    PlotBuilder.currentOutputEvolution(mainFig, t, target, output, j + 1, i + 1, fitnessTemp[j, avgIndex])
-    PlotBuilder.updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, i + 1, t, target, output)
-	
+    PlotBuilder.currentOutputEvolution(mainFig, output, t, j + 1, i + 1, fitnessTemp[j, avgIndex])
+    PlotBuilder.updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, i + 1, output, t)
+	reducedoutput = output[:16]
 	#save generation
     SaveLib.saveMain(saveDirectory, geneArray, outputArray, fitnessArray, t, x, output)
-	
+	np.savetxt('classification'+string(generations)+string(genomes)+'.txt', reducedoutput)
+    np.savetxt('classificationfulfinal'+string(generations)+string(genomes)+'.txt', output)
+
     # evolve the next generation
     genePool.nextGen()
 
 SaveLib.saveMain(filepath, geneArray, outputArray, fitnessArray, t, x, output)
+np.savetxt('classification'+string(generations)+string(genomes)+'.txt', reducedoutput)
+np.savetxt('classificationfulfinal'+string(generations)+string(genomes)+'.txt', output)
 
 PlotBuilder.finalMain(mainFig)
