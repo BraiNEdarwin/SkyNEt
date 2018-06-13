@@ -38,8 +38,8 @@ x[1,:] = y_spiral1 * 800
 
 t = np.linspace(0, len(x_spiral1)/SampleFreq ,len(x_spiral1))
 w = np.ones(len(x_spiral1))
-# plt.plot(t,x[0,:],'.')
-# plt.show()
+plt.plot(t,x[0,:],'.')
+plt.show()
 
 # Obtain benchmark target
 target = t

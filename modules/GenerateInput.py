@@ -19,7 +19,7 @@ def softwareInput(benchmark, Fs, periods, frequency):
         return wr.sineWave(Fs, periods, frequency)
 
     if(benchmark[0] == 'bl'):
-    	return bl.InputSignals(Fs)
+        return bl.InputSignals(Fs)
 
     if(benchmark[0] == 'mf'):
         return mf.InputSignals(Fs)
@@ -34,10 +34,10 @@ def targetOutput(benchmark, Fs, periods, frequency):
         return wr.squareWave(Fs, periods, frequency)
 
     if(benchmark[0] == 'bl'):
-    	if(benchmark[1] == 'AND'):
-    		return bl.AND(Fs)
-    	if(benchmark[1] == 'NAND'):
-    		return bl.NAND(Fs)
+        if(benchmark[1] == 'AND'):
+            return bl.AND(Fs)
+        if(benchmark[1] == 'NAND'):
+            return bl.NAND(Fs)
         if(benchmark[1] == 'OR'):
             return bl.OR(Fs)
         if(benchmark[1] == 'AND'):
