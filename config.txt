@@ -22,7 +22,7 @@ WaveFrequency2 = 18.5
 SampleFreq = 1000
 
 # Evolution settings
-genes = 6
+genes = 3
 genomes = 25
 generations = 500
 generange = [[-1000,1000], [-1000, 1000], [-1000, 1000], [-1000, 1000], [-1000, 1000], [0.1, 2]]
