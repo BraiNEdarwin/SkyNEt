@@ -90,11 +90,36 @@ def outputMainEvolution(mainFig, t, target, outputArray, fitnessArray, currentGe
     mainFig.axes[-2].set_title('Best output of last generation / fitness ' + str(np.max(fitnessArray[currentGeneration - 1])) )
     plt.pause(0.01)
 
+def outputMainClassification(mainFig, outputArray, win, fitnessArray, currentGeneration):
+    out = outputArray[currentGeneration - 1,np.argmax(fitnessArray[currentGeneration - 1]),:,:]
+    y = np.zeros(len(out))
+    mainFig.axes[-2].lines.clear()
+    for i in range(len(out)):
+        y[i] = np.average(out[i])
+        a = mainFig.axes[-2].plot(out[i],np.arange(0,len(out[i])),dashes = [1,1], label = win[i])
+        mainFig.axes[-2].plot(out[i],np.arange(0,len(out[i])),'x',color = a[0].get_color())
+        mainFig.axes[-2].plot([y[i],y[i]],[0,len(out[0])],dashes = [5,5],color = a[0].get_color())
+    mainFig.axes[-2].legend(loc = 1)
+    mainFig.axes[-2].set_title('Best output of last generation / fitness ' + str(np.max(fitnessArray[currentGeneration - 1])) )
+    plt.pause(0.01)
+
 def currentOutputEvolution(mainFig, t, target, currentOutput, genome, currentGeneration, fitness):
     mainFig.axes[-1].lines.clear()
     mainFig.axes[-1].plot(t, currentOutput, 'r')
     mainFig.axes[-1].plot(t, target, 'b--')
     mainFig.axes[-1].legend(['Current output', 'Target'], loc = 1)
+    mainFig.axes[-1].set_title('Genome ' + str(genome) + '/Generation ' + str(currentGeneration) + '/fitness ' + '{0:.2f}'.format(fitness))
+    plt.pause(0.01)
+
+def currentOutputClassification(mainFig, out, win, genome, currentGeneration, fitness):
+    y = np.zeros(len(out))
+    mainFig.axes[-1].lines.clear()
+    for i in range(len(out)):
+        y[i] = np.average(out[i])
+        a = mainFig.axes[-1].plot(out[i],np.arange(0,len(out[i])),dashes = [1,1], label = win[i])
+        mainFig.axes[-1].plot(out[i],np.arange(0,len(out[i])),'x',color = a[0].get_color())
+        mainFig.axes[-1].plot([y[i],y[i]],[0,len(out[0])],dashes = [5,5],color = a[0].get_color())
+    mainFig.axes[-1].legend(loc = 1)
     mainFig.axes[-1].set_title('Genome ' + str(genome) + '/Generation ' + str(currentGeneration) + '/fitness ' + '{0:.2f}'.format(fitness))
     plt.pause(0.01)
 
@@ -212,6 +237,14 @@ def updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, curren
     bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration)
     fitnessMainEvolution(mainFig, fitnessArray, currentGeneration)
     outputMainEvolution(mainFig, t, target, outputArray,
+               fitnessArray, currentGeneration)
+    #currentOutputEvolution(mainFig, t, target, currentOutput)
+    #statsMain(mainFig, geneArray, currentGeneration)
+
+def updateMainFigClassification(mainFig, geneArray, fitnessArray, outputArray, currentGeneration, win):
+    bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration)
+    fitnessMainEvolution(mainFig, fitnessArray, currentGeneration)
+    outputMainClassification(mainFig, outputArray, win, 
                fitnessArray, currentGeneration)
     #currentOutputEvolution(mainFig, t, target, currentOutput)
     #statsMain(mainFig, geneArray, currentGeneration)

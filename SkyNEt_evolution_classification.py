@@ -33,7 +33,7 @@ import itertools
 a = [0, 1]
 b = [0, 1, -1]
 c = 24
-win = np.array(list(itertools.product(*[a,a,a,b])))
+win = np.array(list(itertools.product(*[b,a,a,a])))
 
 # win = np.array([[0,0,0,0],[0,0,0,1],[0,0,1,0],[0,0,1,1],[0,1,0,0],[0,1,0,1],[0,1,1,0],[0,1,1,1],[1,0,0,0],[1,0,0,1],[1,0,1,0],[1,0,1,1],[1,1,0,0],[1,1,0,1],[1,1,1,0],[1,1,1,1],[-1,0,0,0],[-1,1,0,0]])
 wtest = 10
@@ -48,21 +48,19 @@ t = range(10)
 
 # np arrays to save genePools, outputs and fitness
 geneArray = np.empty((generations, genes, genomes))
-outputArray = np.empty((generations, len(P) - skipstates, genomes)) 
+outputArray = np.empty((generations, genomes, c, wtest)) 
 fitnessArray = np.empty((generations, genomes))
 
 # temporary arrays, overwritten each generation
 fitnessTemp = np.empty((genomes, fitnessAvg))
-# trained_output = np.empty((len(P) - skipstates, fitnessAvg)) !!!!!!!!!!!!!!!!!!
-# outputTemp = np.empty((len(P) - skipstates, genomes)) !!!!!!!!!!!!!!!!!!!
 controlVoltages = np.zeros(genes+4)
+output = np.empty((c, wtest))
 
 # initialize save directory
 saveDirectory = SaveLib.createSaveDirectory(filepath, name)
 
 # initialize main figure
 mainFig = PlotBuilder.initMainFigEvolution(genes, generations, genelabels, generange)
-
 
 # initialize instruments
 ivvi = IVVIrack.initInstrument()
@@ -93,49 +91,34 @@ for i in range(generations):
                 time.sleep(0.2)
                 for m in range(wtest):
                     measureddata = np.asarray(nidaqIO.IO(y, fs)) * 10
-
-                    measureddata = np.average(measureddata)
-          #   print('measured output current is')
-                
-                    output[n,m]=np.transpose(measureddata)
+                    output[n,m] = np.average(measureddata)
     
             # plot genome
             PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[:, j])
-            
-            # Train output
-            # trained_output[:, avgIndex] =10 * np.asarray(output)  # empty for now, as we have only one output node
 
             # Calculate fitness
             fitnessTemp[j, avgIndex]= PostProcess.fitnessEvolutionCalssif(output, fitnessParameters)
-            for l in range(len(output)):
-                y[l] = np.average(output[l])
-            #plot output
-            PlotBuilder.currentOutputEvolution(mainFig, output, t, j + 1, i + 1, fitnessTemp[j, avgIndex])
 
-        outputTemp[:, j] = output[:, np.argmin(fitnessTemp[j, :])]
+            #plot output
+            PlotBuilder.currentOutputClassification(mainFig, output, win, j + 1, i + 1, fitnessTemp[j, avgIndex])
 
     genePool.fitness = fitnessTemp.min(1)
     print("Generation nr. " + str(i + 1) + " completed")
     print("Highest fitness: " + str(max(genePool.fitness)))
+    outputArray[i, j, :, :] = output
 
     # save generation data
     geneArray[i, :, :] = genePool.returnPool()
-    outputArray[i, :, :] = y[:, np.argmin(fitnessTemp[j, :])]
     fitnessArray[i, :] = fitnessTemp.min(1)
 
-    PlotBuilder.currentOutputEvolution(mainFig, output, t, j + 1, i + 1, fitnessTemp[j, avgIndex])
-    PlotBuilder.updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, i + 1, output, t)
-	reducedoutput = output[:16]
+    PlotBuilder.updateMainFigClassification(mainFig, geneArray, fitnessArray, outputArray, i + 1, win)
+
 	#save generation
-    SaveLib.saveMain(saveDirectory, geneArray, outputArray, fitnessArray, t, x, output)
-	np.savetxt('classification'+string(generations)+string(genomes)+'.txt', reducedoutput)
-    np.savetxt('classificationfulfinal'+string(generations)+string(genomes)+'.txt', output)
+    SaveLib.saveMainClassification(saveDirectory, geneArray, outputArray, fitnessArray, win)
 
     # evolve the next generation
     genePool.nextGen()
 
-SaveLib.saveMain(filepath, geneArray, outputArray, fitnessArray, t, x, output)
-np.savetxt('classification'+string(generations)+string(genomes)+'.txt', reducedoutput)
-np.savetxt('classificationfulfinal'+string(generations)+string(genomes)+'.txt', output)
+SaveLib.saveMainClassification(saveDirectory, geneArray, outputArray, fitnessArray, win)
 
 PlotBuilder.finalMain(mainFig)

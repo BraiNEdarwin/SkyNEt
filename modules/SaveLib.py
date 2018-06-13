@@ -12,6 +12,9 @@ def saveArrays(filepath, geneArray, outputArray, fitnessArray, t, inp, outp):
     np.savez(os.path.join(filepath, 'nparrays'), geneArray=geneArray,
              outputArray=outputArray, fitnessArray=fitnessArray, t=t, inp=inp, outp=outp)
 
+def saveArraysClassification(filepath, geneArray, outputArray, fitnessArray, win):
+    np.savez(os.path.join(filepath, 'nparrays'), geneArray=geneArray,
+             outputArray=outputArray, fitnessArray=fitnessArray, win=win)
 
 def saveConfig(filepath):
     copyfile('config.txt', os.path.join(filepath, 'config.txt'))
@@ -19,6 +22,10 @@ def saveConfig(filepath):
 
 def saveMain(filepath, geneArray, outputArray, fitnessArray, t, inp, outp):
     saveArrays(filepath, geneArray, outputArray, fitnessArray, t, inp, outp)
+    saveConfig(filepath)
+
+def saveMainClassification(filepath, geneArray, outputArray, fitnessArray, win):
+    saveArraysClassification(filepath, geneArray, outputArray, fitnessArray, win)
     saveConfig(filepath)
 
 	
