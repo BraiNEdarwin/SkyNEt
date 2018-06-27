@@ -12,9 +12,11 @@ import matplotlib.pyplot as plt
 adwin = adwinIO.initInstrument()
 
 x = np.linspace(0, 1, 2000)
+x = np.stack((x,x))
+print(x)
 Fs = 1000
 
-output = adwinIO.IO(adwin, x, Fs)
+output = adwinIO.IO_2D(adwin, x, Fs)
 
 print(len(output))
 # inputvoltages = np.array([500])
