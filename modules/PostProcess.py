@@ -131,8 +131,25 @@ def fitnessEvolutionCalssif(x, par):
 
     F = par[0] * np.amin(z) + par[1] * Difference
     for i in range(len(x)):
-        if(abs(x[i])>3.1*10)
-        f = -100
+        if(abs(x[i])>3.1*10):
+            f = -100
     return F
 
     
+def fitnessEvolutionSingelinputrecongnition(x, optimal_input, par):
+    y = np.zeros(len(x))
+    z = np.zeros(len(y))
+
+    for i in range(len(x)):
+        y[i] = np.average(x[i])
+    
+    for n in range(len(y)):
+        z[n] = abs(y[optimal_input]-y[n])
+
+    z[optimal_input] = 100
+
+    F = par[0] * np.amin(z)
+    for i in range(len(x)):
+        if(abs(x[i])>3.1*10):
+            f = -100
+    return F
