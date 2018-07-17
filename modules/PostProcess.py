@@ -7,7 +7,7 @@ Calulate fitness/error
 !for now all functions support only one output node
 '''
 import numpy as np
-
+from Nets.classifiers import perceptron as classifier
 
 def leakyIntegrateFire(x, alpha):
     for i in range(1, len(x)):
@@ -29,11 +29,11 @@ def fitness(x, target):
     return 1 / ((np.linalg.norm(x - target, 2)) ** 2 * (1 / len(x)))
 
 def fitnessEvolution(x, target, W, par):
-    #this implements the fitness function
-    #F = par[0] * m / (sqrt(r) + par[3] * abs(c)) + par[1] / r + par[2] * Q
-    #where m,c,r follow from fitting x = m*target + c to minimize r
-    #and Q is the fitness quality as defined by Celestine in his thesis
-    #appendix 9
+    '''This implements the fitness function
+    F = par[0] * m / (sqrt(r) + par[3] * abs(c)) + par[1] / r + par[2] * Q
+    where m,c,r follow from fitting x = m*target + c to minimize r
+    and Q is the fitness quality as defined by Celestine in his thesis
+    appendix 9'''
 
 
     #extract fit data with weights W
@@ -77,11 +77,11 @@ def fitnessEvolution(x, target, W, par):
     return F
 
 def fitnessEvolutionSpiral(x, target, W, par):
-    #this implements the fitness function
-    #F = par[0] * m / (sqrt(r) + par[3] * abs(c)) + par[1] / r + par[2] * Q
-    #where m,c,r follow from fitting x = m*target + c to minimize r
-    #and Q is the fitness quality as defined by Celestine in his thesis
-    #appendix 9
+    '''This implements the fitness function
+    F = par[0] * m / (sqrt(r) + par[3] * abs(c)) + par[1] / r + par[2] * Q
+    where m,c,r follow from fitting x = m*target + c to minimize r
+    and Q is the fitness quality as defined by Celestine in his thesis
+    appendix 9'''
 
     #extract fit data with weights W
     indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)
@@ -131,8 +131,23 @@ def fitnessEvolutionCalssif(x, par):
 
     F = par[0] * np.amin(z) + par[1] * Difference
     for i in range(len(x)):
-        if(abs(x[i])>3.1*10)
-        f = -100
+        if(abs(x[i])>3.1*10): f = -100
     return F
 
     
+def alphaFit(x, target, W, par):
+    
+    F = fitnessEvolution(x, target, W, par)
+    #extract fit data with weights W
+    indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)
+    x_weighed = np.empty(len(indices))
+    target_weighed = np.empty(len(indices))
+    for i in range(len(indices)):
+    	x_weighed[i] = x[indices[i]]
+    	target_weighed[i] = target[indices[i]]
+    x_weighed = x_weighed[:,np.newaxis]
+    target_weighed = target_weighed[:,np.newaxis]
+    
+    alpha = classifier(x_weighed,target_weighed)
+    
+    return alpha*F
