@@ -7,7 +7,7 @@ Calulate fitness/error
 !for now all functions support only one output node
 '''
 import numpy as np
-from Nets.classifiers import perceptron as classifier
+from modules.classifiers import perceptron as classifier
 
 def leakyIntegrateFire(x, alpha):
     for i in range(1, len(x)):
@@ -96,7 +96,7 @@ def fitnessEvolutionSpiral(x, target, W, par):
     Difference = np.zeros(len(x)-1)
     for i in range(len(x)-1):
         Difference[i] = [i] = x[i+1]-x[i]
-    signsum = abs(sum(np.sign(difference)))/(len(x)-1)
+    signsum = abs(sum(np.sign(Difference)))/(len(x)-1)
 
     #fit x = m * target + c to minimize res
     A = np.vstack([target_weighed, np.ones(len(indices))]).T  #write x = m*target + c as x = A*(m, c)
@@ -131,7 +131,7 @@ def fitnessEvolutionCalssif(x, par):
 
     F = par[0] * np.amin(z) + par[1] * Difference
     for i in range(len(x)):
-        if(abs(x[i])>3.1*10): f = -100
+        if(abs(x[i])>3.1*10): F = -100
     return F
 
     
