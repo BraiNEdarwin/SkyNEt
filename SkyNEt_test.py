@@ -13,7 +13,7 @@ import modules.SaveLib as SaveLib
 from instruments.niDAQ import nidaqIO
 from instruments.DAC import IVVIrack
 import time
-
+import os
 # temporary imports
 import numpy as np
 import itertools as iter
@@ -118,7 +118,7 @@ for n in range(len(c)-1):
         #PlotBuilder.updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, i + 1, t, target, output)
     
         #save generation
-        SaveLib.saveMain(saveDirectory, geneArray, outputArray, fitnessArray, t, x, target)
+        np.savez(os.path.join(saveDirectory, 'nparrays'), outputArray = outputArray, t = t, x = x, genome = c[n] )
     
         # evolve the next generation
         genePool.nextGen()
