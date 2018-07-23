@@ -1,5 +1,5 @@
 # This module implements functions utilized in obtaining data to train for a neural net
-
+import numpy as np
 
 def initTraj(controls, controlRange):
     steps = len(controlRange)

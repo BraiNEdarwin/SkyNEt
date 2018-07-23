@@ -151,3 +151,17 @@ def alphaFit(x, target, W, par):
     alpha = classifier(x_weighed,target_weighed)
     
     return alpha*F
+
+def fitnessNegMSE(x, target, W, par):
+    #extract fit data with weights W
+    indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)
+
+    x_weighed = np.empty(len(indices))
+    target_weighed = np.empty(len(indices))
+    for i in range(len(indices)):
+    	x_weighed[i] = x[indices[i]]
+    	target_weighed[i] = target[indices[i]]
+        
+    negMSE = -np.mean((target_weighed-x_weighed)**2)
+    
+    return negMSE
