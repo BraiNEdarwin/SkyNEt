@@ -81,11 +81,23 @@ def outputMain(mainFig, t, target, outputArray, fitnessArray, currentGeneration)
     mainFig.axes[-1].legend(['Trained output', 'Target'], loc = 1)
     plt.pause(0.01)
 
-def outputMainEvolution(mainFig, t, target, outputArray, fitnessArray, currentGeneration):
+def outputMainEvolution(mainFig, t, target, outputArray, fitnessArray, currentGeneration, W):
+    x = outputArray[currentGeneration - 1,:, np.argmax(fitnessArray[currentGeneration - 1])]
+
+    #extract fit data with weights W
+    indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)
+
+    t_weighed = np.empty(len(indices))
+    x_weighed = np.empty(len(indices))
+    target_weighed = np.empty(len(indices))
+    for i in range(len(indices)):
+        x_weighed[i] = x[indices[i]]
+        target_weighed[i] = target[indices[i]]
+        t_weighed[i] = t[indices[i]]
+
     mainFig.axes[-2].lines.clear()
-    mainFig.axes[-2].plot(t, outputArray[currentGeneration - 1,
-                                         :, np.argmax(fitnessArray[currentGeneration - 1])], 'r')
-    mainFig.axes[-2].plot(t, target, 'b--')
+    mainFig.axes[-2].plot(x_weighed, 'r')
+    mainFig.axes[-2].plot(target_weighed, 'b--')
     mainFig.axes[-2].legend(['Best output', 'Target'], loc = 1)
     mainFig.axes[-2].set_title('Best output of last generation / fitness ' + str(np.max(fitnessArray[currentGeneration - 1])) )
     plt.pause(0.01)
@@ -208,11 +220,11 @@ def updateMainFig(mainFig, geneArray, fitnessArray, outputArray, currentGenerati
     #statsMain(mainFig, geneArray, currentGeneration)
 
 
-def updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, currentGeneration, t, target, currentOutput):
+def updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, currentGeneration, t, target, currentOutput, W):
     bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration)
     fitnessMainEvolution(mainFig, fitnessArray, currentGeneration)
     outputMainEvolution(mainFig, t, target, outputArray,
-               fitnessArray, currentGeneration)
+               fitnessArray, currentGeneration, W)
     #currentOutputEvolution(mainFig, t, target, currentOutput)
     #statsMain(mainFig, geneArray, currentGeneration)
 

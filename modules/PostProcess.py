@@ -71,7 +71,9 @@ def fitnessEvolution(x, target, W, par):
         if(abs(x_weighed[i]) > 3.1*10):
             clipcounter = clipcounter + 1
             F = -100
+        return F
+    #F += (min(x1) - max(x0)) * 20
     # F = F - clipcounter *  0.1
-    clipcounter = 0            
-    return F
+    #clipcounter = 0            
+    #return F
 

@@ -32,9 +32,9 @@ def IO(y, Fs):
 
         #stop and close the tasks
         input_task.stop()
-        input_task.close()
+        #input_task.close()
         output_task.stop()
-        output_task.close()
+        #output_task.close()
 		
     return data
 

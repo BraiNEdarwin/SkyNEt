@@ -10,7 +10,7 @@ rralpha = 1e-3
 skipstates = 0
 
 # Benchmarks settings
-benchmark = ['bl', 'XNOR']
+benchmark = ['bl', 'OR']
   #'wr' for waveform regression benchmark
 WavePeriods = 15
 WaveFrequency = 8.5
@@ -24,16 +24,22 @@ SampleFreq = 1000
 # Evolution settings
 genes = 6
 genomes = 25
-generations = 500
-generange = [[-1000,1000], [-1000, 1000], [-1000, 1000], [-1000, 1000], [-1000, 1000], [0.1, 2]]
-genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
+generations = 300
+
+generange = [[-1000,1000], [-1000, 1000], [-1000, 1000], [-1000, 1000], [0, 0], [0.5, 2]]
+# generange = [[-1000,1000], [-1000, 1000], [-1000, 1000], [-1000, 1000], [0.5, 2]]
+
+
+genelabels = ['CV1/T11','CV2/T7','CV3/T5','CV4/T1','CV5/T17', 'Input scaling']
+# genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7', 'Input scaling']
+
 fitnessAvg = 1  #amount of runs per genome
-fitnessParameters = [1, 0, 0, 0.01]
+fitnessParameters = [1, 0, 5, 0.01]
 
 # input1 = t1/e5
 # input2 = t3/e6
 # output = t11/e1
 
 # Save settings
-filepath = 'D:\data\Ren\Evolution'
-name = 'XNOR'
+filepath = 'D:\data\Ren\Evolution\As_implant\1141_77K'
+name = 'OR'
