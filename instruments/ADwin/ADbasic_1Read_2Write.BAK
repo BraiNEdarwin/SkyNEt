@@ -8,23 +8,18 @@
 ' ADbasic_Version                = 5.0.8
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
-' Info_Last_Save                 = MOBILERACK  MOBILERACK\ursaminor
+' Info_Last_Save                 = DARWIN-PC  Darwin-PC\PNPNteam
 '<Header End>
 #Include ADwinGoldII.inc
 DIM DATA_1[40003] AS LONG AS FIFO  
 DIM DATA_2[40003] AS LONG AS FIFO
-DIM DATA_3[40003] AS LONG AS FIFO
 
 INIT:
   FIFO_Clear(1)
   FIFO_Clear(2)
-  FIFO_Clear(3)
   Par_9 = 0
-  Par_10 = 0
   
 EVENT:
   Par_9 = DATA_2
-  Par_10 = DATA_3
   DAC(1, Par_9)
-  DAC(2, Par_10)
-  DATA_1 = ADC(2)
+  DATA_1 = ADC(1)
