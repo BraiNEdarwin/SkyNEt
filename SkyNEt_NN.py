@@ -9,44 +9,32 @@ import modules.GenerateInput as GenerateInput
 import modules.Evolution as Evolution
 import modules.PostProcess as PostProcess
 import modules.SaveLib as SaveLib
-import modules.NeuralNetTraining as NN
 from instruments.niDAQ import nidaqIO
 from instruments.DAC import IVVIrack
 import time
-
+import modules.Grid_Constructor as Construct
+import modules.NeuralNetTraining as NN
 # temporary imports
 import numpy as np
-
+import os
 # config
-filepath = ''
-name = ''
-voltageGrid = [-2000, -1600, -1200, -800, -400, 0, 400, 800, 1200, 1600, 2000]
+filepath = 'D:\data\Hans'
+name = 'CP_FullSwipe'
+voltageGrid = [-900, -600, -300, 0, 300, 600, 900]
 controls = 5 #amount of controls used to set voltages
 acqTime = 0.01 
 samples = 50
-
+smallest_div = 7
+biggest_div = 3
 #construct configuration array
 blockSize = len(voltageGrid) ** controls
-controlVoltages = np.empty((4 * blockSize, 7))
+nr_blocks = biggest_div*smallest_div
 
-controlVoltages[0:blockSize,0] = 0
-controlVoltages[blockSize:2*blockSize,0] = 1
-controlVoltages[2*blockSize:3*blockSize,0] = 0
-controlVoltages[3*blockSize:4*blockSize,0] = 1
-
-controlVoltages[0:blockSize,1] = 0
-controlVoltages[blockSize:2*blockSize,1] = 0
-controlVoltages[2*blockSize:3*blockSize,1] = 1
-controlVoltages[3*blockSize:4*blockSize,1] = 1
-
-controlVoltages[0:blockSize, 2:2+controls] = NN.initTraj(controls, voltageGrid)
-controlVoltages[blockSize:2*blockSize, 2:2+controls] = NN.initTraj(controls, voltageGrid)
-controlVoltages[2*blockSize:3*blockSize, 2:2+controls] = NN.initTraj(controls, voltageGrid)
-controlVoltages[3*blockSize:4*blockSize, 2:2+controls] = NN.initTraj(controls, voltageGrid)
+controlVoltages = Construct.CP_Grid(nr_blocks, blockSize, smallest_div, controls, voltageGrid)
 
 # init data container
-data = np.empty((4 * blockSize, samples))
-
+data = np.zeros((controlVoltages.shape[0], controlVoltages.shape[1] + samples))
+data[:,:controlVoltages.shape[1]] = controlVoltages
 
 # initialize save directory
 saveDirectory = SaveLib.createSaveDirectory(filepath, name)
@@ -56,13 +44,19 @@ ivvi = IVVIrack.initInstrument()
 
 
 #main acquisition loop
-for j in range(4):
+for j in range(nr_blocks):
+    print('Getting Data for block '+str(j)+'...')
+    start_fullSweep = time.time()
     IVVIrack.setControlVoltages(ivvi, controlVoltages[j * blockSize, :])
     time.sleep(1)  #extra delay to account for changing the input voltages
-    for i in range(blocksize):
+    for i in range(blockSize):
         IVVIrack.setControlVoltages(ivvi, controlVoltages[j * blockSize + i, :])
         time.sleep(0.01)  #tune this to avoid transients
-        data[j * blockSize + i, :] = nidaqIO.IO(np.zeros(samples), samples/acqTime)
-
+        data[j * blockSize + i, -samples:] = nidaqIO.IO(np.zeros(samples+1), samples/acqTime)
+    end_fullSweep = time.time()
+    print('CV-sweep over one input state took '+str(end_fullSweep-start_fullSweep)+' sec.')
 # some save command to finish off...
+#data = np.concatenate((controlVoltages,data),axis=1)
+np.savez(os.path.join(saveDirectory, 'nparrays'), data=data)
 
+IVVIrack.setControlVoltages(ivvi, np.zeros(8))
