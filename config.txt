@@ -22,7 +22,7 @@ WaveFrequency2 = 18.5
 SampleFreq = 1000
 
 # Evolution settings
-genes = 6
+genes = 3
 genomes = 25
 generations = 300
 
@@ -35,6 +35,10 @@ genelabels = ['CV1/T11','CV2/T7','CV3/T5','CV4/T1','CV5/T17', 'Input scaling']
 
 fitnessAvg = 1  #amount of runs per genome
 fitnessParameters = [1, 0, 5, 0.01]
+
+#spiralsettings
+SpiralOffset = 0
+n_points = 1000
 
 # input1 = t1/e5
 # input2 = t3/e6
