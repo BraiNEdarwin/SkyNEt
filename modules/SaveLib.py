@@ -6,7 +6,7 @@ import math
 import time
 import os
 from shutil import copyfile
-
+import sys
 
 def saveArrays(filepath, geneArray, outputArray, fitnessArray, t, inp, outp):
     np.savez(os.path.join(filepath, 'nparrays'), geneArray=geneArray,
@@ -31,7 +31,7 @@ def saveMainClassification(filepath, geneArray, outputArray, fitnessArray, win):
 	
 def createSaveDirectory(filepath, name):
     datetime = time.strftime("%d_%m_%Y_%H%M%S")
-    filepath = filepath + '\\' + datetime + '_' + name
+    filepath = filepath + datetime + '_' + name
     if not os.path.exists(filepath):
         os.makedirs(filepath)	
     return filepath

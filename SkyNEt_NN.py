@@ -9,43 +9,29 @@ import modules.GenerateInput as GenerateInput
 import modules.Evolution as Evolution
 import modules.PostProcess as PostProcess
 import modules.SaveLib as SaveLib
-import modules.NeuralNetTraining as NN
 from instruments.niDAQ import nidaqIO
 from instruments.DAC import IVVIrack
 import time
-
+import modules.Grid_Constructor as Construct
 # temporary imports
 import numpy as np
 
 # config
 filepath = ''
 name = ''
-voltageGrid = [-2000, -1600, -1200, -800, -400, 0, 400, 800, 1200, 1600, 2000]
+voltageGrid = [-1200, -800, -400, 0, 400, 800, 1200]
 controls = 5 #amount of controls used to set voltages
 acqTime = 0.01 
 samples = 50
-
+smallest_div = 7
 #construct configuration array
 blockSize = len(voltageGrid) ** controls
-controlVoltages = np.empty((4 * blockSize, 7))
+nr_blocks = 3*smallest_div
 
-controlVoltages[0:blockSize,0] = 0
-controlVoltages[blockSize:2*blockSize,0] = 1
-controlVoltages[2*blockSize:3*blockSize,0] = 0
-controlVoltages[3*blockSize:4*blockSize,0] = 1
-
-controlVoltages[0:blockSize,1] = 0
-controlVoltages[blockSize:2*blockSize,1] = 0
-controlVoltages[2*blockSize:3*blockSize,1] = 1
-controlVoltages[3*blockSize:4*blockSize,1] = 1
-
-controlVoltages[0:blockSize, 2:2+controls] = NN.initTraj(controls, voltageGrid)
-controlVoltages[blockSize:2*blockSize, 2:2+controls] = NN.initTraj(controls, voltageGrid)
-controlVoltages[2*blockSize:3*blockSize, 2:2+controls] = NN.initTraj(controls, voltageGrid)
-controlVoltages[3*blockSize:4*blockSize, 2:2+controls] = NN.initTraj(controls, voltageGrid)
+controlVoltages = Construct.CP_Grid(nr_blocks, blockSize, smallest_div, controls, voltageGrid)
 
 # init data container
-data = np.empty((4 * blockSize, samples))
+data = np.empty((controlVoltages.shape[0], samples))
 
 
 # initialize save directory
