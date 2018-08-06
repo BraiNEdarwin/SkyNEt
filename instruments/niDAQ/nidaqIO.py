@@ -28,7 +28,8 @@ def IO(y, Fs):
         input_task.start()
         
         #read data
-        data = input_task.read(N)
+        read_data = input_task.read(N + 1)
+        data = read_data[1:] #trim off the first datapoint, read lags one sample behind write
 
         #stop and close the tasks
         input_task.stop()
