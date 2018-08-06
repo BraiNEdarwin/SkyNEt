@@ -7,7 +7,7 @@ Calulate fitness/error
 !for now all functions support only one output node
 '''
 import numpy as np
-
+from modules.classifiers import perceptron as classifier
 
 def leakyIntegrateFire(x, alpha):
     for i in range(1, len(x)):
@@ -29,11 +29,11 @@ def fitness(x, target):
     return 1 / ((np.linalg.norm(x - target, 2)) ** 2 * (1 / len(x)))
 
 def fitnessEvolution(x, target, W, par):
-    #this implements the fitness function
-    #F = par[0] * m / (sqrt(r) + par[3] * abs(c)) + par[1] / r + par[2] * Q
-    #where m,c,r follow from fitting x = m*target + c to minimize r
-    #and Q is the fitness quality as defined by Celestine in his thesis
-    #appendix 9
+    '''This implements the fitness function
+    F = par[0] * m / (sqrt(r) + par[3] * abs(c)) + par[1] / r + par[2] * Q
+    where m,c,r follow from fitting x = m*target + c to minimize r
+    and Q is the fitness quality as defined by Celestine in his thesis
+    appendix 9'''
 
 
     #extract fit data with weights W
@@ -76,12 +76,64 @@ def fitnessEvolution(x, target, W, par):
     clipcounter = 0            
     return F
 
+def fitnessREvolution(x, target, W, par):
+    '''This implements the regularized fitness function
+    F = par[0] * m / (sqrt(r) + par[3] * abs(c)) + par[1] / r + par[2] * Q
+    where m,c,r follow from fitting x = m*target + c to minimize r
+    and Q is the fitness quality as defined by Celestine in his thesis
+    appendix 9'''
+
+
+    #extract fit data with weights W
+    indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)
+
+    x_weighed = np.empty(len(indices))
+    target_weighed = np.empty(len(indices))
+    for i in range(len(indices)):
+    	x_weighed[i] = x[indices[i]]
+    	target_weighed[i] = target[indices[i]]
+
+
+	#fit x = m * target + c to minimize res
+    A = np.vstack([target_weighed, np.ones(len(indices))]).T  #write x = m*target + c as x = A*(m, c)
+    m, c = np.linalg.lstsq(A, x_weighed)[0]	
+    res = np.linalg.lstsq(A, x_weighed)[1]
+    res = res[0]
+
+    #determine fitness quality
+    indices1 = np.argwhere(target_weighed)  #all indices where target is nonzero
+    x0 = np.empty(0)  #list of values where x should be 0
+    x1 = np.empty(0)  #list of values where x should be 1
+    for i in range(len(target_weighed)):
+        if(i in indices1):
+            x1 = np.append(x1, x_weighed[i])
+        else:
+            x0 = np.append(x0, x_weighed[i])
+    if(min(x1) < max(x0)):
+        Q = 0
+    else:
+        Q = np.abs(min(x1) - max(x0)) #/ (max(x1) - min(x0) + abs(min(x0)))
+
+    F = par[0] * m / (res**(.5) + par[3] * abs(c)) + par[1] / res + par[2] * Q
+    ## REgularize 
+#    print('Factor m = ',m)
+    F = F - 0.001*(m-1)**2
+    clipcounter = 0
+    for i in range(len(x_weighed)):
+        if(abs(x_weighed[i]) > 3.1*10):
+            clipcounter = clipcounter + 1
+            F = -100
+    # F = F - clipcounter *  0.1
+    clipcounter = 0            
+    return F
+
+    
 def fitnessEvolutionSpiral(x, target, W, par):
-    #this implements the fitness function
-    #F = par[0] * m / (sqrt(r) + par[3] * abs(c)) + par[1] / r + par[2] * Q
-    #where m,c,r follow from fitting x = m*target + c to minimize r
-    #and Q is the fitness quality as defined by Celestine in his thesis
-    #appendix 9
+    '''This implements the fitness function
+    F = par[0] * m / (sqrt(r) + par[3] * abs(c)) + par[1] / r + par[2] * Q
+    where m,c,r follow from fitting x = m*target + c to minimize r
+    and Q is the fitness quality as defined by Celestine in his thesis
+    appendix 9'''
 
     #extract fit data with weights W
     indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)
@@ -96,7 +148,7 @@ def fitnessEvolutionSpiral(x, target, W, par):
     Difference = np.zeros(len(x)-1)
     for i in range(len(x)-1):
         Difference[i] = [i] = x[i+1]-x[i]
-    signsum = abs(sum(np.sign(difference)))/(len(x)-1)
+    signsum = abs(sum(np.sign(Difference)))/(len(x)-1)
 
     #fit x = m * target + c to minimize res
     A = np.vstack([target_weighed, np.ones(len(indices))]).T  #write x = m*target + c as x = A*(m, c)
@@ -178,6 +230,7 @@ def fitnessmaxmin(x, optimal_input, par):
     z = np.zeros(len(y))
 
     for i in range(len(x)):
+
         y[i] = np.average(x[i])
 
     indeces = np.argsort(y)
@@ -208,6 +261,7 @@ def fitnessvariance(x, optimal_input, par):
     others = np.delete(y, optimal_input)
     stdothers = np.delete(var, optimal_input) 
     
+
     averagevar = np.average(var)
 
     average = np.average(others)
@@ -328,3 +382,54 @@ def fitnesssquareinput(x, optimal_input, par):
                 return -100
    
     return F
+
+def alphaFit(x, target, W, par):
+    
+    F = fitnessEvolution(x, target, W, par)
+    #extract fit data with weights W
+    indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)
+    x_weighed = np.empty(len(indices))
+    target_weighed = np.empty(len(indices))
+    for i in range(len(indices)):
+    	x_weighed[i] = x[indices[i]]
+    	target_weighed[i] = target[indices[i]]
+    x_weighed = x_weighed[:,np.newaxis]
+    target_weighed = target_weighed[:,np.newaxis]
+    
+    alpha = classifier(x_weighed,target_weighed)
+    
+    return alpha*F
+
+def fitnessNegMSE(x, target, W, par):
+    #extract fit data with weights W
+    indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)
+
+    x_weighed = np.empty(len(indices))
+    target_weighed = np.empty(len(indices))
+    for i in range(len(indices)):
+    	x_weighed[i] = x[indices[i]]
+    	target_weighed[i] = target[indices[i]]
+        
+    negMSE = -np.mean((target_weighed-x_weighed)**2)
+    
+    return negMSE
+
+    
+def fitnessEvolutionSingelinputrecongnition(x, optimal_input, par):
+    y = np.zeros(len(x))
+    z = np.zeros(len(y))
+
+    for i in range(len(x)):
+        y[i] = np.average(x[i])
+    
+    for n in range(len(y)):
+        z[n] = abs(y[optimal_input]-y[n])
+
+    z[optimal_input] = 100
+
+    F = par[0] * np.amin(z)
+    for i in range(len(x)):
+        if(abs(x[i])>3.1*10):
+            f = -100
+    return F
+

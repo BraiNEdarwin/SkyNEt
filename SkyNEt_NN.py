@@ -13,28 +13,37 @@ from instruments.niDAQ import nidaqIO
 from instruments.DAC import IVVIrack
 import time
 import modules.Grid_Constructor as Construct
+<<<<<<< HEAD
 import modules.NeuralNetTraining as NN
+=======
+>>>>>>> 16a82fdd676aac2f29e3d27546be9942b407af72
 # temporary imports
 import numpy as np
 import os
 # config
+
 filepath = 'D:\data\Hans'
 name = 'CP_FullSwipe'
 voltageGrid = [-900, -600, -300, 0, 300, 600, 900]
+
 controls = 5 #amount of controls used to set voltages
 acqTime = 0.01 
 samples = 50
 smallest_div = 7
+
 biggest_div = 3
 #construct configuration array
 blockSize = len(voltageGrid) ** controls
 nr_blocks = biggest_div*smallest_div
 
+
 controlVoltages = Construct.CP_Grid(nr_blocks, blockSize, smallest_div, controls, voltageGrid)
 
 # init data container
+
 data = np.zeros((controlVoltages.shape[0], controlVoltages.shape[1] + samples))
 data[:,:controlVoltages.shape[1]] = controlVoltages
+
 
 # initialize save directory
 saveDirectory = SaveLib.createSaveDirectory(filepath, name)
