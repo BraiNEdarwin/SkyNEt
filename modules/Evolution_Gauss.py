@@ -28,8 +28,8 @@ class GenePool(object):
 
         # generate second fifth
         for i in range(fifth):
-            parent1 = newPool[:, i] * 1.05
-            parent2 = newPool[:, i] * 0.95
+            parent1 = newPool[:, i] + 0.02*np.random.randn(newPool[:, i].shape[0])
+            parent2 = newPool[:, i] + 0.02*np.random.randn(newPool[:, i].shape[0])
 
             # check that genes are in [0,1]
             for j in range(self.genes):

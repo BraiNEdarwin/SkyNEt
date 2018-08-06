@@ -28,13 +28,14 @@ def IO(y, Fs):
         input_task.start()
         
         #read data
-        data = input_task.read(N)
+        read_data = input_task.read(N + 1)
+        data = read_data[1:] #trim off the first datapoint, read lags one sample behind write
 
         #stop and close the tasks
         input_task.stop()
-        input_task.close()
+        #input_task.close()
         output_task.stop()
-        output_task.close()
+        #output_task.close()
 		
     return data
 
@@ -74,7 +75,7 @@ def IO_2D(x, Fs):
         
     return data
 
-    def IO_2D2I(x, Fs):
+def IO_2D2I(x, Fs):
     N = x.shape[1]
     np.append(x, [[0], [0]], axis=1)  #finish by setting dacs to 0
     with nidaqmx.Task() as output_task, nidaqmx.Task() as input_task: 

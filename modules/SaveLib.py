@@ -30,7 +30,7 @@ def saveMainClassification(filepath, geneArray, outputArray, fitnessArray, win):
 
 	
 def createSaveDirectory(filepath, name):
-    datetime = time.strftime("%d_%m_%Y_%H%M%S")
+    datetime = time.strftime("%Y_%m_%d_%H%M%S")
     filepath = filepath + '\\' + datetime + '_' + name
     if not os.path.exists(filepath):
         os.makedirs(filepath)	

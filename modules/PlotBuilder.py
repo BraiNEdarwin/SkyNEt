@@ -65,11 +65,13 @@ def bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration):
 def fitnessMain(mainFig, fitnessArray, currentGeneration):
     mainFig.axes[-2].plot(range(1, currentGeneration + 1),
                           np.max(fitnessArray, 1)[0:currentGeneration], 'r-x')
+    plt.autoscale()
     plt.pause(0.01)
 
 def fitnessMainEvolution(mainFig, fitnessArray, currentGeneration):
     mainFig.axes[-3].plot(range(1, currentGeneration + 1),
                           np.max(fitnessArray, 1)[0:currentGeneration], 'r-x')
+    plt.autoscale()
     plt.pause(0.01)
 
 
@@ -90,17 +92,24 @@ def outputMainEvolution(mainFig, t, target, outputArray, fitnessArray, currentGe
     mainFig.axes[-2].set_title('Best output of last generation / fitness ' + str(np.max(fitnessArray[currentGeneration - 1])) )
     plt.pause(0.01)
 
-def outputMainClassification(mainFig, outputArray, win, fitnessArray, currentGeneration):
+def outputMainClassification(mainFig, outputArray, win, fitnessArray, currentGeneration, marker):
     out = outputArray[currentGeneration - 1,np.argmax(fitnessArray[currentGeneration - 1]),:,:]
     y = np.zeros(len(out))
-    mainFig.axes[-2].lines.clear()
+    mainFig.axes[-2].clear()
+    mainFig.axes[-2].grid()
     for i in range(len(out)):
         y[i] = np.average(out[i])
         a = mainFig.axes[-2].plot(out[i],np.arange(0,len(out[i])),dashes = [1,1], label = win[i])
-        mainFig.axes[-2].plot(out[i],np.arange(0,len(out[i])),'x',color = a[0].get_color())
+        if i > 16:
+            mainFig.axes[-2].plot(out[i],np.arange(0,len(out[i])),'o',color = a[0].get_color())
+        elif i == marker:
+            mainFig.axes[-2].plot(out[i],np.arange(0,len(out[i])),'o',color = a[0].get_color())
+        else:
+            mainFig.axes[-2].plot(out[i],np.arange(0,len(out[i])),'x',color = a[0].get_color())
         mainFig.axes[-2].plot([y[i],y[i]],[0,len(out[0])],dashes = [5,5],color = a[0].get_color())
-    mainFig.axes[-2].legend(loc = 1)
+    # mainFig.axes[-2].legend(loc = 1)
     mainFig.axes[-2].set_title('Best output of last generation / fitness ' + str(np.max(fitnessArray[currentGeneration - 1])) )
+    plt.autoscale()
     plt.pause(0.01)
 
 def currentOutputEvolution(mainFig, t, target, currentOutput, genome, currentGeneration, fitness):
@@ -111,16 +120,23 @@ def currentOutputEvolution(mainFig, t, target, currentOutput, genome, currentGen
     mainFig.axes[-1].set_title('Genome ' + str(genome) + '/Generation ' + str(currentGeneration) + '/fitness ' + '{0:.2f}'.format(fitness))
     plt.pause(0.01)
 
-def currentOutputClassification(mainFig, out, win, genome, currentGeneration, fitness):
+def currentOutputClassification(mainFig, out, win, genome, currentGeneration, fitness, marker):
     y = np.zeros(len(out))
-    mainFig.axes[-1].lines.clear()
+    mainFig.axes[-1].clear()
+    mainFig.axes[-1].grid()
     for i in range(len(out)):
         y[i] = np.average(out[i])
         a = mainFig.axes[-1].plot(out[i],np.arange(0,len(out[i])),dashes = [1,1], label = win[i])
-        mainFig.axes[-1].plot(out[i],np.arange(0,len(out[i])),'x',color = a[0].get_color())
+        if i > 16:
+            mainFig.axes[-1].plot(out[i],np.arange(0,len(out[i])),'o',color = a[0].get_color())
+        elif i == marker:
+            mainFig.axes[-1].plot(out[i],np.arange(0,len(out[i])),'o',color = a[0].get_color())
+        else:
+            mainFig.axes[-1].plot(out[i],np.arange(0,len(out[i])),'x',color = a[0].get_color())
         mainFig.axes[-1].plot([y[i],y[i]],[0,len(out[0])],dashes = [5,5],color = a[0].get_color())
-    mainFig.axes[-1].legend(loc = 1)
+    # mainFig.axes[-1].legend(loc = 1)
     mainFig.axes[-1].set_title('Genome ' + str(genome) + '/Generation ' + str(currentGeneration) + '/fitness ' + '{0:.2f}'.format(fitness))
+    plt.autoscale()
     plt.pause(0.01)
 
 def currentGenomeEvolution(mainFig, genome):
@@ -241,11 +257,11 @@ def updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, curren
     #currentOutputEvolution(mainFig, t, target, currentOutput)
     #statsMain(mainFig, geneArray, currentGeneration)
 
-def updateMainFigClassification(mainFig, geneArray, fitnessArray, outputArray, currentGeneration, win):
+def updateMainFigClassification(mainFig, geneArray, fitnessArray, outputArray, currentGeneration, win, marker):
     bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration)
     fitnessMainEvolution(mainFig, fitnessArray, currentGeneration)
     outputMainClassification(mainFig, outputArray, win, 
-               fitnessArray, currentGeneration)
+               fitnessArray, currentGeneration, marker)
     #currentOutputEvolution(mainFig, t, target, currentOutput)
     #statsMain(mainFig, geneArray, currentGeneration)
 

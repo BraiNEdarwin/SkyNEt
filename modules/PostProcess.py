@@ -116,23 +116,215 @@ def fitnessEvolutionSpiral(x, target, W, par):
     return F
 
 
-def fitnessEvolutionCalssif(x, par):
+def fitnessEvolutionClassif(x, par):
     y = np.zeros(len(x))
     z = np.zeros(len(y)-1)
-
+    var = np.zeros(len(y))
     for i in range(len(x)):
         y[i] = np.average(x[i])
+        var[i] = np.std(x[i])
     y = sorted(y)
 
     for j in range(len(y)-1):
         z[j] = abs(y[j+1]-y[j])
 
-    Difference = np.max(x)-np.min(x)  
+    Difference = np.max(y)-np.min(y)  
+    NoiseContr = np.exp(-np.average(var)/(0.01*Difference))
 
-    F = par[0] * np.amin(z) + par[1] * Difference
+    F = par[0] * np.amin(z) + par[1] * np.average(z) + NoiseContr * par[2]
     for i in range(len(x)):
-        if(abs(x[i])>3.1*10)
-        f = -100
+        for j in range(len(x[0])):
+            if(abs(x[i][j])>3.1*10):
+                return -100
     return F
 
+def fitnessEvolutionClassifSep(x):
+    for i in range(len(x)):
+        for j in range(len(x[0])):
+            if(abs(x[i][j])>3.1*10):
+                return -100
+
+    F = 0
+    y = np.average(x,axis = 1)
+    ind = np.argsort(y)
+    for i in np.arange(1,len(ind)-1):
+        a = ind[i]
+        b = ind[i+1]
+        c = ind[i-1]
+        if np.min(x[a])>np.max(x[c]) and np.max(x[a])<np.min(x[b]):
+            F = F+1
+    return F
+
+def fitnessEvolutionSingelinputrecongnition(x, optimal_input, par):
+    y = np.zeros(len(x))
+    z = np.zeros(len(y))
+
+    for i in range(len(x)):
+        y[i] = np.average(x[i])
     
+    for n in range(len(y)):
+    	z[n] = abs(y[optimal_input]-y[n])
+    z = np.sort(z)[1:]
+
+    F = par[0] * np.amin(z) + par[1] * np.average(z)
+    for i in range(len(x)): 
+        for j in range(len(x[0])):
+            if(abs(x[i][j])>3.1*10):
+                return -100
+    return F
+
+def fitnessmaxmin(x, optimal_input, par):
+    y = np.zeros(len(x))
+    z = np.zeros(len(y))
+
+    for i in range(len(x)):
+        y[i] = np.average(x[i])
+
+    indeces = np.argsort(y)
+    c = y[optimal_input]
+
+    if y[optimal_input] >= 0:
+	    y[optimal_input] = -100
+	    F = (c-np.amax(y))/abs(c) + abs(c)/3000
+    else:
+	    y[optimal_input] = 100
+	    F = (np.amin(y)-c)/abs(c) + abs(c)/3000
+
+    for i in range(len(x)): 
+        for j in range(len(x[0])):
+            if(abs(x[i][j])>3.1*100):
+                return -100
+
+    return F
+
+def fitnessvariance(x, optimal_input, par):
+    y = np.zeros(len(x))
+    indistd = np.zeros(len(x))
+    z = np.zeros(len(y))
+    var = np.zeros(len(y))
+    for i in range(len(x)):
+        y[i] = np.average(x[i])
+        var[i] = np.std(x[i])
+    others = np.delete(y, optimal_input)
+    stdothers = np.delete(var, optimal_input) 
+    
+    averagevar = np.average(var)
+
+    average = np.average(others)
+    variance = np.std(others)
+
+    Difference = np.max(y)-np.min(y)  
+    NoiseContr = np.exp(-np.average(var)/(0.01*Difference))
+    aveTemp=0
+    nN=0.00001
+
+    if y[optimal_input] >= 0:
+        for i in range(len(others)):
+            if others[i] >= 0:
+               aveTemp=aveTemp+others[i]
+               nN=nN+1
+        aveTemp=aveTemp/nN
+        if y[optimal_input] >= np.amax(others):
+            F = (par[0]*abs(y[optimal_input])**2)/(par[1]*abs(aveTemp)+par[2]*np.std(others))+par[3]*(abs(y[optimal_input])-abs(np.amax(others)))
+        else:
+            F = (par[0]*abs(y[optimal_input])**2)/(par[1]*abs(aveTemp)+par[2]*np.std(others))
+    else:
+        for i in range(len(others)):
+            if others[i] <= 0:
+               aveTemp=aveTemp+others[i]
+               nN=nN+1
+        aveTemp=aveTemp/nN
+        if y[optimal_input] <= np.amin(others):
+            F = (par[0]*abs(y[optimal_input])**2)/(par[1]*abs(aveTemp)+par[2]*np.std(others))+par[3]*(abs(y[optimal_input])-abs(np.amin(others)))
+        else:
+            F = (par[0]*abs(y[optimal_input])**2)/(par[1]*abs(aveTemp)+par[2]*np.std(others))
+    + NoiseContr * par[2]
+    for i in range(len(x)): 
+        for j in range(len(x[0])):
+            if(abs(x[i][j])>3.1*10):
+                return -100
+    return F
+
+def fitnesssigndiff(x, optimal_input, par):
+    y = np.zeros(len(x))
+    indistd = np.zeros(len(x))
+    z = np.zeros(len(y))
+    var = np.zeros(len(y))
+    for i in range(len(x)):
+        y[i] = np.average(x[i])
+        var[i] = np.std(x[i])
+    others = np.delete(y, optimal_input)
+    stdothers = np.delete(var, optimal_input) 
+    
+    averagevar = np.average(var)
+
+    average = np.average(others)
+    variance = np.std(others)
+
+    Difference = np.max(y)-np.min(y)  
+    NoiseContr = np.exp(-np.average(var)/(0.01*Difference))
+    aveTemp=0
+    nN=0.00001
+    
+    # counterpos = 0
+    # for i in range(len(others)):
+    #         if others[i] >= 0:
+    #             counterpos = counterpos+1
+
+    # counterneg = 0
+    # for i in range(len(others)):
+    #         if others[i] <= 0:
+    #             counterneg = counterneg+1
+
+    if y[optimal_input] >= 0:
+        # aveTemp = np.zeros(counterneg)
+        # for i in range(len(others)):
+        #     if others[i] >= 0:
+        #        aveTemp[i] = others[i]
+        #        nN=nN+1
+        # aveTemp=aveTemp/nN
+
+        F = (y[optimal_input]-np.amax(others))
+
+    else:
+        # aveTemp = np.zeros(counterneg)
+        # for i in range(len(others)):
+        #     if others[i] <= 0:
+        #        aveTemp[i] = others[i]
+        #        nN=nN+1
+        # aveTemp=aveTemp/nN
+
+        F = (np.amin(others)-y[optimal_input])
+
+    for i in range(len(x)): 
+        for j in range(len(x[0])):
+            if(abs(x[i][j])>3.1*10):
+                return -100
+    return F
+
+
+def fitnesssquareinput(x, optimal_input, par):
+    y = np.zeros(len(x))
+    z = np.zeros(len(y))
+    var = np.zeros(len(y))
+    for i in range(len(x)):
+        y[i] = np.average(x[i])
+        var[i] = np.std(x[i])
+    others = np.delete(y, optimal_input)
+    stdothers = np.delete(indistd, optimal_input)
+    
+    average = np.average(others)
+    variance = np.std(others)
+
+    Difference = np.max(y)-np.min(y)  
+    NoiseContr = np.exp(-np.average(var)/(0.01*Difference))
+
+    F = par[0]*(abs(y[optimal_input])**2-indistd(optimal_input))/(abs(average)*variance)
+    # + NoiseContr * par[2]
+
+    for i in range(len(x)): 
+        for j in range(len(x[0])):
+            if(abs(x[i][j])>3.1*100):
+                return -100
+   
+    return F

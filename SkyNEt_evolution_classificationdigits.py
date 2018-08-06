@@ -7,7 +7,7 @@ gate. This will initially be tested on the Heliox (with nidaq) setup.
 import modules.ReservoirFull as Reservoir
 import modules.PlotBuilder as PlotBuilder
 import modules.GenerateInput as GenerateInput
-import modules.Evolution as Evolution
+import modules.Evolution_Gauss as Evolution
 import modules.PostProcess as PostProcess
 import modules.SaveLib as SaveLib
 from instruments.niDAQ import nidaqIO
@@ -70,7 +70,7 @@ for i in range(generations):
     for j in range(genomes):
 
         # set the DAC voltages
-        a1 = np.zeros(4)
+        a1 = np.zeros(3)
         for k in range(genes):
             a1[k] = Evolution.mapGenes(
                 generange[k], genePool.pool[k, j])
@@ -95,7 +95,7 @@ for i in range(generations):
                 print("current input")
                 print(inputVoltages)
                 IVVIrack.setControlVoltages(ivvi, inputVoltages)
-                time.sleep(0.5)
+                time.sleep(0.2)
                 for m in range(wtest):
                     measureddata = np.asarray(nidaqIO.IO(y, fs)) * 10
                     output[n,m] = np.average(measureddata)
