@@ -21,7 +21,7 @@ class GenePool(object):
         indices = np.argsort(self.fitness)
         indices = indices[::-1]
         fifth = int(self.genomes / 5)
-        newPool = self.pool
+        newPool = self.pool.copy()
         # promote fittest fifth of the pool
         for i in range(fifth):
             newPool[:, i] = self.pool[:, indices[i]]
@@ -51,7 +51,7 @@ class GenePool(object):
 
                 # mutation
                 if(np.random.rand() < 0.1):
-                    newPool[j, i + fifth] = self.mutation(newPool[j, i + fifth])
+                    newPool[j, i + fifth] = np.random.rand()
 
         # generate third fifth
         for i in range(fifth):
@@ -63,7 +63,7 @@ class GenePool(object):
 
                 # mutation
                 if(np.random.rand() < 0.1):
-                    newPool[j, i + 2 * fifth] = self.mutation(newPool[j, i + 2 * fifth])
+                    newPool[j, i + 2 * fifth] = np.random.rand()
 
         # generate fourth fifth
         for i in range(fifth):
@@ -76,7 +76,7 @@ class GenePool(object):
 
                 # mutation
                 if(np.random.rand() < 0.1):
-                    newPool[j, i + 3 * fifth] = self.mutation(newPool[j, i + 3 * fifth])
+                    newPool[j, i + 3 * fifth] = np.random.rand()
 
         # generate fifth fifth
         for i in range(fifth):
@@ -84,14 +84,10 @@ class GenePool(object):
                 newPool[j, i + 4 * fifth] = np.random.rand()
 
         # replace pool
-        self.pool = newPool   
+        self.pool = newPool.copy()   
         
         #empty fitness
         self.fitness = np.empty(self.genomes) 
 
     def returnPool(self):
         return self.pool
-    
-    def mutation(self,mode):
-        mutant = np.random.triangular(0,mode,1)
-        return mutant
