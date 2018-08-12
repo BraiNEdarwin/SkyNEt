@@ -51,6 +51,7 @@ genearray = np.zeros((generations, genomes, genes, genes))
 outputarray = np.zeros((generations, genomes, devs, devs))
 fitnessarray = np.zeros((generations, genomes))
 successarray = np.zeros((generations, genomes))
+timearray = np.zeros((generations,genomes,4))
 
 #define the initial switches, array has to be 8 by 8 because it'll be converted to bytes
 array1 = np.random.rand(genomes,genes,genes)
@@ -62,6 +63,15 @@ NewGenConfigs = np.around(array1)
 nullist = [1,6,7]
 for a in range(len(nullist)):
 	NewGenConfigs[:,:,nullist[a]] = 0
+
+#And then, we will convert the row that corresponds to input and output to 0
+#This is done so when duplicate check is run, we don't allow two copies with same switch config upon changing input and output byte
+for a in range(len(NewGenConfigs)):
+	NewGenConfigs[a][0] = [0,0,0,0,0,0,0,0]
+	NewGenConfigs[a][4] = [0,0,0,0,0,0,0,0]
+
+#Time checker 1 to see when duplicate check starts
+start=time.time()
 
 #Check if duplicate exist AFTER converting the unused column to 0
 #For all the genomes
@@ -86,7 +96,13 @@ for a in range(len(NewGenConfigs)):
 			templist = np.round(newlist)
 			for c in range(len(nullist)):
 				templist[:,nullist[c]] = 0
+			templist[0]=[0,0,0,0,0,0,0,0]
+			templist[4]=[0,0,0,0,0,0,0,0]
 
+#Time checker 2 to see how long the duplicate elimination takes, this can take some motherfucking time
+end = time.time()
+
+print("Eliminating the duplicate from " + str(genomes) +" genomes took %f s" % ((end - start)))
 
 #generate the plot figure, this is untested and can seriously influence evolution as their update speed may significantly hinder the process tempo of the GA
 #mainFig = PlotBuilder.MainfigInitforFullSearch()
@@ -102,7 +118,7 @@ for m in range(generations):
 	#per genomes
 	for i in range(len(NewGenConfigs)):
 		#Check the starting marker for the processing time
-		start = time.time()
+		start1 = time.time()
 		print("Genome " + str(i+1) + "begins")
 		bytelist = []
 		sendlist = []
@@ -120,6 +136,9 @@ for m in range(generations):
 		
 		for l in range(len(bytelist)):
 			sendlist.append(str(bytelist[l]))
+
+		#Time checker 1 to see how long the byte and string conversion takes
+		end1=time.time()
 
 		#Send 8 byte info to the switch, it is configured in a certain interconnectivity
 		#PlotBuilder.UpdateCurrentSwitchFullSearch(mainFig, array = NewGenConfigs[i])
@@ -147,6 +166,9 @@ for m in range(generations):
 		#Instead of plotting, now we print out 8 by 8 array
 		print(NewGenConfigs[i])
 		
+		#Timechecker2 to see how long it takes to send array, highly doubtful this slows done over the time
+		end2 = time.time()
+
 		evaluateinput =[]
 		evaluateoutput = []
 
@@ -164,8 +186,8 @@ for m in range(generations):
 		#For the current mode, stick to 1 dev per 1 evaliate
 		Outputresult = np.zeros((devs, devs))
 
+
 		#Evaluate output
-		p = 1
 		for a in range(len(evaluateinput)):
 			for b in range(len(evaluateoutput)):
 				time.sleep(0.01)
@@ -199,16 +221,20 @@ for m in range(generations):
 				#Read current values, store into an output array
 				current = keithley.curr.get()
 				Outputresult[a][b] = current
-				print("Current recorded " + str(p) + " out of " + str(devs*devs))
+				#This printing may slow down the whole thing, comment for now
+				#print("Current recorded " + str(p) + " out of " + str(devs*devs))
 				p = p + 1
+
 
 		#After the forloop with a, you should acquire dev by dev output array
 		#PlotBuilder.UpdateIoutFullSearch(mainFig, array = Outputresult, devs = devs)
 		#PlotBuilder.UpdateLastSwitch(mainFig, array = NewGenConfigs[i])
 		#give time to update
 		#print(Outputresult)
-		end = time.time()
-		print("Genome " + str(i) + " took %f ms" % ((end - start) * 1000))
+
+		#From end2, this gives time it takes for output evaluation, this is likely to slow down over the time
+		end3 = time.time()
+		#print("Genome " + str(i) + " took %f ms" % ((end - start) * 1000))
 		time.sleep(0.1)
 
 		F = 0
@@ -280,14 +306,33 @@ for m in range(generations):
 				success = success + 1
 
 		successrate.append(success)
+		#from end 3 gives the time it takes to analyze the fitness score, matrix process might take longer over the genomes
+		end4 = time.time()
+
+		#time calculation
+		#byte and string conversion per genome
+		conversiontime = end1 - time1
+		#array sending duration per genome
+		arraytime = end2 - end1
+		#Output evaluation time per genome
+		outputtime = end3 - end2
+		#fitness score analysis per genome
+		calculatetime = end4 - end3
 
 		#Genome operation done, save the result in numpy array
 		genearray[m,i, :, :] = NewGenConfigs[i,:]
 		outputarray[m,i, :, :]=Outputresult
 		fitnessarray[m,i] = F
 		successarray[m,i] = success
+
+		#This time array might not be necessary in the future, so ill put here instead
+		timearray[m,i,0] = conversiontime
+		timearray[m,i,1] = arraytime
+		timearray[m,i,2] = outputtime
+		timearray[m,i,3] = calculatetime
+
 		#Add save library here so just in case, program can terminate midway
-		SaveLib.saveMain(savedirectory, genearray, outputarray, fitnessarray, successarray)
+		SaveLib.saveMain(savedirectory, genearray, outputarray, fitnessarray, successarray, timearray)
 
 
 
@@ -303,7 +348,7 @@ for m in range(generations):
 	Hermafrodite = np.copy(NewGenConfigs[winner])
 
 	#Save the generation result
-	SaveLib.saveMain(savedirectory, genearray, outputarray, fitnessarray, successarray)
+	SaveLib.saveMain(savedirectory, genearray, outputarray, fitnessarray, successarray, timearray)
 
 	#Mutation, not exist for the full search
 	'''
@@ -366,6 +411,7 @@ for m in range(generations):
 
 
 #Finish
+
 keithley.volt.set(0)
 
 #don't know why I need this. But the window disappears without this command.

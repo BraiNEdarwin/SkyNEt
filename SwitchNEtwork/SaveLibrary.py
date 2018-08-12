@@ -14,13 +14,13 @@ def createSaveDirectory(filepath, name):
 		os.makedirs(filepath)	
 	return filepath
 
-def saveMain(filepath, genearray, outputarray, fitnessarray, successarray):
-	saveArrays(filepath, genearray, outputarray, fitnessarray, successarray)
+def saveMain(filepath, genearray, outputarray, fitnessarray, successarray,timearray):
+	saveArrays(filepath, genearray, outputarray, fitnessarray, successarray,timearray)
 	saveConfig(filepath)
 
-def saveArrays(filepath, genearray, outputarray, fitnessarray, successarray):
+def saveArrays(filepath, genearray, outputarray, fitnessarray, successarray,timearray):
 	np.savez(os.path.join(filepath, 'DataArrays'), genearray=genearray,
-		outputarray=outputarray, fitnessarray=fitnessarray, successarray = successarray)
+		outputarray=outputarray, fitnessarray=fitnessarray, successarray = successarray,timearray = timearray)
 
 def saveConfig(filepath):
 	copyfile('setup.txt', os.path.join(filepath, 'setup.txt'))
