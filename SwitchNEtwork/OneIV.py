@@ -19,7 +19,7 @@ keithley = Keith2400.Keithley_2400('keithley', 'GPIB0::11')
 #set the current limit, in Amp
 keithley.compliancei.set(1E-6)
 #set the voltage limit in volts just in case something goes wrong from the set up file. DO NOT CHANGE THIS UNLESS YOU KNOW WHAT YOU'RE DOING
-keithley.compliancev.set(2)
+keithley.compliancev.set(4)
 
 
 #Necessary for the IV curve
@@ -42,7 +42,7 @@ for b in range(4):
 		voltrange.append(a[b][0][c])
 
 #Change bytelist accordingly
-bytelist = [4,4,4,4,4,4,4,4]
+bytelist = [2,2,2,2,2,2,2,2]
 sendlist = []
 
 for i in range(len(bytelist)):
