@@ -7,9 +7,7 @@ Created on Tue Aug  7 18:22:23 2018
 """
 
 import numpy as np
-from dev_v1.config_class import config_class
-
-#TODO: change dev_v1 to the correct package name when finished
+from config.config_class import config_class
 
 class experiment_config(config_class):
     '''This is a template for the configuration class that is experiment/user specific.
@@ -32,12 +30,12 @@ class experiment_config(config_class):
         self.name = 'AND'
         
         ############## New Fitness function ############
-        self.Fitness = self.new_fitness
+        self.Fitness = self.NewFitness
     
     #####################################################    
     ############# USER-SPECIFIC METHODS #################
     #####################################################
-    def new_fitness(self):
+    def NewFitness(self):
         '''Here define the new fitness for your experiment if it is not in the parent class 
         Remember to comment!!
         '''

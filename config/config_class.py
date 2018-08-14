@@ -17,12 +17,11 @@ class config_class(object):
     The constructor __init__() contains all parameters that will be used in the GA and measurement
     script. Here, the fitness, target and inputs will be also defined. Their name should be 
     self.Fitness, self.Target_gen and self.Input_gen respectively. Notice that methods are written 
-    with First_capital_letter to differentiate from parameters with small_letters. This convention should also be 
+    with CamelCase to differentiate from parameters with smallletters. This convention should also be 
     carried to the user-specific experiment_config() classes.
     '''
     #TODO: clean unnecessary parameters
     #TODO: generalize code and clean up
-    #TODO: rewrite parameters in small_letters and methods in First_capital_letter
     
     def __init__(self):
         ################################################
@@ -31,12 +30,12 @@ class config_class(object):
         # Benchmarks settings
         self.benchmark = ['bl', 'XNOR']
           #'wr' for waveform regression benchmark
-        self.WavePeriods = 15
-        self.WaveFrequency = 8.5
+        self.waveperiods = 15
+        self.wavefrequency = 8.5
         # WavePeriods2 = 0
-        self.WaveFrequency2 = 18.5              
+        self.wavefrequency2 = 18.5              
         # I/O settings
-        self.SampleFreq = 1000
+        self.samplefreq = 1000
         self.skipstates = 0
         ################################################
         ############### Evolution settings #############
@@ -46,8 +45,8 @@ class config_class(object):
         self.generations = 500
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [0.1, 2]]
         self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
-        self.fitnessAvg = 1  #amount of runs per genome
-        self.fitnessParameters = [1, 0, 1, 0.01]       
+        self.fitnessavg = 1  #amount of runs per genome
+        self.fitnessparameters = [1, 0, 1, 0.01]       
         ################################################
         ################# Save settings ################
         ################################################
@@ -57,24 +56,24 @@ class config_class(object):
         ################################################
         ###################  Methods ###################
         ################################################
-        self.Fitness = self.fitnessEvolution
-        self.Target_gen = self.xor
-        self.Input_gen = self.bool_input       
+        self.Fitness = self.FitnessEvolution
+        self.TargetGen = self.XOR
+        self.InputGen = self.BoolInput       
         # parameters for methods
-        self.signalLength = 0.5  #in seconds 
-        self.edgeLength = 0.01  #in seconds
-        self.Fs = 1000
+        self.signallength = 0.5  #in seconds 
+        self.edgelength = 0.01  #in seconds
+        self.fs = 1000
         
     #%%
     ####################################################
     ############# FITNESS METHODS ######################
     ####################################################
-    def fitness_nmse(self, x, target):
+    def FitnessNMSE(self, x, target):
         return 1 / ((np.linalg.norm(x - target, 2)) ** 2 * (1 / len(x)))
 
-    def fitnessEvolution(self, x, target, W):
+    def FitnessEvolution(self, x, target, W):
         '''This implements the fitness function
-        F = self.fitnessParameters[0] * m / (sqrt(r) + self.fitnessParameters[3] * abs(c)) + self.fitnessParameters[1] / r + self.fitnessParameters[2] * Q
+        F = self.fitnessparameters[0] * m / (sqrt(r) + self.fitnessparameters[3] * abs(c)) + self.fitnessparameters[1] / r + self.fitnessparameters[2] * Q
         where m,c,r follow from fitting x = m*target + c to minimize r
         and Q is the fitness quality as defined by Celestine in his thesis
         appendix 9'''
@@ -110,7 +109,7 @@ class config_class(object):
         else:
             Q = (min(x1) - max(x0)) / (max(x1) - min(x0) + abs(min(x0)))
     
-        F = self.fitnessParameters[0] * m / (res**(.5) + self.fitnessParameters[3] * abs(c)) + self.fitnessParameters[1] / res + self.fitnessParameters[2] * Q
+        F = self.fitnessparameters[0] * m / (res**(.5) + self.fitnessparameters[3] * abs(c)) + self.fitnessparameters[1] / res + self.fitnessparameters[2] * Q
         clipcounter = 0
         for i in range(len(x_weighed)):
             if(abs(x_weighed[i]) > 3.1*10):
@@ -122,18 +121,18 @@ class config_class(object):
     ####################################################
     ############# OUTPUT METHODS #######################
     ####################################################
-    def xor(self):
-        samples = 4 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength)
+    def XOR(self):
+        samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
         x = np.empty(samples)
-        t = np.linspace(0, samples/self.Fs, samples)
+        t = np.linspace(0, samples/self.fs, samples)
     
-        x[0:round(self.Fs * self.signalLength / 4)] = 0
-        x[round(self.Fs * self.signalLength / 4) : round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength)] = np.linspace(1, 0, round(self.Fs * self.edgeLength))
-        x[round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength) : 2 * round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength)] = 1
-        x[2 * round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength) : 2 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength)] = 1
-        x[2 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength) : 3 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength)] = 1
-        x[3 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength) : 3 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength)] = 1
-        x[3 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength) : 4 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength)] = 0
+        x[0:round(self.fs * self.signallength / 4)] = 0
+        x[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = np.linspace(1, 0, round(self.fs * self.edgelength))
+        x[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 1
+        x[2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 1
+        x[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 1
+        x[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
+        x[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 0
     
         return t, x
     
@@ -141,39 +140,39 @@ class config_class(object):
     ####################################################
     ############# INPUT METHODS ########################
     ####################################################
-    def bool_input(self):
-        samples = 4 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength)
+    def BoolInput(self):
+        samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
         x = np.empty(samples)
         y = np.empty(samples)
         W = np.empty(samples)
-        t = np.linspace(0, samples/self.Fs, samples)
+        t = np.linspace(0, samples/self.fs, samples)
     
-        x[0:round(self.Fs * self.signalLength / 4)] = 0
-        x[round(self.Fs * self.signalLength / 4) : round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength)] = np.linspace(0, 1, round(self.Fs * self.edgeLength))
-        x[round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength) : 2 * round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength)] = 1
-        x[2 * round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength) : 2 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength)] = np.linspace(1, 0, round(self.Fs * self.edgeLength))
-        x[2 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength) : 3 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength)] = 0
-        x[3 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength) : 3 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength)] = np.linspace(0, 1, round(self.Fs * self.edgeLength))
-        x[3 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength) : 4 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength)] = 1
+        x[0:round(self.fs * self.signallength / 4)] = 0
+        x[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = np.linspace(0, 1, round(self.fs * self.edgelength))
+        x[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 1
+        x[2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = np.linspace(1, 0, round(self.fs * self.edgelength))
+        x[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 0
+        x[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = np.linspace(0, 1, round(self.fs * self.edgelength))
+        x[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
     
-        y[0:round(self.Fs * self.signalLength / 4)] = 0
-        y[round(self.Fs * self.signalLength / 4) : round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength)] = 0
-        y[round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength) : 2 * round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength)] = 0
-        y[2 * round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength) : 2 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength)] = np.linspace(0, 1, round(self.Fs * self.edgeLength))
-        y[2 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength) : 3 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength)] = 1
-        y[3 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength) : 3 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength)] = 1
-        y[3 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength) : 4 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength)] = 1
+        y[0:round(self.fs * self.signallength / 4)] = 0
+        y[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 0
+        y[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 0
+        y[2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = np.linspace(0, 1, round(self.fs * self.edgelength))
+        y[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 1
+        y[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
+        y[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
     
         #define weight signal
-        W[0:round(self.Fs * self.signalLength / 4)] = 1
-        W[round(self.Fs * self.signalLength / 4) : round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength)] = 0
-        W[round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength) : 2 * round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength)] = 1
-        W[2 * round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength) : 2 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength)] = 0
-        W[2 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength) : 3 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength)] = 1
-        W[3 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength) : 3 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength)] = 0
-        W[3 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength) : 4 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength)] = 1
+        W[0:round(self.fs * self.signallength / 4)] = 1
+        W[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 0
+        W[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 1
+        W[2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 0
+        W[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 1
+        W[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 0
+        W[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
     
-        W[round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength): round(self.Fs * self.signalLength / 4) + round(self.Fs * self.edgeLength) + 40] = 0
-        W[2 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength): 2 * round(self.Fs * self.signalLength / 4) + 2 * round(self.Fs * self.edgeLength) + 40] = 0
-        W[3 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength): 3 * round(self.Fs * self.signalLength / 4) + 3 * round(self.Fs * self.edgeLength) + 40] = 0
+        W[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength): round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) + 40] = 0
+        W[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength): 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) + 40] = 0
+        W[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength): 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) + 40] = 0
         return t, x, y, W
