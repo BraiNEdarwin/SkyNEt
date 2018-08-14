@@ -60,7 +60,7 @@ NewGenConfigs = np.around(array1)
 
 #convert the unused device column into 0s, newgenconfig = (genomes, gene, dev) so for all the genomes, convert dev 
 #make a list of numbers (from 0 to 7) where the devices are not installed, please refer to the guideline of which device spot is which
-nullist = [1,6,7]
+nullist = [7]
 for a in range(len(nullist)):
 	NewGenConfigs[:,:,nullist[a]] = 0
 
@@ -180,8 +180,8 @@ for m in range(generations):
 			#evaluateoutput.append(2**(a))
 
 		#give number from the makelist that corresponds to the device that are active
-		evaluateinput=[1,4,8,16,32]
-		evaluateoutput=[1,4,8,16,32]
+		evaluateinput=[1,2,4,8,16,32,64]
+		evaluateoutput=[1,2,4,8,16,32,64]
 
 		#For the current mode, stick to 1 dev per 1 evaliate
 		Outputresult = np.zeros((devs, devs))
@@ -223,7 +223,8 @@ for m in range(generations):
 				Outputresult[a][b] = current
 				#This printing may slow down the whole thing, comment for now
 				#print("Current recorded " + str(p) + " out of " + str(devs*devs))
-				p = p + 1
+				
+				#p = p + 1
 
 
 		#After the forloop with a, you should acquire dev by dev output array
@@ -233,6 +234,7 @@ for m in range(generations):
 		#print(Outputresult)
 
 		#From end2, this gives time it takes for output evaluation, this is likely to slow down over the time
+		print("Evaluation finished")
 		end3 = time.time()
 		#print("Genome " + str(i) + " took %f ms" % ((end - start) * 1000))
 		time.sleep(0.1)
@@ -311,7 +313,7 @@ for m in range(generations):
 
 		#time calculation
 		#byte and string conversion per genome
-		conversiontime = end1 - time1
+		conversiontime = end1 - start1
 		#array sending duration per genome
 		arraytime = end2 - end1
 		#Output evaluation time per genome
