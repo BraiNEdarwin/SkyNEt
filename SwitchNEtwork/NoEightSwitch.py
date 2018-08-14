@@ -1,6 +1,6 @@
 __author__ = 'RenH'
 '''
-This is a rudimentary model of switch network python code, the first row(electrode 5) is dedicated for the input and the fifth row(electrode 1) for the output
+This is a full search model of switch network python code, the first row(electrode 5) is dedicated for the input and the fifth row(electrode 1) for the output
 '''
 
 #import necessary libraries
@@ -76,28 +76,53 @@ start=time.time()
 #Check if duplicate exist AFTER converting the unused column to 0
 #For all the genomes
 for a in range(len(NewGenConfigs)):
-	#set switch to true
-	duplicate = True
-	#set temporary list
-	templist = np.copy(NewGenConfigs[a])
-	while(duplicate):
-		stack = 0
-		for b in range(len(NewGenConfigs)):
-			#check if the templist (ones that we are checking for duplicate) are equal to all the ones in newgenconfigs(sweeped by b)
-			if np.array_equal(templist, NewGenConfigs[b]):
-				stack = stack + 1
-
-		if stack == 1:
-			#newgenconfig can stay as it is, as there were only one duplicate(itself)
+	#set the boolean keywords
+	flag = True
+	duplicate = False
+	connect = True
+	remake = False
+	#flag becomes false ONLY when the target array satisfies every condition
+	while(flag == True):
+		#connection checking. This code looks for a scenario where only 1 item in a row is ON.
+		#Such configuration is meaningless because only one bridge is made to the intermediate layer, thus no overall connection
+		#Therefore we would like to have 0 or more than 2 1's per row to ensure that the ON switch leads to a current flow
+		while(remake == False and connect == True):
+			for b in range(len(NewGenConfigs[a])):
+				connection = 0
+				for c in range(NewGenConfigs[a][b]):
+					if NewGenConfigs[a][b][c] == 1:
+						connection = connection + 1
+				if connection !=1:
+					connect = False
+					duplicate = True
+				elif connection ==1:
+					remake = True
+					connect = False
+		while(remake == False and duplicate == True):
+			stack = 0
+			templist = np.copy(NewGenConfigs[a])
+			for d in range(len(NewGenConfigs)):
+				if np.array_equal(templist, NewGenConfigs[d]):
+					stack = stack + 1
+			if stack == 1:
+				NewGenConfigs[a] = NewGenConfigs[a]
+				duplicate = False
+				flag = False
+			if stack >1:
+				remake = True
+				duplicate = False
+		while(remake == true):
+			NewGenConfigs[a] = np.random.rand(8,8)
+			NewGenConfigs[a] = np.round(NewGenConfigs[a])
+			for e in range(len(nullist)):
+				NewGenConfigs[a,:,nullist[e]] = 0
+			NewGenConfigs[a][0] = [0,0,0,0,0,0,0,0]
+			NewGenConfigs[a][4] = [0,0,0,0,0,0,0,0]
+			remake = False
+			connect = True
 			duplicate = False
-		if stack > 1:
-			#if new duplicate is found, change templist and go back to the top of while loop
-			newlist = np.random.rand(8,8)
-			templist = np.round(newlist)
-			for c in range(len(nullist)):
-				templist[:,nullist[c]] = 0
-			templist[0]=[0,0,0,0,0,0,0,0]
-			templist[4]=[0,0,0,0,0,0,0,0]
+
+
 
 #Time checker 2 to see how long the duplicate elimination takes, this can take some motherfucking time
 end = time.time()
@@ -190,7 +215,7 @@ for m in range(generations):
 		#Evaluate output
 		for a in range(len(evaluateinput)):
 			for b in range(len(evaluateoutput)):
-				time.sleep(0.01)
+				time.sleep(0.1)
 				#set the byte(input) into only one port opening
 				bytelist[0] = evaluateinput[a]
 				#set the last byte(output) into only one port opening
@@ -209,14 +234,14 @@ for m in range(generations):
 
 				#print ("Array sent")
 
-				time.sleep(0.1)
+				time.sleep(0.3)
 
-				#receivemessage = ser.readline()
-				#receivemessage = receivemessage.strip()
-				#receivemessage = receivemessage.split()
+				receivemessage = ser.readline()
+				receivemessage = receivemessage.strip()
+				receivemessage = receivemessage.split()
 
 				#Print out the message received from Arduino
-				#print(receivemessage)
+				print(receivemessage)
 
 				#Read current values, store into an output array
 				current = keithley.curr.get()
