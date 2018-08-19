@@ -38,4 +38,5 @@ If you wish to contribute to the code you are more than welcome to do so. If you
 
 ## Code maintainers
 Currently the users with admin rights on this repo are:
-* Bram de Wilde (b.dewilde-1@student.utwente.nl) @brambozz
+* add yourself!
+* Bram de Wilde, [@brambozz](https://github.com/brambozz) (b.dewilde-1@student.utwente.nl) 
