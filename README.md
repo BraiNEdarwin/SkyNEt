@@ -1,25 +1,42 @@
 # SkyNEt
 
-This repository houses a collection of functions and scripts used by the Darwin team of the NanoElectronics group (utwente). This README serves to outline the structure of the repo and its files. Additionally it gives some notes about how to contribute.
+This repository houses a collection of functions and scripts used by the Darwin team of the [NanoElectronics](https://www.utwente.nl/en/eemcs/ne/) group at the University of Twente. This README serves to outline the structure of the repo and its files. Additionally it gives some notes about how to contribute. For more details, please refer to the [wiki](https://github.com/BraiNEdarwin/SkyNEt/wiki).
 
-## Installation notes
+## Installation
 
-The code in this repo relies on a couple of packages and uses some drivers from [QCoDeS](https://github.com/QCoDeS/Qcodes). We use their *qcodes* Anaconda environment to run our scripts. To install this environment on a new PC, duplicate the repo and browse to it in an Anaconda prompt. Then run the following command to install the qcodes environment:
+To begin with, install [Anaconda](https://www.anaconda.com/download) (python3 version). For maintaining the code we use GitHub, so please make a GitHub account. To use GitHub on your computer you can use git in the command line, or if this does not ring a bell, we recommend using [GitHub Desktop](https://desktop.github.com/).
+The code in this repo relies on a couple of packages and uses some drivers from [QCoDeS](https://github.com/QCoDeS/Qcodes). We use their *qcodes* Anaconda environment to run our scripts. To install this environment on a new PC, clone this repo and browse to it in an Anaconda prompt. Then run the following command to install the qcodes environment:
 
 ```
 conda env create -f environment.yml
 ```
+You now have everything set up to run measurements from this repository. See the **Practical use** section below on how to get started.
 
 ## Repository structure
 
-In experiments, we basically use this repo to run measurement scripts, which in turn use predefined functions. The repository structure reflects this: all folders hold function definition files, all separate .py files are measurement scripts. The *instruments* folder contains instrument drivers. The *modules* folder holds various modules containing functions used in the measurement scripts. Any *.py* file is a measurement script. Please refer to *template.py* to see how you can structure your measurement script.
+The repository is structured in a few folders. The *instruments* folder contains instrument drivers. The *modules* folder holds various modules containing function and class definitions used to run experiments. The *experiments* folder is where all the experiments are stored. Each individual experiment has its own measurement script (*.py* file) and configuration class definition.
+
+As for the branching structure, there is a *master* and a *dev* branch. The *master* branch is only for stable versions of the software. Important changes or new features are implemented in the *dev* branch, which at some point will merge into a new version in the *master* branch. Each user at NE uses a *personal* branch to run experiments and optionally change code.
 
 ## Practical use
 
+As mentioned above, make sure that there is a *personal* branch for you to run code in and experiment. If this is not the case, contact one of the code maintainers (see the end of this page). Assuming everything is installed correctly, this is the basic workflow for running an experiment.
 
+* Open an Anaconda prompt and activate the qcodes environment.
+* Browse to the directory containing the measurement script you wish to run.
+* Make sure that you are checked out to your personal branch in git. This can be done using the following commands?
+* Configure the configuration class definition to your liking.
+* Run the measurement script by running the following command:
 
-## Implementing new functionality
+## Configuration class definitions
 
+Some explanation of the basic structure of the configuration class and how to change it.
 
+## Code contribution
 
-## Issues
+If you wish to contribute to the code you are more than welcome to do so. If you see any bugs or come across issues you think need improvement, please raise an issue on this repository [here](https://github.com/BraiNEdarwin/SkyNEt/issues). If you want to know more about writing pieces of code to aid development, please refer to the [wiki](https://github.com/BraiNEdarwin/SkyNEt/wiki).
+
+## Code maintainers
+Currently the users with admin rights on this repo are:
+* add yourself!
+* Bram de Wilde, [@brambozz](https://github.com/brambozz) (b.dewilde-1@student.utwente.nl) 
