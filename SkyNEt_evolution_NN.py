@@ -23,7 +23,7 @@ from Nets.predNNet import predNNet
 #np.random.seed(333)
 ########################### LOAD NN & DATA ########################################
 main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/'
-data_dir = main_dir+'25_07_2018_CP-full-search-77K/'#'180130-S1-13-77K-full-search-withoutInM/'
+data_dir = main_dir+'2018_08_07_164652_CP_FullSwipe/'#'180130-S1-13-77K-full-search-withoutInM/'
 syst = 'cuda' # 'cpu' #
 if syst is 'cuda':
     print('Train with CUDA')
@@ -34,7 +34,7 @@ else:
     dtype = torch.FloatTensor
     itype = torch.LongTensor
 
-net = predNNet(data_dir+'lr2e-4_eps1000_mb512_25072018CP.pt')#'1000eps_lr2e-4_mb512_noBN.pt')
+net = predNNet(data_dir+'lr2e-4_eps400_mb512_20180807CP.pt')#'1000eps_lr2e-4_mb512_noBN.pt')
 
 # Import config file
 from config_NN import *
@@ -101,8 +101,8 @@ for i in range(generations):
 #            PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[:, j])
             
             # Train output
-            trained_output[:, avgIndex] =10 * np.asarray(output)  # empty for now, as we have only one output node
-
+            trained_output[:, avgIndex] = np.asarray(output) + np.random.normal(scale=0.01,size=output.shape) 
+            
             # Calculate fitness
             fitnessTemp[j, avgIndex]= PostProcess.fitnessREvolution(
 #            fitnessTemp[j, avgIndex]= PostProcess.alphaFit(
