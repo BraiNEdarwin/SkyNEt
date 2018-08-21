@@ -16,7 +16,7 @@ class GenePool(object):
         self.partition = config_obj.partition
         self.mutationrate = config_obj.mutationrate
 
-    def nextGen(self):
+    def NextGen(self):
         indices = np.argsort(self.fitness)
         indices = indices[::-1]
         self.pool = self.pool[indices]  # Sort genepool on fitness
