@@ -230,7 +230,7 @@ for m in range(generations):
 				bytelist[0] = inputlist1[a]
 				bytelist[1] = inputlist2[a]
 				#set the last byte(output) into only one port opening
-				bytelist[4] = evaluateoutput[b]
+				bytelist[4] = outputlist[b]
 				#send a bytelist where the input and output path are modified
 				#reinitialize sendlist
 				sendlist = []
