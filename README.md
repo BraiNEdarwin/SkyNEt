@@ -41,3 +41,4 @@ Currently the users with admin rights on this repo are:
 * add yourself!
 * Bram de Wilde, [@brambozz](https://github.com/brambozz) (b.dewilde-1@student.utwente.nl) 
 * Hans-Christian Ruiz Euler [@hcruiz](https://github.com/hcruiz) (h.ruiz@utwente.nl)
+* Bram van de Ven, [@bbroo1](https://github.com/bbroo1) (b.vandeven@utwente.nl)
