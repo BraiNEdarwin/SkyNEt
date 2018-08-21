@@ -19,8 +19,6 @@ time = data.f.timearray
 
 timenew = np.zeros((1,4,3000))
 
-#aprint(time[0][][2])
-
 for a in range(len(timenew[0])):
 	for b in range(len(timenew[0][a])):
 		timenew[0][a][b] = time[0][b][a]
