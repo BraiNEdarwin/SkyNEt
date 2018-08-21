@@ -42,7 +42,7 @@ for b in range(4):
 		voltrange.append(a[b][0][c])
 
 #Change bytelist accordingly
-bytelist = [2,2,2,2,2,2,2,2]
+bytelist = [128,0,0,128,0,0,0,0]
 sendlist = []
 
 for i in range(len(bytelist)):
@@ -56,6 +56,12 @@ ser.write(">".encode())
 time.sleep(1)
 print("Array Sent")
 
+item = ser.readline()
+item2 = item.strip()
+item3 = item2.split()
+
+print(item3)
+
 for c in range(len(voltrange)):
 	time.sleep(0.01)
 	keithley.volt.set(voltrange[c])
@@ -65,6 +71,7 @@ for c in range(len(voltrange)):
 	print(str(voltrange[c]) + '	V' + '        ' + str(showcurrent) + '	nA')
 	currentlist[0][c] = voltrange[c]
 	currentlist[1][c] = current
+
 
 print("DONE")
 time.sleep(1)

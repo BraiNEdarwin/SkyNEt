@@ -60,7 +60,7 @@ NewGenConfigs = np.around(array1)
 
 #convert the unused device column into 0s, newgenconfig = (genomes, gene, dev) so for all the genomes, convert dev 
 #make a list of numbers (from 0 to 7) where the devices are not installed, please refer to the guideline of which device spot is which
-nullist = [7]
+nullist = []
 for a in range(len(nullist)):
 	NewGenConfigs[:,:,nullist[a]] = 0
 
@@ -75,6 +75,9 @@ start=time.time()
 
 #Check if duplicate exist AFTER converting the unused column to 0
 #For all the genomes
+
+#NewGenConfigs = NewGenConfigs.astype(np.int64)
+
 for a in range(len(NewGenConfigs)):
 	#set the boolean keywords
 	flag = True
@@ -89,7 +92,7 @@ for a in range(len(NewGenConfigs)):
 		while(remake == False and connect == True):
 			for b in range(len(NewGenConfigs[a])):
 				connection = 0
-				for c in range(NewGenConfigs[a][b]):
+				for c in range(len(NewGenConfigs[a][b])):
 					if NewGenConfigs[a][b][c] == 1:
 						connection = connection + 1
 				if connection !=1:
@@ -111,7 +114,7 @@ for a in range(len(NewGenConfigs)):
 			if stack >1:
 				remake = True
 				duplicate = False
-		while(remake == true):
+		while(remake == True):
 			NewGenConfigs[a] = np.random.rand(8,8)
 			NewGenConfigs[a] = np.round(NewGenConfigs[a])
 			for e in range(len(nullist)):
@@ -205,8 +208,8 @@ for m in range(generations):
 			#evaluateoutput.append(2**(a))
 
 		#give number from the makelist that corresponds to the device that are active
-		evaluateinput=[1,2,4,8,16,32,64]
-		evaluateoutput=[1,2,4,8,16,32,64]
+		evaluateinput=[1,2,4,8,16,32,64,128]
+		evaluateoutput=[1,2,4,8,16,32,64,128]
 
 		#For the current mode, stick to 1 dev per 1 evaliate
 		Outputresult = np.zeros((devs, devs))

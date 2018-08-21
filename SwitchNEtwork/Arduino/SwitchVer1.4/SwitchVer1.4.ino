@@ -98,28 +98,28 @@ void parseData() {      // split the data into its parts
 //============
 
 void showParsedData() {
-    Serial.print("Number:");
+    //Serial.print("Number:");
     Serial.print(String(switcharray[0]));
     Serial.print(" ");
-    Serial.print("Number:");
+    //Serial.print("Number:");
     Serial.print(String(switcharray[1]));
     Serial.print(" ");
-    Serial.print("Number:");
+    //Serial.print("Number:");
     Serial.print(String(switcharray[2]));
     Serial.print(" ");
-    Serial.print("Number:");
+    //Serial.print("Number:");
     Serial.print(String(switcharray[3]));
     Serial.print(" ");
-    Serial.print("Number:");
+    //Serial.print("Number:");
     Serial.print(String(switcharray[4]));
     Serial.print(" ");
-    Serial.print("Number:");
+    //Serial.print("Number:");
     Serial.print(String(switcharray[5]));
     Serial.print(" ");
-    Serial.print("Number:");
+    //Serial.print("Number:");
     Serial.print(String(switcharray[6]));
     Serial.print(" ");
-    Serial.print("Number:");
+    //Serial.print("Number:");
     Serial.println(String(switcharray[7]));
 }
 

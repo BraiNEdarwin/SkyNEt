@@ -8,25 +8,24 @@ CompI = 1E-6
 CompV = 4
 
 #voltage value used for the input
-Volts = 2
+Volts = 1.5
 
-
-#############Evolution parameters##############
+#############Evolution partameters##############
 
 #genomes, for the full search idk 5000? For the evolution try 10
-genomes = 3000
+genomes = 10000
 
 #genes correspond to the number of electrodes, should remain untouched
 genes = 8
 
 #devs is the number of devices installed 
-devs = 7
+devs = 8
 
 #number of generations, for the full search 1, for the evolution however many
 generations = 1
 
 #Set the tolerance value
-tolerance = 0.8
+tolerance = 0.7
 
 #FOR THE FULL SEARCH/GENERAL EVOLUTION, WE SET ONLY ONE ELECTRODE AS AN INPUT AND ONE ELECTRODE AS AN OUTPUT
 
@@ -36,10 +35,10 @@ tolerance = 0.8
 #voltage in volts. Can only have same abs value for max and min
 #please don't screw this up for the room temp measurements
 
-Vabs = 3
-Vstep =0.01
+Vabs = 2.5
+Vstep =0.1
 
 #############Save settings#####################
 
 filepath = 'D:\RenDrive\SwiNEt'
-name = 'RenB7devIV77K(5DevFS)'
+name = 'EightDeviceFullSearch77K1.5V'

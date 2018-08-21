@@ -1,10 +1,10 @@
 #=====================================================================
 
-#This script will output total of 56 IV curves as np file
+#This script is basically MEgaIV, but kilo because it's for 1-7 devices
 
 #Time and the efficiency are unoptimized, maybe it can be faster
 
-#For this experiment, we suppose all 8 devices are connected, and the electrode 5 of all the devices are to the battery and the remains are to the output.
+#For this experiment, we have less than 8 devices connected, and the electrode 5 of all the devices are to the battery and the remains are to the output.
 
 #This code does not reflect the actual ordering from electrode 1 to 8 due to the matrix representation of the electrodes, so the printing out message is not correct
 
@@ -54,7 +54,7 @@ for b in range(4):
 #Let's go
 print('Ready')
 devs = 7
-devicelist = [0,1,2,3,4,5,6,7]
+devicelist = [0,2,3,4,5,6,7]
 #initialize the IV numpy array and the bytelist to control switch configs
 currentlist = np.zeros((devs,genes-1,2,4*steps))
 

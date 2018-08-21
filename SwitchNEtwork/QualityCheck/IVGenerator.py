@@ -9,10 +9,10 @@ Created on Thu Jun 21 17:25:11 2018
 import numpy as np
 import matplotlib.pyplot as plt
 
-data= np.load('D:\RenDrive\SwiNEt_09_08_2018_212532_RenB7devIV77K\IVDataz.npz')
+data= np.load('D:\RenDrive\SwiNEt_16_08_2018_235318_RenBoronIVFinal77K\IVDataz.npz')
 result =data.f.currentlist
 
-b = 7
+b = 5
 
 plt.figure(1)
 j = 421
@@ -26,4 +26,3 @@ for a in range(len(result[b])):
     j = j + 1
 
 plt.show()
-

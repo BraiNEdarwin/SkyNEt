@@ -93,6 +93,11 @@ sendlist[3].encode() + ",".encode() + sendlist[4].encode() + ",".encode() + send
 		ser.write(">".encode())
 
 		time.sleep(1)
+		item = ser.readline()
+		item2 = item.strip()
+		item3 = item2.split()
+
+		print(item3)
 
 		print("READY")
 
