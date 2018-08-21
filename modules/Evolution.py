@@ -96,7 +96,7 @@ class GenePool(object):
         the genome put through a triangular distribution'''
         for i in range(self.genomes):
             for j in range(self.genomes):
-                if(j != i and self.newpool[i] == self.newpool[j]):
+                if(j != i and np.array_equal(self.newpool[i],self.newpool[j])):
                     self.newpool[j] = np.random.triangular(0, self.newpool[j], 1)
         
             
