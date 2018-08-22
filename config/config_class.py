@@ -28,7 +28,7 @@ class config_class(object):
         ###### Config params for the experiments #######
         ################################################
         # Benchmarks settings
-        self.benchmark = ['bl', 'XNOR']
+        self.benchmark = ['XNOR']
           #'wr' for waveform regression benchmark
         self.waveperiods = 15
         self.wavefrequency = 8.5
