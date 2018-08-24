@@ -21,16 +21,35 @@ class experiment_config(config_class):
     def __init__(self):
         super().__init__() #DO NOT REMOVE!
         
+        ################# Experiment ###################
+        self.Target_gen = self.XNOR
+
+        ################# Save settings ################
+        self.filepath = r'some_path/to/save'
+        self.name = 'AND'
+
+        ################################################
+        ############### Evolution settings #############
+        ################################################
+        self.genes = 6
+        self.genomes = 25
+        self.generations = 500
+        self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [0.1, 2]]
+        self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
+        self.fitnessparameters = [1, 0, 1, 0.01]    
+
+        #control signallength and measurement speed.
+        self.signallength = 0.5  #in seconds 
+        self.edgelength = 0.01  #in seconds
+        self.fs = 1000
         ################################################
         ######### USER-SPECIFIC PARAMETERS #############
         ################################################
         
-        ################# Save settings ################
-        self.filepath = r'some_path/to/save'
-        self.name = 'AND'
+
         
         ############## New Fitness function ############
-        self.Fitness = self.NewFitness
+        #self.Fitness = self.NewFitness
     
     #####################################################    
     ############# USER-SPECIFIC METHODS #################
