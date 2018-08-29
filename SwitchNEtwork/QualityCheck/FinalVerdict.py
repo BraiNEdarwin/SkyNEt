@@ -11,10 +11,15 @@ Created on Thu May 24 11:41:00 2018
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import pylab
+from matplotlib.font_manager import FontProperties
+
+fontP = FontProperties()
+fontP.set_size('small')
 #from collections import counter
 
 #write here the path to npz file
-data = np.load('/Users/renhori/Desktop/Twente/Year2/Thesis/Result/Switch/SwiNEt_14_08_2018_183313_RenB7devIV77K(7DevFSREAL)/DataArrays.npz')
+data = np.load('/Users/renhori/Desktop/Twente/Year2/Thesis/Result/Switch/SwiNEt_22_08_2018_140242_FINALEightDeviceFullSearchRealDigitIV77K/DataArrays.npz')
 
 switch = data.f.genearray
 output = data.f.outputarray
@@ -27,8 +32,13 @@ success = data.f.successarray
 time = data.f.timearray
 #TO HERE SHOULD BE INCLUDED IN EVERY ANALYSIS CODE
 #This dev should be read from setup file but for now we automatically select
-dev = 7
+dev = 8
 
+#quickfix
+switch = np.resize(switch,(1,15000,8,8))
+output = np.resize(output,(1,15000,8,8))
+fitness = np.resize(fitness,(1,15000))
+success = np.resize(success,(1,15000))
 #FROM HERE
 
 #switch is a pretend genearray
@@ -36,12 +46,12 @@ dev = 7
 #array2 shows the number of time it was ON
 array2 = np.zeros((8,8))
 #array3 shows number of ONs per row (per genome ofc)
-array3 = np.zeros((3000,8))
+array3 = np.zeros((15000,8))
 #output is a pretend output array
 #output = np.random.rand(20,dev,dev)
-transoutput = np.zeros((3000,dev,dev))
+transoutput = np.zeros((15000,dev,dev))
 #array5and6 are used to help finding the identity matrix
-array5 = np.zeros((3000,dev,dev))
+array5 = np.zeros((15000,dev,dev))
 
 #TO HERE WILL BE USED FOR RANDOM RESULT TO DEBUG THE PROCESSING WRITEUPS
 
@@ -115,7 +125,29 @@ plt.ylabel("Occurance")
 
 for n in range(4):
     #plt.subplot(810+i)
-    axes[n].hist(arrayyes[+4], bins=range(0,10) ,align = 'left', rwidth=0.95, normed = False)
+    axes[n].hist(arrayyes[n], bins=range(0,10) ,align = 'left', rwidth=0.95, normed = False)
+    axes[n].set_title('Intermediate layer ' + str(n+1))
+
+plt.tight_layout()
+plt.show()
+
+fig = plt.figure()
+
+#axes = fig.subplots(8,1, sharex = True)
+fig, axes = plt.subplots(4, 1, sharex=True, sharey=True)
+# add a big axes, hide frame
+fig.add_subplot(111, frameon=False)
+# hide tick and tick label of the big axes
+plt.tick_params(labelcolor='none', top='off', bottom='off', left='off', right='off')
+plt.grid(False)
+
+#Add labels
+plt.xlabel("# of shared connections")
+plt.ylabel("Occurance")
+
+for n in range(4):
+    #plt.subplot(810+i)
+    axes[n].hist(arrayyes[n+4], bins=range(0,10) ,align = 'left', rwidth=0.95, normed = False)
     axes[n].set_title('Intermediate layer ' + str(n+5))
 
 plt.tight_layout()
@@ -143,14 +175,15 @@ for a in range(len(transoutput)):
 #The processed array5 will have 1 for row highest, 2 for column highest, 3 when together
 
 zen = 0
-
+checklist = []
 for a in range(len(array5)):
     counter = 0
     for b in range(len(array5[a])):
         if array5[a][b][b]==3 :
             counter = counter + 1
-    if counter == dev:
+    if counter == 8:
         print("Genome " + str(a+1) + " is an identity matrix")
+        checklist.append(a)
         zen = zen + 1
         
 if zen ==0:
@@ -163,13 +196,13 @@ if zen ==0:
 
 #================================================================#
 #This part will plot the timing analysis
-timenew = np.zeros((1,4,3000))
+timenew = np.zeros((1,4,7000))
 
 for a in range(len(timenew[0])):
     for b in range(len(timenew[0][a])):
         timenew[0][a][b] = time[0][b][a]
 plt.figure()
-i = np.linspace(1,3000,3000)
+i = np.linspace(1,7000,7000)
 plt.subplot(221)
 plt.plot(i,timenew[0][0])
 plt.ylabel('Time (s)')
@@ -208,10 +241,10 @@ plt.show()
 #This part will just find out how successful the FS results were in terms of classifying
 swiggity = np.transpose(success)
 plt.figure()
-plt.hist(swiggity, bins=np.arange((8)-0.5) ,align = 'left', rwidth=0.5, normed = False)
+plt.hist(swiggity, bins=np.arange((9)-0.5) ,align = 'left', rwidth=0.5, normed = False)
 plt.ylabel('Population')
 plt.xlabel('Successrate out of ' + str(dev))
-plt.xticks(range(9))
+plt.xticks(range(10))
 plt.show()
 
 unique_elements, counts_elements = np.unique(swiggity, return_counts = True)
@@ -230,12 +263,12 @@ swag = np.transpose(fitness)
 #minimum = int(round(float(min(swag))/5.0)*5.0)
 #maximum = int(round(float(max(swag))/5.0)*5.0)
 #swaglord =np.linspace(minimum,maximum,int(1+(maximum-minimum)/5)).tolist()
-fitrange = np.linspace(0,45)
+fitrange = np.linspace(0,51)
 plt.figure()
 plt.hist(swag ,bins = np.arange((45)-0.5), align = 'left', rwidth=0.5, normed = False)
-plt.ylabel('Population')
-plt.xlabel('Fitness Score')
-plt.xticks(range(44))
+plt.ylabel('Population', size = 17)
+plt.xlabel('Fitness Score', size = 17)
+plt.xticks(range(49), size = 13)
 #plt.xticks(range(20))
 plt.show()
 
@@ -251,11 +284,42 @@ print(np.asarray((unique_elements, counts_elements)))
 
 #================================================================#
 #This part will list the successful evaluation
+winnerlist = []
 for a in range(len(success[0])):
-    if success[0][a] == 7:
+    if success[0][a] == 8:
         print('Genome ' + str(a+1) + 'is a winner. With a fitness score of ' + str(fitness[0][a]))
-        print(switch[0][a])
-        print(output[0][a])
+        winnerlist.append(a)
+        #print(switch[0][a])
+        #print(output[0][a])
+#End
+#================================================================#
+
+
+#================================================================#
+#this snippet is to compare winnerlist and checklist, please comment out unless u rly need it
+thesislist =[]
+for a in range(len(winnerlist)):
+    counter = 0
+    for b in range(len(checklist)):
+        if winnerlist[a] == checklist[b]:
+            counter = 1
+    if counter == 0:
+       print("Genome" + str(winnerlist[a]+1) + "is non identity but high success genome")
+       thesislist.append(winnerlist[a])
+
+
+#================================================================#
+
+
+#================================================================#
+#This part will list the fitness evaluation
+fitlist = []
+for a in range(len(fitness[0])):
+    if fitness[0][a] == 3*2*dev:
+        #print('Genome ' + str(a+1) + 'is a fitness winner. With a fitness score of ' + str(fitness[0][a]))
+        fitlist.append(a)
+        #print(switch[0][a])
+        #print(output[0][a])
 #End
 #================================================================#
 
@@ -271,8 +335,8 @@ threshold = tolerance
 tolist = np.linspace(0.01,0.99,num = 99)
 graphlist = np.linspace(0,1, num = 11)
 #new fitness array for 10 different tolerance values
-fitrange = np.zeros((99,3000))
-successrange = np.zeros((99,3000))
+fitrange = np.zeros((99,15000))
+successrange = np.zeros((99,15000))
 for i in range(len(fitrange)):
     threshold = tolist[i]
     for j in range(len(fitrange[i])):
@@ -317,7 +381,8 @@ for i in range(len(fitrange)):
             if Transoutput[tempx][tempy] == maxi:
                 successful = successful + 1
         successrange[i][j] = successful
-
+'''
+'''
 plt.figure()
 plt.imshow(fitrange, cmap= 'summer', aspect = 'auto')
 #ax1.set_xticklabels(['Device', 1,2,3,4,5,6,7,8])
@@ -329,16 +394,33 @@ cb = plt.colorbar()
 cb.set_label("Fitness score")
 plt.show()
 
-winner1 = fitrange[:,359]
-winner2 = fitrange[:,1116]
 
+
+#winner1 = fitrange[:,359]
+#winner2 = fitrange[:,1116]
+'''
 plt.figure()
-plt.plot(winner1, label = 'Genome 360')
-plt.plot(winner2, label = 'Genome 1167')
+for a in range(len(winnerlist)):
+    plt.plot(fitrange[:,a], label =str(winnerlist[a]))
 plt.xticks(np.linspace(0,99,num = 11),[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
-plt.legend(loc = 'lower right')
+plt.legend(prop = fontP, loc = 2)
 plt.xlabel('Tolerance value')
 plt.ylabel('Fitness score')
 plt.show()
+'''
 #End
 #================================================================#
+
+'''
+#================================================================#
+#Ignore here, this is for dealing with thesislist
+for a in range(len(thesislist)):
+    print(switch[0][thesislist[a]])
+    print(output[0][thesislist[a]])
+    print(fitness[0][thesislist[a]])
+    print(success[0][thesislist[a]])
+
+
+
+#================================================================#
+'''
