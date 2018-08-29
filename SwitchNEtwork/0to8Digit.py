@@ -97,10 +97,10 @@ for a in range(len(NewGenConfigs)):
 				for c in range(len(NewGenConfigs[a][b])):
 					if NewGenConfigs[a][b][c] == 1:
 						connection = connection + 1
-				if connection !=1:
+				if connection >=2:
 					connect = False
 					duplicate = True
-				elif connection ==1:
+				elif connection ==1 or connection ==0:
 					remake = True
 					connect = False
 		while(remake == False and duplicate == True):
@@ -138,7 +138,7 @@ print("Eliminating the duplicate from " + str(genomes) +" genomes took %f s" % (
 #generate the plot figure, this is untested and can seriously influence evolution as their update speed may significantly hinder the process tempo of the GA
 #mainFig = PlotBuilder.MainfigInitforFullSearch()
 
-time.sleep(0.1)
+time.sleep(0.01)
 
 #start the process, per generation
 for m in range(generations):
@@ -223,9 +223,9 @@ for m in range(generations):
 
 
 		#Evaluate output
-		for a in range(len(evaluateinput)):
-			for b in range(len(evaluateoutput)):
-				time.sleep(0.1)
+		for a in range(len(inputlist1)):
+			for b in range(len(outputlist)):
+				time.sleep(0.01)
 				#set the byte(input) into only one port opening
 				bytelist[0] = inputlist1[a]
 				bytelist[1] = inputlist2[a]
@@ -245,7 +245,7 @@ for m in range(generations):
 
 				#print ("Array sent")
 
-				time.sleep(0.3)
+				time.sleep(0.01)
 
 				receivemessage = ser.readline()
 				receivemessage = receivemessage.strip()
@@ -273,7 +273,7 @@ for m in range(generations):
 		print("Evaluation finished")
 		end3 = time.time()
 		#print("Genome " + str(i) + " took %f ms" % ((end - start) * 1000))
-		time.sleep(0.1)
+		time.sleep(0.01)
 
 		F = 0
 		success = 0

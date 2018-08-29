@@ -8,12 +8,12 @@ CompI = 1E-6
 CompV = 4
 
 #voltage value used for the input
-Volts = 1.5
+Volts = 1
 
 #############Evolution partameters##############
 
 #genomes, for the full search idk 5000? For the evolution try 10
-genomes = 10000
+genomes = 3000
 
 #genes correspond to the number of electrodes, should remain untouched
 genes = 8
@@ -35,10 +35,10 @@ tolerance = 0.7
 #voltage in volts. Can only have same abs value for max and min
 #please don't screw this up for the room temp measurements
 
-Vabs = 2.5
-Vstep =0.1
+Vabs = 1.6
+Vstep =0.002
 
 #############Save settings#####################
 
 filepath = 'D:\RenDrive\SwiNEt'
-name = 'EightDeviceFullSearch77K1.5V'
+name = 'FINALEightDeviceDigitRetry1VIV77K'

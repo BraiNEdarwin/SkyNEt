@@ -118,7 +118,7 @@ sendlist[3].encode() + ",".encode() + sendlist[4].encode() + ",".encode() + send
 			#Maybe I should change this to nA representation?
 			print(str(voltrange[c]) + '	V' + '        ' + str(showcurrent) + '	nA')
 			currentlist[a][b][0][c] = voltrange[c]
-			currentlist[a][b][1][c] = current
+			currentlist[a][b][1][c] = showcurrent
 			
 
 #save the file

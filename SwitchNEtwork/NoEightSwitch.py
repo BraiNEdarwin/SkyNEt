@@ -135,7 +135,7 @@ print("Eliminating the duplicate from " + str(genomes) +" genomes took %f s" % (
 #generate the plot figure, this is untested and can seriously influence evolution as their update speed may significantly hinder the process tempo of the GA
 #mainFig = PlotBuilder.MainfigInitforFullSearch()
 
-time.sleep(0.1)
+time.sleep(0.01)
 
 #start the process, per generation
 for m in range(generations):
@@ -218,7 +218,7 @@ for m in range(generations):
 		#Evaluate output
 		for a in range(len(evaluateinput)):
 			for b in range(len(evaluateoutput)):
-				time.sleep(0.1)
+				time.sleep(0.01)
 				#set the byte(input) into only one port opening
 				bytelist[0] = evaluateinput[a]
 				#set the last byte(output) into only one port opening
@@ -237,7 +237,7 @@ for m in range(generations):
 
 				#print ("Array sent")
 
-				time.sleep(0.3)
+				time.sleep(0.02)
 
 				receivemessage = ser.readline()
 				receivemessage = receivemessage.strip()
@@ -265,7 +265,7 @@ for m in range(generations):
 		print("Evaluation finished")
 		end3 = time.time()
 		#print("Genome " + str(i) + " took %f ms" % ((end - start) * 1000))
-		time.sleep(0.1)
+		time.sleep(0.01)
 
 		F = 0
 		success = 0
