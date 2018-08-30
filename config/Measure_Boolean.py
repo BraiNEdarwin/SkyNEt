@@ -48,7 +48,7 @@ for i in range(config.generations()):
         IVVIrack.setControlVoltages(ivvi, controlVoltages)
 
         #set the input scaling
-        x_scaled = config.InputGen()[1:2] * Evolution.mapGenes(config.generange()[-1], genePool.pool[config.genes()-1, j])
+        x_scaled = config.InputGen()[1:3] * Evolution.mapGenes(config.generange()[-1], genePool.pool[config.genes()-1, j])
 
         #wait after setting DACs
         time.sleep(1)
