@@ -1,3 +1,10 @@
+'''
+This code does the timing analysis, the genome numbers need to be manually fixed
+
+>>3018-8-30
+This part of the code is included in the final verdict. SCRATCH
+
+'''
 
 
 import numpy as np

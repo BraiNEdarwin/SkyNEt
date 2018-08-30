@@ -6,7 +6,11 @@
 
 #For this experiment, we have less than 8 devices connected, and the electrode 5 of all the devices are to the battery and the remains are to the output.
 
-#This code does not reflect the actual ordering from electrode 1 to 8 due to the matrix representation of the electrodes, so the printing out message is not correct
+#Around line 56-57 contains device number and the device list, please change this accordingly for the set of devices you are measuring (less than 8)
+
+#Since if you take out from the dipstick to put the 8th one, you have to remeasure these anyway, so even if you do 1-7 dev IV curves, having all 8 devices are ideal
+
+#In that case, just use Mega IV curve . py
 
 #=====================================================================
 

@@ -1,3 +1,11 @@
+'''
+This code takes IV measurement of one connection
+For this code you need to manually modify the bytelist which is converted to the identificaiton of which two switches are open,i.e. where we take IV curves from.
+
+>>2018-08-30
+This code is useful for testing a connection, thus will be kept in the main repository
+Please keep in mind the saved current values are in nA.
+'''
 import serial
 import numpy as np
 from instrument import Keith2400
@@ -17,9 +25,9 @@ ser = serial.Serial(port='COM3', baudrate=9600, bytesize=8, parity='N', stopbits
 keithley = Keith2400.Keithley_2400('keithley', 'GPIB0::11')
 
 #set the current limit, in Amp
-keithley.compliancei.set(1E-6)
-#set the voltage limit in volts just in case something goes wrong from the set up file. DO NOT CHANGE THIS UNLESS YOU KNOW WHAT YOU'RE DOING
-keithley.compliancev.set(4)
+keithley.compliancei.set(CompI)
+#set the voltage limit in volts just in case something goes wrong from the set up file. Do change this if you want to extend your IV measurement further than normal
+keithley.compliancev.set(CompV)
 
 
 #Necessary for the IV curve
@@ -70,7 +78,7 @@ for c in range(len(voltrange)):
 	showcurrent = current * 1000000000
 	print(str(voltrange[c]) + '	V' + '        ' + str(showcurrent) + '	nA')
 	currentlist[0][c] = voltrange[c]
-	currentlist[1][c] = current
+	currentlist[1][c] = showcurrent
 
 
 print("DONE")
@@ -78,8 +86,8 @@ time.sleep(1)
 
 plt.figure(1)
 plt.plot(currentlist[0],currentlist[1])
-plt.ylabel('Amp')
-plt.xlabel('Volt')
+plt.ylabel('Amp (nA)')
+plt.xlabel('Volt (V)')
 plt.grid(True)
 
 plt.show()

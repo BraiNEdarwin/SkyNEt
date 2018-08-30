@@ -2,9 +2,10 @@
 
 #This code is there to check just one connection between two switches(by making IV)
 #For the explanation please refer to MEGA IV curve code
-
+#
 #It won't save a file, so just keep an eye on the keythley :p
-
+#>>2018-08-30
+#Large portion of what this code does is covered in OneIV code, thus this will be sent to the trashbin
 #============================================================================================================================================================================================================================================
 
 import serial

@@ -2,6 +2,12 @@ __author__ = 'RenH'
 '''
 This is a final model of the MSc project. Most of the stuff is the same as the switch code, but when evaluating the output we use different information
 For this set up, two input rows are necessary, electrode 5 and 6 (row 1 and 2 of the matrix) will be inputs, while the electrode 1(row 5) will be the output
+
+>>2018-08-30
+Uploading to github as the end of thesis nears.
+This version still manually requires you to change the byte number as well as the input row numbers. These CAN be automated in the future.
+Plot building is still ikely to cause slowing down issue, however the previous slowing down was due to the arduino-pc communication fault. So maybe it's ok.
+Mutation part is largely unworked
 '''
 
 #import necessary libraries
@@ -10,8 +16,10 @@ import numpy as np
 import operator
 from time import sleep
 from instrument import Keith2400
+
 #Until plot building memory issue is solved, this remains commented
 #from instrument import PlotBuilding as PlotBuilder
+
 import serial
 import SaveLibrary as SaveLib
 
@@ -41,7 +49,7 @@ keithley.volt.set(Volts)
 ser = serial.Serial(port='COM3', baudrate=9600, bytesize=8, parity='N', stopbits=1, write_timeout = 0, dsrdtr = True)
 
 #I don't even know if you need this, maybe wait time for the port to open
-#Also gotta implement the try and catch code for if the port is available
+#Also if possible, gotta implement the try and catch code for if the port is available
 time.sleep(1)
 
 #Initialize the directory to save the files
@@ -78,8 +86,6 @@ start=time.time()
 #Check if duplicate exist AFTER converting the unused column to 0
 #For all the genomes
 
-#NewGenConfigs = NewGenConfigs.astype(np.int64)
-
 for a in range(len(NewGenConfigs)):
 	#set the boolean keywords
 	flag = True
@@ -90,34 +96,44 @@ for a in range(len(NewGenConfigs)):
 	while(flag == True):
 		#connection checking. This code looks for a scenario where only 1 item in a row is ON.
 		#Such configuration is meaningless because only one bridge is made to the intermediate layer, thus no overall connection
-		#Therefore we would like to have 0 or more than 2 1's per row to ensure that the ON switch leads to a current flow
+		#Therefore we would like to have more than 2 1's per row to ensure that the ON switch leads to a current flow
 		while(remake == False and connect == True):
 			for b in range(len(NewGenConfigs[a])):
 				connection = 0
 				for c in range(len(NewGenConfigs[a][b])):
+					#per row, check all the values and add 1 to connection when 1 is detected
 					if NewGenConfigs[a][b][c] == 1:
 						connection = connection + 1
+				#If more than 2 are connected, proceed
 				if connection >=2:
 					connect = False
 					duplicate = True
+				#if 1 or 0 connection are made, go back to remake
+				#not allowing 0 connection may significantly slow down the initial generation process
 				elif connection ==1 or connection ==0:
 					remake = True
 					connect = False
+		#Go through all the genomes
 		while(remake == False and duplicate == True):
 			stack = 0
+			#copy the target you want to check the duplicate for
 			templist = np.copy(NewGenConfigs[a])
 			for d in range(len(NewGenConfigs)):
+				#test if any genomes are equal to the templist
 				if np.array_equal(templist, NewGenConfigs[d]):
 					stack = stack + 1
+			#If only one is found, that means it found itself, hence genome is unique enough and thus we escape the while loop
 			if stack == 1:
 				NewGenConfigs[a] = NewGenConfigs[a]
 				duplicate = False
 				flag = False
+			#duplicate found. go back to remake
 			if stack >1:
 				remake = True
 				duplicate = False
 		while(remake == True):
-			NewGenConfigs[a] = np.random.rand(8,8)
+			#remake basically does what was done before for the intial population, so you're really just redoing whole set of creating procedure for one genome
+			NewGenConfigs[a] = np.random.rand(genes,genes)
 			NewGenConfigs[a] = np.round(NewGenConfigs[a])
 			for e in range(len(nullist)):
 				NewGenConfigs[a,:,nullist[e]] = 0
@@ -130,12 +146,13 @@ for a in range(len(NewGenConfigs)):
 
 
 
-#Time checker 2 to see how long the duplicate elimination takes, this can take some motherfucking time
+#Time checker 2 to see how long the duplicate elimination takes, this can take some time
 end = time.time()
 
 print("Eliminating the duplicate from " + str(genomes) +" genomes took %f s" % ((end - start)))
 
 #generate the plot figure, this is untested and can seriously influence evolution as their update speed may significantly hinder the process tempo of the GA
+#as such, commented
 #mainFig = PlotBuilder.MainfigInitforFullSearch()
 
 time.sleep(0.01)
@@ -173,9 +190,11 @@ for m in range(generations):
 
 		#Send 8 byte info to the switch, it is configured in a certain interconnectivity
 		#PlotBuilder.UpdateCurrentSwitchFullSearch(mainFig, array = NewGenConfigs[i])
+
 		#maybe you need time for plot to update?
 		#Plotbuilding takes too long, to avoid potential memory leak, this part will be excluded
 		time.sleep(0.01)
+		#For why this method of sending was chosen, please refer to the software development chapter of my master's thesis
 
 		ser.write("<".encode())
 		ser.write(sendlist[0].encode()+ ",".encode() +sendlist[1].encode()+ ",".encode() +sendlist[2].encode()+ 
@@ -186,7 +205,7 @@ for m in range(generations):
 		print ("Array sent")
 
 		time.sleep(0.01)
-
+		#Receive the sent message from arduino
 		receivemessage = ser.readline()
 		receivemessage = receivemessage.strip()
 		receivemessage = receivemessage.split()
@@ -202,14 +221,6 @@ for m in range(generations):
 
 		evaluateinput =[]
 		evaluateoutput = []
-
-		#Make list = [1,2,4,8,16,32,64,128], corresponds to one port being open from a row
-
-		#for a in range(devs):
-			#These lines are for doing all 8
-			#evaluateinput.append(2**(a))
-			#evaluateoutput.append(2**(a))
-
 
 		#give number from the makelist that corresponds to the digit
 		inputlist1 =[146,231,167,237,207,207,39,239]
@@ -245,6 +256,8 @@ for m in range(generations):
 
 				#print ("Array sent")
 
+				#This time is significant because it's responsible for making the system wait until the current is settled upon switching the configuration.
+
 				time.sleep(0.01)
 
 				receivemessage = ser.readline()
@@ -257,19 +270,18 @@ for m in range(generations):
 				#Read current values, store into an output array
 				current = keithley.curr.get()
 				Outputresult[a][b] = current
-				#This printing may slow down the whole thing, comment for now
-				#print("Current recorded " + str(p) + " out of " + str(devs*devs))
-				
-				#p = p + 1
+
 
 
 		#After the forloop with a, you should acquire dev by dev output array
+
+		#yup this plot stuff is left out still
 		#PlotBuilder.UpdateIoutFullSearch(mainFig, array = Outputresult, devs = devs)
 		#PlotBuilder.UpdateLastSwitch(mainFig, array = NewGenConfigs[i])
 		#give time to update
 		#print(Outputresult)
 
-		#From end2, this gives time it takes for output evaluation, this is likely to slow down over the time
+		#From end2, this gives time it takes for output evaluation, this is likely to be useful when evaluating how long the entire GA could take
 		print("Evaluation finished")
 		end3 = time.time()
 		#print("Genome " + str(i) + " took %f ms" % ((end - start) * 1000))
@@ -300,7 +312,7 @@ for m in range(generations):
 				F = F - 10
 
 		#Criteria 2
-		#Do exactly the same but transposed matrix. Vertical check
+		#Do exactly the same but transposed matrix. So vertical check!
 		TransOutputresult = np.copy(Outputresult)
 		TransOutputresult = np.transpose(TransOutputresult)
 		
@@ -437,12 +449,6 @@ for m in range(generations):
 				NewGenConfigs[i] = np.copy(templist)
 				duplicate = False		
 
-#In the current version, there is a problem with this duplicate checker, we use 8 by 8 array as a genome identification (DNA) 
-#but we really only utilize the switches that are not connected to the input.
-#our duplicate checker will check every bits, therefore, the actual switches used to evolve the connectivity may be the same. 
-#But if the first row, input byte, is different, they'll think it's a different genome, even though the real functionality part is the same.
-#As such, two different genomes with an identical row 2,3,4,6,7,8 and nonidentical row 1 and 5, will be saved, despite them being practically the same
-
 #Repeat until all generations meet 
 #don't know why I need this. But the window disappears without this command.
 #PlotBuilder.finalMain(mainFig)
@@ -472,6 +478,7 @@ for m in range(generations):
 #	1	1	1			1	1	1
 #
 #For all 10 digit, I guess we have to use two output row, which will heavily limit the switch configuration
+#AND if two output, then we are essentially not using 6 output electrodes and the extra 2 used will be very close to the other output. No bueno.
 #
 #For conversion purpose
 #Suppose matrix looked like								We will allocate our digit as 

@@ -1,6 +1,11 @@
 __author__ = 'RenH'
 '''
 This is a full search model of switch network python code, the first row(electrode 5) is dedicated for the input and the fifth row(electrode 1) for the output
+
+>>2018-08-30
+Upon having discussion with Dr.Tao Chen and Prof. Wilfred vdWiel and getting slaughtered by them during the presentation,
+this method of full search is deemed rather pointless, or aiming very far goal.
+I will leave this here as a basis of full search code to further implement, but this version is largely similar to 2018-08-30 version of digit0to8 code
 '''
 
 #import necessary libraries
@@ -127,7 +132,7 @@ for a in range(len(NewGenConfigs)):
 
 
 
-#Time checker 2 to see how long the duplicate elimination takes, this can take some motherfucking time
+#Time checker 2 to see how long the duplicate elimination takes, this can take some tiiime
 end = time.time()
 
 print("Eliminating the duplicate from " + str(genomes) +" genomes took %f s" % ((end - start)))

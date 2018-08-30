@@ -2,6 +2,12 @@
 #
 #This code is written specifically for the switch involved IV curve result.
 #
+#>>2018-08-30
+#The output here seems pointleess tp just measire
+#
+#
+#
+#
 #================================================================================================
 import numpy as np
 import matplotlib.pyplot as plt

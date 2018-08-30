@@ -1,6 +1,9 @@
 __author__ = 'RenH'
 '''
 This is a rudimentary model of switch network python code, the first row(electrode 5) is dedicated for the input and the fifth row(electrode 1) for the output
+
+>>2018-08-30
+Many further improvement was done on the fullsearch and 0to8 code, thus this rudimentary version will be sent behind the wall
 '''
 
 #import necessary libraries

@@ -9,7 +9,8 @@
 
 
 #This is incomplete, don't test yet
-
+#>>2018-08-30
+#As of this date, this code's functionality is overshadowed by OneIV, thus please leave this pyfile alone.
 #=======================================================================
 #Import necessary libraries
 import serial
