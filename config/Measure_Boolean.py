@@ -86,14 +86,13 @@ for i in range(config.generations):
 
     PlotBuilder.currentOutputEvolution(mainFig, config.InputGen()[0], config.amplification *config.TargetGen()[1], output, j + 1, i + 1, fitnessTemp[j, avgIndex])
     PlotBuilder.updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, i + 1, config.InputGen()[0], config.amplification *config.TargetGen()[1], output, config.InputGen()[3])
-    	
     	#save generation
     SaveLib.saveMain(saveDirectory, geneArray, outputArray, fitnessArray, config.InputGen()[0], config.InputGen()[1:3], config.amplification *config.TargetGen()[1])
     	
     # evolve the next generation
-    genePool.nextGen()
+    genePool.NextGen()
 
-SaveLib.saveMain(config.filepath, geneArray, outputArray, fitnessArray, config.InputGen()[0], config.InputGen()[1:3], config.amplification *config.TargetGen()[1])
+SaveLib.saveMain(saveDirectory, geneArray, outputArray, fitnessArray, config.InputGen()[0], config.InputGen()[1:3], config.amplification *config.TargetGen()[1])
 
 PlotBuilder.finalMain(mainFig)
 #raise KeyboardInterrupt
@@ -111,9 +110,5 @@ PlotBuilder.finalMain(mainFig)
 #    fname = filepath + '\\main_figure.png'
 #    plt.savefig(fname)
 #    print('All good')
-
-
-
-
 
 # genePool = Evolution.GenePool(config.genes, config.genomes)
