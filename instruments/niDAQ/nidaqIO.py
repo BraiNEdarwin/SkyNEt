@@ -15,7 +15,7 @@ def IO(y, Fs):
 
         #configure sample rate and set acquisition mode to finite
         output_task.timing.cfg_samp_clk_timing(Fs, sample_mode=nidaqmx.constants.AcquisitionType.FINITE, samps_per_chan = N)
-        input_task.timing.cfg_samp_clk_timing(Fs, sample_mode=nidaqmx.constants.AcquisitionType.FINITE, samps_per_chan = N)
+        input_task.timing.cfg_samp_clk_timing(Fs, sample_mode=nidaqmx.constants.AcquisitionType.FINITE, samps_per_chan = N+1)
 
         #output triggers on the read operation
         output_task.triggers.start_trigger.cfg_dig_edge_start_trig('/Dev1/ai/StartTrigger')
