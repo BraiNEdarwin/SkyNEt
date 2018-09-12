@@ -20,9 +20,9 @@ import os
 # config
 
 
-filepath = 'D:\data\Hans'
+filepath = 'D:\data\Hans\\'
 name = 'CP_FullSwipe'
-voltageGrid = [-900, -600, -300, 0, 300, 600, 900]
+voltageGrid = [-350, -225, -75, 75, 225, 350, 450]
 
 controls = 5 #amount of controls used to set voltages
 acqTime = 0.01 
@@ -48,6 +48,7 @@ data[:,:controlVoltages.shape[1]] = controlVoltages
 # initialize save directory
 saveDirectory = SaveLib.createSaveDirectory(filepath, name)
 
+
 # initialize instruments
 ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
 
@@ -63,6 +64,7 @@ for j in range(nr_blocks):
         IVVIrack.setControlVoltages(ivvi, controlVoltages[j * blockSize + i, :])
         time.sleep(0.01)  #tune this to avoid transients
         data[j * blockSize + i, -samples:] = nidaqIO.IO(np.zeros(samples+1), samples/acqTime)
+        if j == 0 and i<25: print('Data acquired: ',data[j * blockSize + i, -samples:])
     end_fullSweep = time.time()
     print('CV-sweep over one input state took '+str(end_fullSweep-start_fullSweep)+' sec.')
 # some save command to finish off...

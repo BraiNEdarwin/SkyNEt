@@ -10,7 +10,7 @@ rralpha = 1e-3
 skipstates = 0
 
 # Benchmarks settings
-benchmark = ['bl', 'OR']
+benchmark = ['bl', 'XNOR']
   #'wr' for waveform regression benchmark
 WavePeriods = 15
 WaveFrequency = 8.5
@@ -22,11 +22,11 @@ WaveFrequency2 = 18.5
 SampleFreq = 1000
 
 # Evolution settings
-genes = 3
-genomes = 25
-generations = 300
+genes = 6
+genomes = 5
+generations = 1
 
-generange = [[-1000,1000], [-1000, 1000], [-1000, 1000], [-1000, 1000], [0, 0], [0.5, 2]]
+generange = [[-771,-771], [342,342], [900,900], [-655,-655], [-48,-48], [0.9, 0.9]]
 # generange = [[-1000,1000], [-1000, 1000], [-1000, 1000], [-1000, 1000], [0.5, 2]]
 
 
@@ -45,5 +45,5 @@ n_points = 1000
 # output = t11/e1
 
 # Save settings
-filepath = 'D:\data\Ren\Evolution\As_implant\1141_77K'
-name = 'OR'
+filepath = r'D:\data\Hans\Evolution\NN_test'
+name = 'XNOR'

@@ -27,19 +27,19 @@ class config_class(object):
         ################################################
         ###### Config params for the experiments #######
         ################################################
-        # Benchmarks settings
-        self.benchmark = ['XNOR']
           #'wr' for waveform regression benchmark
         self.waveperiods = 15
         self.wavefrequency = 8.5
         # WavePeriods2 = 0
         self.wavefrequency2 = 18.5              
         # I/O settings
-        self.samplefreq = 1000
+
         self.skipstates = 0
         ################################################
         ############### Evolution settings #############
         ################################################
+        self.genes = 6 
+        self.genomes = 25 
         self.generations = 500
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [0.1, 2]]
         self.partition = [5, 5, 5, 5, 5]
@@ -132,8 +132,85 @@ class config_class(object):
         x[2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 1
         x[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 1
         x[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
+        x[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = np.linspace(0, 1, round(self.fs * self.edgelength))
         x[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 0
     
+        return t, x
+
+    def AND(self):
+        samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
+        x = np.empty(samples)
+        t = np.linspace(0, samples/self.fs, samples)
+
+        x[0:round(self.fs * self.signallength / 4)] = 0
+        x[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 0
+        x[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 0
+        x[2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 0
+        x[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 0
+        x[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = np.linspace(0, 1, round(self.fs * self.edgelength))
+        x[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
+
+        return t, x
+
+    def OR(self):
+        samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
+        x = np.empty(samples)
+        t = np.linspace(0, samples/self.fs, samples)
+
+        x[0:round(self.fs * self.signallength / 4)] = 0
+        x[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = np.linspace(0, 1, round(self.fs * self.edgelength))
+        x[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 1
+        x[2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 1
+        x[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 1
+        x[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
+        x[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
+
+        return t, x
+
+    def NAND(self):
+        samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
+        x = np.empty(samples)
+        t = np.linspace(0, samples/self.fs, samples)
+
+        x[0:round(self.fs * self.signallength / 4)] = 1
+        x[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 1
+        x[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 1
+        x[2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 1
+        x[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 1
+        x[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = np.linspace(1, 0, round(self.fs * self.edgelength))
+        x[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 0
+
+        return t, x
+
+    def NOR(self):
+        samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
+        x = np.empty(samples)
+        t = np.linspace(0, samples/self.fs, samples)
+
+        x[0:round(self.fs * self.signallength / 4)] = 1
+        x[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = np.linspace(1, 0, round(self.fs * self.edgelength))
+        x[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 0
+        x[2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 0
+        x[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 0
+        x[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 0
+        x[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 0
+
+        return t, x
+
+
+    def XNOR(self):
+        samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
+        x = np.empty(samples)
+        t = np.linspace(0, samples/self.fs, samples)
+
+        x[0:round(self.fs * self.signallength / 4)] = 1
+        x[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = np.linspace(1, 0, round(self.fs * self.edgelength))
+        x[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 0
+        x[2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 0
+        x[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 0
+        x[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 0
+        x[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
+
         return t, x
     
     #%%
