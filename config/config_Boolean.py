@@ -15,18 +15,24 @@ class experiment_config(config_class):
         super().__init__() #DO NOT REMOVE!
 
         #define experiment
-        self.amplification = 1 #makes up for the different IVVI amplifications, 1G = 1 and 1M = 1000
+        self.amplification = 1 #makes up for the different IVVI amplifications, 1G = 1 and 1M = 1000 such that the output is in nA
         self.TargetGen = self.NOR
+        self.partition = [2, 2, 2, 2, 2]
+        self.generations = 1
         ################################################
         ######### USER-SPECIFIC PARAMETERS #############
         ################################################
         
         ################# Save settings ################
-        self.filepath = r'some_path/to/save'
+        self.filepath = r'D:\data\BramdW\test'
         self.name = 'AND'
         
         ############## New Fitness function ############
 
+        ################################################
+        ################# OFF-LIMITS ###################
+        ################################################
+        self.genomes = sum(self.partition)  # Make sure genomes parameter is correct
     
     #####################################################    
     ############# USER-SPECIFIC METHODS #################
