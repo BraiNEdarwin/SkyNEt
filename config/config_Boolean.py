@@ -15,10 +15,10 @@ class experiment_config(config_class):
         super().__init__() #DO NOT REMOVE!
 
         #define experiment
-        self.amplification = 1 #makes up for the different IVVI amplifications, 1G = 1 and 1M = 1000 such that the output is in nA
+        self.amplification = 10 #makes up for the different IVVI amplifications, 1G = 1 and 1M = 1000 such that the output is in nA
         self.TargetGen = self.NOR
         self.partition = [2, 2, 2, 2, 2]
-        self.generations = 1
+        self.generations = 10
         ################################################
         ######### USER-SPECIFIC PARAMETERS #############
         ################################################

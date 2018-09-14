@@ -1,20 +1,30 @@
+from instruments.niDAQ import nidaqIO
+from instruments.ADwin import adwinIO
+import modules.Evolution as Evolution
+from instruments.DAC import IVVIrack
+import modules.PlotBuilder as PlotBuilder
+import time
+import matplotlib.pyplot as plt
 
-
-
+# temporary imports
 import numpy as np
-import itertools as iter
 
-a = [-1,0,1]
-b = iter.product(a, repeat=5)
-c = list(b)
+# define input
+t = 1
+Fs = 200000
+frequency = 1
+time_array = np.linspace(0, t, Fs*t)
+inp = np.sin(2*np.pi*frequency*time_array)
 
-generange = [[-0.57084235, -0.57084235], [0.32070898, 0.32070898], [-0.08166972, -0.08166972], [-1.83939985, -1.83939985], [-0.34799499, -0.34799499], [0.5, 0.5]]
+adw = adwinIO.initInstrument()
 
-for i in range(5):
-	generange[i][0] = c[5][i]
-	generange[i][1] = c[5][i]
+#x = nidaqIO.IO(inp, Fs)
+x = adwinIO.IO(adw, inp, Fs)
 
-print(generange)
+plt.plot(time_array, inp)
 
-# for n in range(len(b)-1)
-# 	generange = 
+
+plt.figure()
+
+plt.plot(time_array, x)
+plt.show()

@@ -10,7 +10,7 @@ import numpy as np
 DEVICENUMBER = 1
 RAISE_EXCEPTIONS = 1
 PROCESSORTYPE = '11'
-PROCESS = 'ADbasic_1Read_1Write.TB1'
+PROCESS = '\ADbasic_1Read_1Write.TB1'
 FifoSize = 40003
 
 
@@ -34,7 +34,7 @@ def IO(adw, x, Fs):
         else:
             adw.Boot('C:\\ADwin\\ADwin' + PROCESSORTYPE + '.btl')
         #proc = os.path.abspath(os.path.dirname(sys.argv[0])) + os.sep + 'intstruments' + os.sep + 'ADwin' + os.sep + PROCESS
-        adw.Load_Process('C:\\Users\\ursaminor\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_1Read_1Write.TB1')
+        adw.Load_Process(r'C:\Users\PNPNteam\Documents\GitHub\SkyNEt\instruments\ADwin' + PROCESS)
         adw.Set_Processdelay(1, int(300e6 / Fs))  # delay in clock cycles
 
         # fill the write FIFO
