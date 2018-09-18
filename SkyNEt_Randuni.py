@@ -20,7 +20,8 @@ measurepoints = fs*measurementtime
 voltagerange = np.array([900,-900])
 
 
-data = np.zeros([2020,int(measurepoints)])
+data = np.zeros([int(basepoints*2*switchpoints),int(measurepoints)])
+CVdata = np.zeros([int(basepoints*2*switchpoints),7])
 measurepoints = np.zeros(int(measurepoints))
 bpoints = (np.random.rand(basepoints*7)*2*voltagerange[0]+voltagerange[1])
 counter = 0
@@ -38,6 +39,7 @@ for i in range(basepoints):
 
     output = nidaqIO.IO(measurepoints, fs)
     data[counter] = output
+    CVdata[counter] = controlvoltagesbase
     
     counter = counter + 1
     for j in range(switchpoints):
@@ -50,6 +52,7 @@ for i in range(basepoints):
 
         output = nidaqIO.IO(measurepoints, fs)
         data[counter] = output
+        CVdata[counter] = controlvoltagesswitch
         counter = counter + 1
 
         IVVIrack.setControlVoltages(ivvi, controlvoltagesbase)
@@ -57,10 +60,13 @@ for i in range(basepoints):
 
         output = nidaqIO.IO(measurepoints, fs)
         data[counter] = output
+        CVdata[counter] = controlvoltagesbase
        
         counter = counter+1
         
-        np.savez(os.path.join(saveDirectory, 'nparrays'),data=data)
+        np.savez(os.path.join(saveDirectory, 'nparrays'),data=data, CVdata=CVdata)
 
 print(datetime.datetime.now())
-IVVIrack.setControlVoltages(ivvi, np.zeros([8]))
+IVVIrack.setControlVoltages(ivvi, np.zeros([16]))
+inp = np.zeros((2,20))
+nidaqIO.IO_2D(inp, 1000)
