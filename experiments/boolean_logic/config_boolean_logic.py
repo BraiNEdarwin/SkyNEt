@@ -1,5 +1,5 @@
 import numpy as np
-from config_class import config_class
+from config.config_class import config_class
 
 class experiment_config(config_class):
     '''This is a template for the configuration class that is experiment/user specific.
@@ -17,7 +17,7 @@ class experiment_config(config_class):
         self.amplification = 1 #makes up for the different IVVI amplifications, 1G = 1 and 1M = 1000 such that the output is in nA
         self.TargetGen = self.NOR
         self.partition = [2, 2, 2, 2, 2]
-        self.generations = 1
+        self.generations = 2
         ################################################
         ######### USER-SPECIFIC PARAMETERS #############
         ################################################
@@ -32,6 +32,7 @@ class experiment_config(config_class):
         ################# OFF-LIMITS ###################
         ################################################
         self.genomes = sum(self.partition)  # Make sure genomes parameter is correct
+        self.genes = len(self.generange)  # Make sure genes parameter is correct
 
     #####################################################
     ############# USER-SPECIFIC METHODS #################

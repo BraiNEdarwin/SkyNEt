@@ -1,6 +1,13 @@
 '''
 Experiment description goes here.
 '''
+# Temporary workaround to incorporate skynet path into system path
+import sys
+import os 
+current_dir = os.getcwd()
+current_dir = current_dir.split(os.sep)
+parent_dir = os.sep.join(current_dir[:-2])
+sys.path.append(parent_dir)
 
 # SkyNEt imports
 import modules.SaveLib as SaveLib
@@ -8,7 +15,7 @@ from instruments.niDAQ import nidaqIO
 import modules.Evolution as Evolution
 from instruments.DAC import IVVIrack
 import modules.PlotBuilder as PlotBuilder
-import [config]boolean_logic as config
+import config_boolean_logic as config
 
 # Other imports
 import time
@@ -21,7 +28,7 @@ config = config.experiment_config()
 
 # Initialize input and target
 t = config.InputGen()[0]  # Time array
-x = config.InputGen()[1:3]  # Array with P and Q signal
+x = np.asarray(config.InputGen()[1:3])  # Array with P and Q signal
 w = config.InputGen()[3]  # Weight array
 target = config.TargetGen()[1]  # Target signal
 
@@ -60,7 +67,7 @@ for i in range(config.generations):
         time.sleep(1)  # Wait after setting DACs
 
         # Set the input scaling
-        x_scaled = x * genePool.MapGenes(config.generange[-1], genePool.pool[j, -1]))
+        x_scaled = x * genePool.MapGenes(config.generange[-1], genePool.pool[j, -1])
 
         # Measure config.fitnessavg times the current configuration
         for avgIndex in range(config.fitnessavg):
