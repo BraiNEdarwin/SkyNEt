@@ -28,8 +28,8 @@ class experiment_config(config_class):
         ################################################
 
         ################# Save settings ################
-        self.filepath = r'D:\data\BramdW\test'
-        self.name = 'AND'
+        self.filepath = r'D:\Tao\test\\'
+        self.name = 'test'
 
         ############## New Fitness function ############
 

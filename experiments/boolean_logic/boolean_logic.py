@@ -94,6 +94,13 @@ for i in range(config.generations):
                                                fitnessTemp[j, avgIndex])
 
         outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
+        SaveLib.saveMain(saveDirectory,
+                     geneArray,
+                     outputArray,
+                     fitnessArray,
+                     t,
+                     x,
+                     config.amplification*target)
 
     genePool.fitness = fitnessTemp.min(1)  # Save fitness
 
@@ -118,13 +125,13 @@ for i in range(config.generations):
                                        w)
 
     # Save generation
-    SaveLib.saveMain(saveDirectory,
-                     geneArray,
-                     outputArray,
-                     fitnessArray,
-                     t,
-                     x,
-                     config.amplification*target)
+    # SaveLib.saveMain(saveDirectory,
+    #                  geneArray,
+    #                  outputArray,
+    #                  fitnessArray,
+    #                  t,
+    #                  x,
+    #                  config.amplification*target)
 
     # Evolve to the next generation
     genePool.NextGen()
@@ -133,14 +140,14 @@ PlotBuilder.finalMain(mainFig)
 #raise KeyboardInterrupt
 #
 #finally:
-#    inp = np.zeros((2,20))
-#
-#    controlVoltages = np.zeros(16)
-#
-#    IVVIrack.setControlVoltages(ivvi, controlVoltages)
-#
-#    # feed 0 to nidaq
-#    nidaqIO.IO_2D(inp, SampleFreq)
+inp = np.zeros((2,20))
+
+controlVoltages = np.zeros(16)
+
+IVVIrack.setControlVoltages(ivvi, controlVoltages)
+
+   # feed 0 to nidaq
+nidaqIO.IO_2D(inp, 1000)
 #
 #    fname = filepath + '\\main_figure.png'
 #    plt.savefig(fname)
