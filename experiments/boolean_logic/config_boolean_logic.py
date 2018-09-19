@@ -16,8 +16,13 @@ class experiment_config(config_class):
         #define experiment
         self.amplification = 1 #makes up for the different IVVI amplifications, 1G = 1 and 1M = 1000 such that the output is in nA
         self.TargetGen = self.NOR
-        self.partition = [2, 2, 2, 2, 2]
-        self.generations = 2
+        #self.partition = [2, 2, 2, 2, 2]
+        self.generations = 1
+        self.genomes = 100
+        self.lenpart = int(self.genomes/5)
+        self.partition = [self.lenpart, self.lenpart, self.lenpart, self.lenpart, self.lenpart]
+
+
         ################################################
         ######### USER-SPECIFIC PARAMETERS #############
         ################################################
