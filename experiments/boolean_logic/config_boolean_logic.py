@@ -14,11 +14,14 @@ class experiment_config(config_class):
         super().__init__() #DO NOT REMOVE!
 
         #define experiment
-        self.amplification = 1 #makes up for the different IVVI amplifications, 1G = 1 and 1M = 1000 such that the output is in nA
+        self.amplification = 10 #makes up for the different IVVI amplifications, 1G = 1 and 1M = 1000 such that the output is in nA
         self.TargetGen = self.NOR
         #self.partition = [2, 2, 2, 2, 2]
         self.generations = 1
-        self.genomes = 100
+        self.genomes = 10000
+        self.fs = 4000
+        self.signallength = 8
+        self.edgelength = 0.1
         self.lenpart = int(self.genomes/5)
         self.partition = [self.lenpart, self.lenpart, self.lenpart, self.lenpart, self.lenpart]
 
@@ -28,8 +31,8 @@ class experiment_config(config_class):
         ################################################
 
         ################# Save settings ################
-        self.filepath = r'D:\Tao\test\\'
-        self.name = 'test'
+        self.filepath = r'D:\Tao\TCSP2\\'
+        self.name = 'SP'
 
         ############## New Fitness function ############
 

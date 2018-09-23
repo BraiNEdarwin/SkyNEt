@@ -7,10 +7,10 @@ import time
 
 Sourcegain = 1
 Igain = 1			#use to make output in nA
-V_low = -2			#needs to be 0 or negative
-V_high = 2		#needs to be 0 or positive
-V_steps = 1000*(V_high-V_low) 	#change stepsize 
-Fs = 1000 						#change sample frequency
+V_low = -0.8			#needs to be 0 or negative
+V_high = 0.8		#needs to be 0 or positive
+V_steps = 10000*(V_high-V_low) 	#change stepsize 
+Fs = 10000 						#change sample frequency
 filepath = 'D:/data/Bram/IV'			
 name = 'IVtest.txt'
 instrument = 1  #choose between nidaq (1) and adwin (0)
