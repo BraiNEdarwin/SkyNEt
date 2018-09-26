@@ -9,20 +9,20 @@ import numpy as np
 
 class config_class(object):
     '''
-    This class has all default parameter values and methods used in the 'standard' measurments 
+    This class has all default parameter values and methods used in the 'standard' measurments
     and Genetic Alg (GA), e.g. standard fitness functions and the input and target generators
     for the Boolean logic experiments.
-    The class is used as a parent for the experiment_config() class that serves as a template for 
+    The class is used as a parent for the experiment_config() class that serves as a template for
     all experiment configurations.
     The constructor __init__() contains all parameters that will be used in the GA and measurement
-    script. Here, the fitness, target and inputs will be also defined. Their name should be 
-    self.Fitness, self.Target_gen and self.Input_gen respectively. Notice that methods are written 
-    with CamelCase to differentiate from parameters with smallletters. This convention should also be 
+    script. Here, the fitness, target and inputs will be also defined. Their name should be
+    self.Fitness, self.Target_gen and self.Input_gen respectively. Notice that methods are written
+    with CamelCase to differentiate from parameters with smallletters. This convention should also be
     carried to the user-specific experiment_config() classes.
     '''
     #TODO: clean unnecessary parameters
     #TODO: generalize code and clean up
-    
+
     def __init__(self):
         ################################################
         ###### Config params for the experiments #######
@@ -31,39 +31,38 @@ class config_class(object):
         self.waveperiods = 15
         self.wavefrequency = 8.5
         # WavePeriods2 = 0
-        self.wavefrequency2 = 18.5              
+        self.wavefrequency2 = 18.5
         # I/O settings
 
         self.skipstates = 0
         ################################################
         ############### Evolution settings #############
         ################################################
-        self.genes = 6 
-        self.genomes = 25 
         self.generations = 500
         self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600], [0.1, 0.5]]
-        self.partition = [5, 5, 5, 5, 5]
+        self.default_partition = [5, 5, 5, 5, 5]
+        self.partition = self.default_partition
         self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
         self.mutationrate = 0.1
         self.fitnessavg = 1  #amount of runs per genome
-        self.fitnessparameters = [1, 0, 1, 0.01]       
+        self.fitnessparameters = [1, 0, 1, 0.01]
         ################################################
         ################# Save settings ################
         ################################################
         self.filepath = 'TEST_Evolution/'
         self.name = 'XNOR'
-        
+
         ################################################
         ###################  Methods ###################
         ################################################
         self.Fitness = self.FitnessEvolution
         self.TargetGen = self.XOR
-        self.InputGen = self.BoolInput       
+        self.InputGen = self.BoolInput
         # parameters for methods
-        self.signallength = 0.5  #in seconds 
+        self.signallength = 0.5  #in seconds
         self.edgelength = 0.01  #in seconds
         self.fs = 1000
-        
+
     #%%
     ####################################################
     ############# FITNESS METHODS ######################
@@ -77,24 +76,24 @@ class config_class(object):
         where m,c,r follow from fitting x = m*target + c to minimize r
         and Q is the fitness quality as defined by Celestine in his thesis
         appendix 9'''
-    
-    
+
+
         #extract fit data with weights W
         indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)
-    
+
         x_weighed = np.empty(len(indices))
         target_weighed = np.empty(len(indices))
         for i in range(len(indices)):
         	x_weighed[i] = x[indices[i]]
         	target_weighed[i] = target[indices[i]]
-    
-    
+
+
     	#fit x = m * target + c to minimize res
         A = np.vstack([target_weighed, np.ones(len(indices))]).T  #write x = m*target + c as x = A*(m, c)
-        m, c = np.linalg.lstsq(A, x_weighed)[0]	
+        m, c = np.linalg.lstsq(A, x_weighed)[0]
         res = np.linalg.lstsq(A, x_weighed)[1]
         res = res[0]
-    
+
         #determine fitness quality
         indices1 = np.argwhere(target_weighed)  #all indices where target is nonzero
         x0 = np.empty(0)  #list of values where x should be 0
@@ -108,7 +107,7 @@ class config_class(object):
             Q = 0
         else:
             Q = (min(x1) - max(x0)) / (max(x1) - min(x0) + abs(min(x0)))
-    
+
         F = self.fitnessparameters[0] * m / (res**(.5) + self.fitnessparameters[3] * abs(c)) + self.fitnessparameters[1] / res + self.fitnessparameters[2] * Q
         clipcounter = 0
         for i in range(len(x_weighed)):
@@ -116,7 +115,7 @@ class config_class(object):
                 clipcounter = clipcounter + 1
                 F = -100
         return F
-    
+
     #%%
     ####################################################
     ############# OUTPUT METHODS #######################
@@ -125,7 +124,7 @@ class config_class(object):
         samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
         x = np.empty(samples)
         t = np.linspace(0, samples/self.fs, samples)
-    
+
         x[0:round(self.fs * self.signallength / 4)] = 0
         x[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = np.linspace(1, 0, round(self.fs * self.edgelength))
         x[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 1
@@ -134,7 +133,7 @@ class config_class(object):
         x[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
         x[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = np.linspace(0, 1, round(self.fs * self.edgelength))
         x[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 0
-    
+
         return t, x
 
     def AND(self):
@@ -212,7 +211,7 @@ class config_class(object):
         x[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
 
         return t, x
-    
+
     #%%
     ####################################################
     ############# INPUT METHODS ########################
@@ -223,7 +222,7 @@ class config_class(object):
         y = np.empty(samples)
         W = np.empty(samples)
         t = np.linspace(0, samples/self.fs, samples)
-    
+
         x[0:round(self.fs * self.signallength / 4)] = 0
         x[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = np.linspace(0, 1, round(self.fs * self.edgelength))
         x[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 1
@@ -231,7 +230,7 @@ class config_class(object):
         x[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 0
         x[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = np.linspace(0, 1, round(self.fs * self.edgelength))
         x[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
-    
+
         y[0:round(self.fs * self.signallength / 4)] = 0
         y[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 0
         y[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) : 2 * round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 0
@@ -239,7 +238,7 @@ class config_class(object):
         y[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 1
         y[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
         y[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
-    
+
         #define weight signal
         W[0:round(self.fs * self.signallength / 4)] = 1
         W[round(self.fs * self.signallength / 4) : round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength)] = 0
@@ -248,7 +247,7 @@ class config_class(object):
         W[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength)] = 1
         W[3 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) : 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 0
         W[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) : 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)] = 1
-    
+
         W[round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength): round(self.fs * self.signallength / 4) + round(self.fs * self.edgelength) + 40] = 0
         W[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength): 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) + 40] = 0
         W[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength): 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) + 40] = 0
