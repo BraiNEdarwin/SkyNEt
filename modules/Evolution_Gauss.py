@@ -21,7 +21,7 @@ class GenePool(object):
         indices = np.argsort(self.fitness)
         indices = indices[::-1]
         fifth = int(self.genomes / 5)
-        newPool = self.pool
+        newPool = self.pool.copy()
         # promote fittest fifth of the pool
         for i in range(fifth):
             newPool[:, i] = self.pool[:, indices[i]]
@@ -84,7 +84,7 @@ class GenePool(object):
                 newPool[j, i + 4 * fifth] = np.random.rand()
 
         # replace pool
-        self.pool = newPool   
+        self.pool = newPool.copy()   
         
         #empty fitness
         self.fitness = np.empty(self.genomes) 

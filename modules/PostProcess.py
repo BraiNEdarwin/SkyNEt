@@ -118,8 +118,8 @@ def fitnessREvolution(x, target, W, par):
 
     F = par[0] * m / (res**(.5) + par[3] * abs(c)) + par[1] / res + par[2] * Q
     ## REgularize 
-#    print('Factor m = ',m)
-    F = F - 0.001*(m-1)**2
+#    print('Offset c = ',c)
+    F = F - 0.1*m**2
     clipcounter = 0
     for i in range(len(x_weighed)):
         if(abs(x_weighed[i]) > 3.1*10):

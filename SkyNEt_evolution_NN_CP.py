@@ -20,10 +20,10 @@ import modules.PostProcess as PostProcess
 import modules.SaveLib as SaveLib
 from Nets.predNNet import predNNet
 
-np.random.seed(333)
+#np.random.seed(333)
 ########################### LOAD NN & DATA ########################################
-
-data_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/180130-S1-13-77K-full-search-withoutInM/'
+main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/'
+data_dir = main_dir+'2018_08_07_164652_CP_FullSwipe/'
 syst = 'cuda' # 'cpu' #
 if syst is 'cuda':
     print('Train with CUDA')
@@ -34,7 +34,7 @@ else:
     dtype = torch.FloatTensor
     itype = torch.LongTensor
 
-net = predNNet(data_dir+'1000eps_lr2e-4_mb512_noBN.pt')
+net = predNNet( data_dir + 'lr2e-4_eps400_mb512_20180807CP.pt' )
 
 # Import config file
 from config_NN_CP import *
@@ -54,7 +54,7 @@ genePool = Evolution.GenePool(genes, genomes)
 #[t, target] = GenerateInput.targetOutput(
 #    benchmark, SampleFreq, WavePeriods, WaveFrequency)
 
-inputs, target, W, t = GenerateInput.ControlProblem()
+inputs, target, W, t = GenerateInput.ControlProblem_2Iv()
 
 # np arrays to save genePools, outputs and fitness
 geneArray = np.empty((generations, genes, genomes))
@@ -68,7 +68,7 @@ outputTemp = np.empty((len(target) - skipstates, genomes))
 controlVoltages = np.empty(genes)
 
 # initialize save directory
-saveDirectory = SaveLib.createSaveDirectory(filepath, name)
+#saveDirectory = SaveLib.createSaveDirectory(filepath, name)
 
 # initialize main figure
 mainFig = PlotBuilder.initMainFigEvolution(genes, generations, genelabels, generange)
@@ -85,13 +85,13 @@ for i in range(generations):
 
         #set the input scaling
         x_scaled = inputs
-        x_scaled[:,1:] = inputs[:,1:] * 0.5#Evolution.mapGenes(generange[-1], genePool.pool[genes-1, j])
+#        x_scaled[:,1:] = inputs[:,1:]#Evolution.mapGenes(generange[-1], genePool.pool[genes-1, j])
 
         for avgIndex in range(fitnessAvg):
 
             # feed input to NN
             g = np.ones_like(target)*genePool.pool[:, j][:,np.newaxis].T
-            x_dummy = np.concatenate((g,x_scaled),axis=1) # First genes then input; dims of input TxD
+            x_dummy = np.concatenate((x_scaled,g),axis=1) # First genes then input; dims of input TxD
             x_dummy = torch.from_numpy(x_dummy).type(dtype)
             output = net.model(Variable(x_dummy))[:,0]
             output = output.data.cpu().numpy()
@@ -100,10 +100,11 @@ for i in range(generations):
 #            PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[:, j])
             
             # Train output
-            trained_output[:, avgIndex] =10 * np.asarray(output)  # empty for now, as we have only one output node
+            trained_output[:, avgIndex] = np.asarray(output) + np.random.normal(scale=0.003,size=output.shape) 
 
             # Calculate fitness
             if Ftype is 'SF':
+#                print('Std Fitness')
                 fitnessTemp[j, avgIndex]= PostProcess.fitnessEvolution(
                         trained_output[:, avgIndex], target[skipstates:], W[:,0], fitnessParameters)
             else:
@@ -182,7 +183,7 @@ plt.title('')
 X = geneArray[:,0,:].reshape((generations*genomes,1))
 Y = geneArray[:,1,:].reshape((generations*genomes,1))
 Z = geneArray[:,2,:].reshape((generations*genomes,1))
-s = flat_fitness - np.min(flat_fitness) #np.abs(np.log(-flat_fitness))
+s = neglog_fitness#np.log(-flat_fitness)#flat_fitness - np.min(flat_fitness) #np.abs(np.log(-flat_fitness))
 #sc = ax.scatter(X,Y,Z,s=1+s/10,c=s)#10/(1+s),c=s)
 sc = ax.scatter(X[mask],Y[mask],Z[mask],s=1+s[mask]/10,c=s[mask])#10/(1+s),c=s)
 plt.colorbar(sc)
@@ -193,20 +194,40 @@ plt.title('Fitness for all explored genomes')
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-sc = ax.scatter(X[mask],Y[mask],neglog_fitness[mask],s=s[mask]/10,c=s[mask])#10/(1+s),c=s)
+plt.title('')
+X = geneArray[:,2,:].reshape((generations*genomes,1))
+Y = geneArray[:,3,:].reshape((generations*genomes,1))
+Z = geneArray[:,4,:].reshape((generations*genomes,1))
+s = flat_fitness#flat_fitness - np.min(flat_fitness) #np.abs(np.log(-flat_fitness))
+#sc = ax.scatter(X,Y,Z,s=1+s/10,c=s)#10/(1+s),c=s)
+sc = ax.scatter(X[mask],Y[mask],Z[mask],s=1+s[mask]/10,c=s[mask])#10/(1+s),c=s)
 plt.colorbar(sc)
-ax.set_xlabel('CV 1')
-ax.set_ylabel('CV 2')
-ax.set_zlabel('neg. log-Fitness')
-plt.title('Fitnes for gene 1 and 2')
+ax.set_xlabel('CV 3')
+ax.set_ylabel('CV 4')
+ax.set_zlabel('CV 5')
+plt.title('Fitness for all explored genomes')
+
+
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-sc = ax.scatter(Y[mask],Z[mask],neglog_fitness[mask],s=s[mask]/10,c=s[mask])#10/(1+s),c=s)
+sc = ax.scatter(X[mask],Y[mask],neglog_fitness[mask],s=1+s[mask]/10,c=s[mask])#10/(1+s),c=s)
+plt.colorbar(sc)
+ax.set_xlabel('CV 1')
+ax.set_ylabel('CV 2')
+ax.set_zlabel('Fitness')
+plt.title('Fitness for gene 1 and 2')
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+sc = ax.scatter(Y[mask],Z[mask],neglog_fitness[mask],s=1+s[mask]/10,c=s[mask])#10/(1+s),c=s)
 plt.colorbar(sc)
 ax.set_xlabel('CV 2')
 ax.set_ylabel('CV 3')
-ax.set_zlabel('neg. log-Fitness')
-plt.title('Fitnes for gene 2 and 3')
+ax.set_zlabel('Fitness')
+plt.title('Fitness for gene 2 and 3')
+
+plt.figure()
+plt.scatter(target,outputArray[-1,:,0])
 
 PlotBuilder.finalMain(mainFig)
