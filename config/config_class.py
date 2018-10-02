@@ -40,11 +40,11 @@ class config_class(object):
         ################################################
         ############### Evolution settings #############
         ################################################
-        self.genes = 5
-        self.genomes = 25
         self.generations = 500
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [0.1, 2]]
+        self.partition = [5, 5, 5, 5, 5]
         self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
+        self.mutationrate = 0.1
         self.fitnessavg = 1  #amount of runs per genome
         self.fitnessparameters = [1, 0, 1, 0.01]       
         ################################################
