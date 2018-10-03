@@ -5,12 +5,39 @@ This repository houses a collection of functions and scripts used by the Darwin 
 ## Installation
 
 To begin with, install [Anaconda](https://www.anaconda.com/download) (python3 version). For maintaining the code we use GitHub, so please make a GitHub account. To use GitHub on your computer you can use git in the command line, or if this does not ring a bell, we recommend using [GitHub Desktop](https://desktop.github.com/).
-The code in this repo relies on a couple of packages and uses some drivers from [QCoDeS](https://github.com/QCoDeS/Qcodes). We use their *qcodes* Anaconda environment to run our scripts. To install this environment on a new PC, clone this repo and browse to it in an Anaconda prompt. Then run the following command to install the qcodes environment:
+To run the code in this repo, we make use of an Anaconda environment called *skynet* (based on the [QCoDeS](https://github.com/QCoDeS/Qcodes) environment). To install this environment on a new PC, clone this repo and browse to it in an Anaconda prompt (or just a normal command prompt). Then run the following command to install the skynet environment:
 
 ```
 conda env create -f environment.yml
 ```
-You now have everything set up to run measurements from this repository. See the **Practical use** section below on how to get started.
+
+Now all that is left to do, is add the SkyNEt repository to the skynet environment, such that all script will be able to import it. To do this, go to your Anaconda prompt and activate the skynet environment by running:
+
+```
+conda activate skynet
+```
+
+Now open up an iPython console
+
+```
+ipython
+```
+
+And inside the console run the following commands:
+
+```
+import sys
+sys.path
+```
+
+You will now see all directories where python will look for modules if you try to import one. There should be a path that looks something like this:
+
+```
+~/anaconda3/envs/skynet/lib/python3.6
+```
+
+This is the directory where you should place this repo. Also make sure that you set up git to recognize this location.
+Now you are done with the installation process and ready to get to work!
 
 ## Repository structure
 
