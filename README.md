@@ -5,7 +5,7 @@ This repository houses a collection of functions and scripts used by the Darwin 
 ## Installation
 
 To begin with, install [Anaconda](https://www.anaconda.com/download) (python3 version). For maintaining the code we use GitHub, so please make a GitHub account. To use GitHub on your computer you can use git in the command line, or if this does not ring a bell, we recommend using [GitHub Desktop](https://desktop.github.com/).
-To run the code in this repo, we make use of an Anaconda environment called *skynet* (based on the [QCoDeS](https://github.com/QCoDeS/Qcodes) environment). To install this environment on a new PC, clone this repo and browse to it in an Anaconda prompt (or just a normal command prompt). Then run the following command to install the skynet environment:
+To run the code in this repo, we make use of an Anaconda environment called *skynet* (based on the [QCoDeS](https://github.com/QCoDeS/Qcodes) environment). To install this environment on a new PC, download the file environment.yml from this repo. Open an Anaconda prompt (or just a normal command prompt) and browse to the directory where you saved environment.yml. Then run the following command to install the skynet environment:
 
 ```
 conda env create -f environment.yml
@@ -36,7 +36,7 @@ You will now see all directories where python will look for modules if you try t
 ~/anaconda3/envs/skynet/lib/python3.6
 ```
 
-This is the directory where you should place this repo. Also make sure that you set up git to recognize this location.
+This is the directory where you should place this repo. So download/clone this full reporitory and place it in the directory you found above. Make sure that you set up git to recognize this location and feel free to ask any of the code maintainers (listed at the bottom of this document) for help.
 Now you are done with the installation process and ready to get to work!
 
 ## Repository structure
