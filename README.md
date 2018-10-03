@@ -37,6 +37,13 @@ You will now see all directories where python will look for modules if you try t
 ```
 
 This is the directory where you should place this repo. So download/clone this full reporitory and place it in the directory you found above. Make sure that you set up git to recognize this location and feel free to ask any of the code maintainers (listed at the bottom of this document) for help.
+
+To finish off the installation process, there is one package left to install. Activate the skynet environment again and run the following command:
+
+```
+pip install nidaqmx
+```
+
 Now you are done with the installation process and ready to get to work!
 
 ## Repository structure
