@@ -51,13 +51,22 @@ As mentioned above, make sure that there is a *personal* branch for you to run c
 
 * Open an Anaconda prompt and activate the qcodes environment.
 * Browse to the directory containing the measurement script you wish to run.
-* Make sure that you are checked out to your personal branch in git. This can be done using the following commands?
-* Configure the configuration class definition to your liking.
+* Make sure that you are checked out to your personal branch in git!
+* Configure the configuration class definition file to your liking.
 * Run the measurement script by running the following command:
 
-## Configuration class definitions
+```
+python <your_script>.py
+```
 
-Some explanation of the basic structure of the configuration class and how to change it.
+## Writing your own experiment scripts
+
+Probably at some point you wish to write your own measurement scripts. There are a few instructions that you should follow in order to keep things coherent with the rest of the repository:
+
+* Follow the file structure conventions (i.e. see https://github.com/BraiNEdarwin/SkyNEt/wiki/File-structure)
+* The boolean_logic experiment serves as a template file. Please have a look at both boolean_logic.py and config_boolean_logic.py to see how we would like files to be structured. 
+
+And please make sure you only work on your own branch, but feel free to suggest any experiments you think should go into the dev branch!
 
 ## Code contribution
 
