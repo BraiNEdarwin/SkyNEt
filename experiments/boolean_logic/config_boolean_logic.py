@@ -8,13 +8,18 @@ class experiment_config(config_class):
     methods that you might need after, e.g. a new fitness function or input and output generators.
     Remember if you define a new fitness function or generator, you have to redefine the self.Fitness,
     self.Target_gen and self.Input_gen in __init__()
+    
+    #TODO: List of possible parameters and methods
+    amplification;
+    partition; 
+    genomes;
     '''
 
     def __init__(self):
         super().__init__() #DO NOT REMOVE!
-
+        
         # Define experiment
-        self.amplification = 1 #makes up for the different IVVI amplifications, 1G = 1 and 1M = 1000 such that the output is in nA
+        self.amplification = 1 
         self.TargetGen = self.NOR
         self.generations = 1
         self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600], [0.1, 0.5]]
@@ -22,6 +27,9 @@ class experiment_config(config_class):
         # Specify either partition or genomes
         #self.partition = [5, 5, 5, 5, 5]
         #self.genomes = 100
+        
+        # Documentation
+        self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
 
         ################################################
         ######### USER-SPECIFIC PARAMETERS #############

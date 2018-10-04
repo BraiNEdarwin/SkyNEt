@@ -1,13 +1,6 @@
 '''
 Experiment description goes here.
 '''
-# Temporary workaround to incorporate skynet path into system path
-import sys
-import os 
-current_dir = os.getcwd()
-current_dir = current_dir.split(os.sep)
-parent_dir = os.sep.join(current_dir[:-2])
-sys.path.append(parent_dir)
 
 # SkyNEt imports
 import modules.SaveLib as SaveLib
