@@ -19,45 +19,35 @@ class config_class(object):
     self.Fitness, self.Target_gen and self.Input_gen respectively. Notice that methods are written
     with CamelCase to differentiate from parameters with smallletters. This convention should also be
     carried to the user-specific experiment_config() classes.
+    
+    #TODO: list of default parameters
     '''
-    #TODO: clean unnecessary parameters
-    #TODO: generalize code and clean up
 
     def __init__(self):
         ################################################
         ###### Config params for the experiments #######
         ################################################
-          #'wr' for waveform regression benchmark
-        self.waveperiods = 15
-        self.wavefrequency = 8.5
-        # WavePeriods2 = 0
-        self.wavefrequency2 = 18.5
-        # I/O settings
 
-        self.skipstates = 0
+        
         ################################################
         ############### Evolution settings #############
         ################################################
         self.generations = 500
         self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600], [0.1, 0.5]]
         self.default_partition = [5, 5, 5, 5, 5]
-        self.partition = self.default_partition
-        self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
+        self.partition = self.default_partition.copy()
+        self.genomes = 25
+        self.genes = 6
         self.mutationrate = 0.1
         self.fitnessavg = 1  #amount of runs per genome
         self.fitnessparameters = [1, 0, 1, 0.01]
-        ################################################
-        ################# Save settings ################
-        ################################################
-        self.filepath = 'TEST_Evolution/'
-        self.name = 'XNOR'
 
         ################################################
         ###################  Methods ###################
         ################################################
         self.Fitness = self.FitnessEvolution
-        self.TargetGen = self.XOR
         self.InputGen = self.BoolInput
+        
         # parameters for methods
         self.signallength = 0.5  #in seconds
         self.edgelength = 0.01  #in seconds
