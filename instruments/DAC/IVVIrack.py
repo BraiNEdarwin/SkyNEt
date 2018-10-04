@@ -2,7 +2,7 @@
 This holds some functions to perform basic operations on the DACs of the IVVI rack
 '''
 
-from qcodes.instrument_drivers.QuTech.IVVI import IVVI
+from SkyNEt.qcodes.instrument_drivers.QuTech.IVVI import IVVI
 import numpy as np
 
 
@@ -18,6 +18,6 @@ def setControlVoltages(ivvi, controlVoltages):
 		exec(command)
 
 def setControlVoltage(ivvi, controlVoltage, dacNo):
-	
+
 	command = 'ivvi.dac{}({})'.format(dacNo + 1,controlVoltage)
 	exec(command)
