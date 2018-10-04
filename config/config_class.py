@@ -9,26 +9,66 @@ import numpy as np
 
 class config_class(object):
     '''
-    This class has all default parameter values and methods used in the 'standard' measurments
+    This class has all default parameter values and methods used in the 'standard' measurements
     and Genetic Alg (GA), e.g. standard fitness functions and the input and target generators
     for the Boolean logic experiments.
     The class is used as a parent for the experiment_config() class that serves as a template for
     all experiment configurations.
     The constructor __init__() contains all parameters that will be used in the GA and measurement
     script. Here, the fitness, target and inputs will be also defined. Their name should be
-    self.Fitness, self.Target_gen and self.Input_gen respectively. Notice that methods are written
+    self.Fitness, self.TargetGen and self.InputGen respectively. Notice that methods are written
     with CamelCase to differentiate from parameters with smallletters. This convention should also be
     carried to the user-specific experiment_config() classes.
-    
-    #TODO: list of default parameters
+
+    ----------------------------------------------------------------------------
+    Description of general parameters
+    ----------------------------------------------------------------------------
+    generations; the amount of generations for the GA
+
+    generange; the range that each gene ([0, 1]) is mapped to. E.g. in the Boolean
+        experiment the genes for the control voltages are mapped to the desired
+        control voltage range.
+
+    default_partition; the default setting for partition (see next)
+
+    partition; this tells the GA how it will evolve the next generation.
+        In order, this will make the GA evolve the specified number with
+        - promoting fittest partition[0] genomes unchanged
+        - adding Gaussian noise to the fittest partition[1] genomes
+        - crossover between fittest partition[2] genomes
+        - crossover between fittest partition[3] and randomly selected genes
+        - randomly adding parition[4] genomes
+
+    genomes; the amount of genomes in the genepool
+
+    genes; the amount of genes per genome
+
+    mutationrate; the probability of mutation for each gene (between 0 and 1)
+
+    fitnessavg; the amount of times the same genome is tested to obtain the fitness
+        value.
+
+    fitnessparameters; the parameters for FitnessEvolution (see its doc for
+        specifics)
+
+    ----------------------------------------------------------------------------
+    Description of method parameters
+    ----------------------------------------------------------------------------
+    signallength; the length in s of the Boolean P and Q signals
+    edgelength; the length in s of the edge between 0 and 1 in P and Q
+    fs; sample frequency for niDAQ or ADwin
+
+    ----------------------------------------------------------------------------
+    For a description of method, refer to their individual docstrings.
+
     '''
 
     def __init__(self):
         ################################################
         ###### Config params for the experiments #######
         ################################################
+        self.fs = 1000
 
-        
         ################################################
         ############### Evolution settings #############
         ################################################
@@ -39,7 +79,7 @@ class config_class(object):
         self.genomes = 25
         self.genes = 6
         self.mutationrate = 0.1
-        self.fitnessavg = 1  #amount of runs per genome
+        self.fitnessavg = 1
         self.fitnessparameters = [1, 0, 1, 0.01]
 
         ################################################
@@ -47,26 +87,32 @@ class config_class(object):
         ################################################
         self.Fitness = self.FitnessEvolution
         self.InputGen = self.BoolInput
-        
+
         # parameters for methods
         self.signallength = 0.5  #in seconds
         self.edgelength = 0.01  #in seconds
-        self.fs = 1000
+
 
     #%%
     ####################################################
     ############# FITNESS METHODS ######################
     ####################################################
     def FitnessNMSE(self, x, target):
+        '''
+        This function returns the normalized mean squared error of x w.r.t. target.
+        '''
         return 1 / ((np.linalg.norm(x - target, 2)) ** 2 * (1 / len(x)))
 
     def FitnessEvolution(self, x, target, W):
-        '''This implements the fitness function
+        '''
+        This implements the fitness function
         F = self.fitnessparameters[0] * m / (sqrt(r) + self.fitnessparameters[3] * abs(c)) + self.fitnessparameters[1] / r + self.fitnessparameters[2] * Q
         where m,c,r follow from fitting x = m*target + c to minimize r
         and Q is the fitness quality as defined by Celestine in his thesis
-        appendix 9'''
-
+        appendix 9
+        W is a weight array consisting of 0s and 1s with equal length to x and
+        target. Points where W = 0 are not included in fitting.
+        '''
 
         #extract fit data with weights W
         indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)
@@ -111,6 +157,7 @@ class config_class(object):
     ############# OUTPUT METHODS #######################
     ####################################################
     def XOR(self):
+        '''Returns an XOR signal with time array t'''
         samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
         x = np.empty(samples)
         t = np.linspace(0, samples/self.fs, samples)
@@ -127,6 +174,7 @@ class config_class(object):
         return t, x
 
     def AND(self):
+        '''Returns an AND signal with time array t'''
         samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
         x = np.empty(samples)
         t = np.linspace(0, samples/self.fs, samples)
@@ -142,6 +190,7 @@ class config_class(object):
         return t, x
 
     def OR(self):
+        '''Returns an OR signal with time array t'''
         samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
         x = np.empty(samples)
         t = np.linspace(0, samples/self.fs, samples)
@@ -157,6 +206,7 @@ class config_class(object):
         return t, x
 
     def NAND(self):
+        '''Returns a NAND signal with time array t'''
         samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
         x = np.empty(samples)
         t = np.linspace(0, samples/self.fs, samples)
@@ -172,6 +222,7 @@ class config_class(object):
         return t, x
 
     def NOR(self):
+        '''Returns a NOR signal with time array t'''
         samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
         x = np.empty(samples)
         t = np.linspace(0, samples/self.fs, samples)
@@ -188,6 +239,7 @@ class config_class(object):
 
 
     def XNOR(self):
+        '''Returns an XNOR signal with time array t'''
         samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
         x = np.empty(samples)
         t = np.linspace(0, samples/self.fs, samples)
@@ -207,6 +259,8 @@ class config_class(object):
     ############# INPUT METHODS ########################
     ####################################################
     def BoolInput(self):
+        '''Return input signals for Boolean logic (x and y), with a weight array
+        W for filtering out the edges. Also returns a time array t.'''
         samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
         x = np.empty(samples)
         y = np.empty(samples)
