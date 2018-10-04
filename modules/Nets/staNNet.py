@@ -209,6 +209,7 @@ class staNNet(object):
             raise NameError('Input and Output Batch Sizes do not match!')
     
     def save_model(self,path):
+        self.model.eval()
         state_dic = self.model.state_dict()
         state_dic['activation'] = self.activ
         state_dic['loss'] = self.loss_str
