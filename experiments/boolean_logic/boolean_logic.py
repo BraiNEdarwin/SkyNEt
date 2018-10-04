@@ -34,7 +34,7 @@ target = config.TargetGen()[1]  # Target signal
 
 # np arrays to save genePools, outputs and fitness
 geneArray = np.zeros((config.generations, config.genomes, config.genes))
-#outputArray = np.zeros((config.generations, config.genomes, len(x[0])))
+outputArray = np.zeros((config.generations, config.genomes, len(x[0])))
 fitnessArray = np.zeros((config.generations, config.genomes))
 
 # Temporary arrays, overwritten each generation
@@ -69,6 +69,9 @@ for i in range(config.generations):
         # Set the input scaling
         x_scaled = x * 0.5#genePool.MapGenes(config.generange[-1], genePool.pool[j, -1])
 
+        ######### to be removed, noised added
+        x_scaled[0,:] = x_scaled[0]+np.random.normal(0, 1, size=len(x_scaled[0,:]))*config.namp*j/config.genomes
+
         # Measure config.fitnessavg times the current configuration
         for avgIndex in range(config.fitnessavg):
             # Feed input to niDAQ
@@ -94,14 +97,14 @@ for i in range(config.generations):
                                                fitnessTemp[j, avgIndex])
 
         # outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
-        saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.name+'_genome_'+str(j))
-        SaveLib.saveMain(saveDirectory,
-                     geneArray,
-                     config.amplification * np.asarray(output),
-                     fitnessArray,
-                     t,
-                     x,
-                     config.amplification*target)
+        # saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.name+'_genome_'+str(j))
+        # SaveLib.saveMain(saveDirectory,
+        #              geneArray,
+        #              config.amplification * np.asarray(output),
+        #              fitnessArray,
+        #              t,
+        #              x,
+        #              config.amplification*target)
 
     genePool.fitness = fitnessTemp.min(1)  # Save fitness
 
@@ -115,24 +118,24 @@ for i in range(config.generations):
     fitnessArray[i, :] = genePool.fitness
 
     # Update main figure
-    # PlotBuilder.updateMainFigEvolution(mainFig,
-    #                                    geneArray,
-    #                                    fitnessArray,
-    #                                    outputArray,
-    #                                    i + 1,
-    #                                    t,
-    #                                    config.amplification*target,
-    #                                    output,
-    #                                    w)
+    PlotBuilder.updateMainFigEvolution(mainFig,
+                                       geneArray,
+                                       fitnessArray,
+                                       outputArray,
+                                       i + 1,
+                                       t,
+                                       config.amplification*target,
+                                       output,
+                                       w)
 
-    # Save generation
-    # SaveLib.saveMain(saveDirectory,
-    #                  geneArray,
-    #                  outputArray,
-    #                  fitnessArray,
-    #                  t,
-    #                  x,
-    #                  config.amplification*target)
+    #Save generation
+    SaveLib.saveMain(saveDirectory,
+                     geneArray,
+                     outputArray,
+                     fitnessArray,
+                     t,
+                     x,
+                     config.amplification*target)
 
     # Evolve to the next generation
     genePool.NextGen()
@@ -150,8 +153,8 @@ IVVIrack.setControlVoltages(ivvi, controlVoltages)
    # feed 0 to nidaq
 nidaqIO.IO_2D(inp, 1000)
 #
-#    fname = filepath + '\\main_figure.png'
-#    plt.savefig(fname)
-#    print('All good')
+fname = filepath + '\\main_figure.png'
+plt.savefig(fname)
+print('All good')
 
-# genePool = Evolution.GenePool(config.genes, config.genomes)
+genePool = Evolution.GenePool(config.genes, config.genomes)

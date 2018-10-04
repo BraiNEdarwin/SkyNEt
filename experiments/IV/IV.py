@@ -11,7 +11,7 @@ V_low = -0.8			#needs to be 0 or negative
 V_high = 0.8		#needs to be 0 or positive
 V_steps = 10000*(V_high-V_low) 	#change stepsize 
 Fs = 10000 						#change sample frequency
-filepath = 'D:/data/Bram/IV'			
+filepath = r'D:\Tao\TCSPnoise\\'			
 name = 'IVtest.txt'
 instrument = 1  #choose between nidaq (1) and adwin (0)
 

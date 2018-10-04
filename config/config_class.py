@@ -52,6 +52,7 @@ class config_class(object):
         ################################################
         self.filepath = 'TEST_Evolution/'
         self.name = 'XNOR'
+        self.namp = 0.2
         
         ################################################
         ###################  Methods ###################

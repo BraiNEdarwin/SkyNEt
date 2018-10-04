@@ -18,12 +18,15 @@ class experiment_config(config_class):
         self.TargetGen = self.NOR
         #self.partition = [2, 2, 2, 2, 2]
         self.generations = 1
-        self.genomes = 10000
+        self.genomes = 100
         self.fs = 4000
         self.signallength = 8
         self.edgelength = 0.1
         self.lenpart = int(self.genomes/5)
         self.partition = [self.lenpart, self.lenpart, self.lenpart, self.lenpart, self.lenpart]
+        #self.generange = [[-900,900], [-1200, 1200], [-1200, 1200], [-1200, 1200], [-900, 900]]
+        self.generange = [[392,392], [784, 784], [614, 614], [569, 569], [238, 238]] #best nand
+        self.namp = 0.2
 
 
         ################################################
@@ -31,8 +34,8 @@ class experiment_config(config_class):
         ################################################
 
         ################# Save settings ################
-        self.filepath = r'D:\Tao\TCSP2\\'
-        self.name = 'SP'
+        self.filepath = r'D:\Tao\TCSP2NANDnoise\\'
+        self.name = 'NANDnoise'
 
         ############## New Fitness function ############
 
