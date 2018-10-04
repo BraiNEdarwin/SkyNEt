@@ -150,9 +150,9 @@ def GetData(dir_file, syst = 'cuda'):
     return inputs, targets
 
 #%%
-def PrepData(main_dir, list_dirs, threshold = 1000,nr_electrodes=8):
+def PrepData(main_dir, list_dirs, threshold = 1000, scale_volts=1000, nr_electrodes=8):
     '''Preprocess data to feed NN. It gets as arguments a string with path to main directory and
-    a list of strings indicating directories with nparrays.npz containing 'data'. A kwarg threshold is given to crop data.
+    a list of strings indicating directories with training_NN_data.npz containing 'data'. A kwarg threshold is given to crop data.
     The data arrays are merged into a single array, cropped given a threshold and the CVs are shifted & rescaled to be in [0,1]. This trafo is done with the [shift,range] of the data.
     NOTE:
         -The data is saved in main_dir+'/data4nn/ to a .npz file with keyes: inputs, cv_trafo, outputs, var_output,list_dirs
@@ -161,7 +161,7 @@ def PrepData(main_dir, list_dirs, threshold = 1000,nr_electrodes=8):
     '''
     data_list = []
     for dir_file in list_dirs:
-        data_buff = np.load(main_dir+dir_file+'nparrays.npz')['data']
+        data_buff = np.load(main_dir+dir_file+'training_NN_data.npz')['data']
         data_list.append(data_buff)  
     data = np.concatenate(tuple(data_list))
     
@@ -175,7 +175,7 @@ def PrepData(main_dir, list_dirs, threshold = 1000,nr_electrodes=8):
     
     outputs = mean_output[cropping_mask]
     # Rescale to Volts
-    inputs = cropped_data[:,:nr_electrodes-1]/1000 
+    inputs = cropped_data[:,:nr_electrodes-1]/scale_volts 
     # Shift and rescale CVs to [0,1]
     shift = np.min(inputs[:,2:])
     cv_range = np.max(inputs[:,2:])-np.min(inputs[:,2:])
