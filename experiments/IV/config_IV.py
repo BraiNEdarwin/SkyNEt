@@ -29,14 +29,14 @@ class experiment_config(object):
         self.v_low = -2
         self.v_high = 2
         self.n_points = 10000
-        self.direction = 'down'
+        self.direction = 'up'
 
         #define the input and output amplifications.
         self.amplification = 1
         self.source_gain = 1
 
         #measurment tool settings.
-        self.device = 'adwin'
+        self.device = 'nidaq'
         self.fs = 1000
 
 
