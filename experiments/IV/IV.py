@@ -25,7 +25,7 @@ else:
     print('specify measurement device')
 
 #save the Input and Output.
-np.savez(os.path.join(saveDirectory, 'config.name'),Input=Input, Output=Output)
+np.savez(os.path.join(saveDirectory, config.name),Input=Input, Output=Output)
 
 #plot the IV curve.
 plt.figure()
