@@ -1,4 +1,4 @@
-name: qcodes
+name: skynet
 channels: 
  - defaults
  - conda-forge

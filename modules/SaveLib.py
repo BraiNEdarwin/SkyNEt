@@ -17,8 +17,9 @@ def saveArraysClassification(filepath, geneArray, outputArray, fitnessArray, win
              outputArray=outputArray, fitnessArray=fitnessArray, win=win)
 
 def saveConfig(filepath):
-    copyfile('config.txt', os.path.join(filepath, 'config.txt'))
-
+    #copyfile('config.txt', os.path.join(filepath, 'config.txt'))
+    #TODO: Implement new save config function
+    pass
 
 def saveMain(filepath, geneArray, outputArray, fitnessArray, t, inp, outp):
     saveArrays(filepath, geneArray, outputArray, fitnessArray, t, inp, outp)
