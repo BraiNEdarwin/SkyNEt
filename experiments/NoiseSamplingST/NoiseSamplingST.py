@@ -13,11 +13,11 @@ The two different experiments are saved in separate files.
 @author: Mark Boon
 """
 # SkyNEt imports
-import SkyNEt.modules.SaveLib as SaveLib
-from SkyNEt.instruments.DAC import IVVIrack
-from SkyNEt.instruments.niDAQ import nidaqIO
-from SkyNEt.modules.GenericGridConstructor import gridConstructor
-import SkyNEt.experiments.NoiseSamplingST.config_NoiseSamplingST as config
+import modules.SaveLib as SaveLib
+from instruments.DAC import IVVIrack
+from instruments.niDAQ import nidaqIO
+from modules.GenericGridConstructor import gridConstructor
+import experiments.NoiseSamplingST.config_NoiseSamplingST as config
 
 # Other imports
 import numpy as np
@@ -33,13 +33,14 @@ fs = config.fs
 T = config.sampleTime
 
 # Initialize save directory
-saveDirectoryT = SaveLib.createSaveDirectory(config.filepath, config.name_T)
-saveDirectoryS = SaveLib.createSaveDirectory(config.filepath, config.name_S)
+
 
 # Initialize data container
 if config.T_test:
+    saveDirectoryT = SaveLib.createSaveDirectory(config.filepath, config.name_T)
     Tcurrents = np.zeros((samples * config.iterations, fs * T))
 if config.S_test:
+    saveDirectoryS = SaveLib.createSaveDirectory(config.filepath, config.name_S)
     Scurrents = np.zeros((samples * config.iterations, fs * T))
 
 # Initialize instruments
@@ -51,9 +52,9 @@ controlVoltages = gridConstructor(config.controls, config.steps)
 if config.T_test:
     print('Testing accuracy of sample time ...')
     for i in range(0, controlVoltages.shape[0]):
-        print('Getting Data for control voltage ' + str(i) + ', ' + str(controlVoltages.shape[0] - i) + ' control voltages remaining.')
+        print('Getting Data for control voltage ' + str(i + 1) + ', ' + str(controlVoltages.shape[0] - i - 1) + ' control voltages remaining.')
         for j in range(samples):
-            print('Sampling ' + str(j) + '/' + str(samples) +'...')
+            print('Sampling ' + str(j + 1) + '/' + str(samples) +'...')
             IVVIrack.setControlVoltages(ivvi, controlVoltages[i,:]) 
             time.sleep(2)  # Pause in between two samples
             Tcurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T + 1), fs) 
@@ -61,9 +62,9 @@ if config.T_test:
 if config.S_test:
     print('Testing accuracy of switching CV config ...')
     for i in range(0, controlVoltages.shape[0]):
-        print('Getting Data for control voltage ' + str(i) + ', ' + str(controlVoltages.shape[0] - i) + ' control voltages remaining.')
+        print('Getting Data for control voltage ' + str(i + 1) + ', ' + str(controlVoltages.shape[0] - i - 1) + ' control voltages remaining.')
         for j in range(samples):
-            print('Sampling ' + str(j) + '/' + str(samples) +'...')
+            print('Sampling ' + str(j + 1) + '/' + str(samples) +'...')
             IVVIrack.setControlVoltages(ivvi, controlVoltages[i,:]) 
             time.sleep(2)  # Pause in between two samples
             Scurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T + 1), fs) 
