@@ -9,7 +9,7 @@ import time
 Sourcegain = 1
 Igain = 1			#use to make output in nA
 
-Fs = 10000 						#change sample frequency
+Fs = 1000 						#change sample frequency
 filepath = 'D:/data/Bram/IV'			
 name = 'IVtest.txt'
 instrument = 1  #choose between nidaq (1) and adwin (0)
@@ -19,9 +19,9 @@ instrument = 1  #choose between nidaq (1) and adwin (0)
 
 inputs = np.array([[0,0,0,0,0,0],[0,0,0,0,1,0],[0,0,1,0,0,0]])
 inputsc = 0.8
-lens = 1000
-lene = 500
-lent = 10000
+lens = 500
+lene = 250
+lent = 5000
 vb = 600
 ivvi = IVVIrack.initInstrument()
 IVVIrack.setControlVoltages(ivvi, np.array([vb]))
