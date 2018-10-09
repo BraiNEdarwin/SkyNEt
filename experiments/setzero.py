@@ -5,7 +5,6 @@ gate. This will initially be tested on the Heliox (with nidaq) setup.
 
 # Import packages
 
-import modules.PlotBuilder as PlotBuilder
 
 
 from instruments.niDAQ import nidaqIO
