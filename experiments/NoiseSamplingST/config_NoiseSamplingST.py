@@ -6,6 +6,8 @@ Config file corresponding to NoiseSamplingST.py
 @author: Mark Boon
 """
 
+import numpy as np
+
 
 class experiment_config():
     
@@ -20,8 +22,10 @@ class experiment_config():
         self.controls = 7
         self.T_test = True      # Tests variations in the variance for a sample time
         self.S_test = True      # Tests variations in the variance for measure - switch - measure for one CV
-        self.samples = 10
+        self.samples = 10       # Amount of measurements for one CV config
         
+        self.CVsteps = [len(self.steps[i]) for i in range(len(self.steps))]
+        self.iterations = np.prod(self.CVsteps)
         
         
         #self.filepath = 'D:\data\Mark\ST_tests'

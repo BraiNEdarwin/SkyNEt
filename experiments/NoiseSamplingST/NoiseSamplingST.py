@@ -38,10 +38,9 @@ saveDirectoryS = SaveLib.createSaveDirectory(config.filepath, config.name_S)
 
 # Initialize data container
 if config.T_test:
-    Tcurrents = np.zeros(samples * config.gridHeight ** len(config.steps), fs * T)
+    Tcurrents = np.zeros((samples * config.iterations, fs * T))
 if config.S_test:
-    Scurrents = np.zeros(samples * config.gridHeight ** len(config.steps), fs * T)
-data = np.zeros((config.T_test + config.S_test) * samples * config.gridHeight ** len(config.steps), fs * T)
+    Scurrents = np.zeros((samples * config.iterations, fs * T))
 
 # Initialize instruments
 ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
