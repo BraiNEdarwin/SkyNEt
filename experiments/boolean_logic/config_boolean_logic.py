@@ -20,24 +20,24 @@ class experiment_config(config_class):
         
         # Define experiment
         self.amplification = 1 
-        self.TargetGen = self.NOR
-        self.generations = 1
-        self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600], [0.1, 0.5]]
+        self.TargetGen = self.XNOR
+        self.generations = 100
+        self.generange = [[-1500,1500], [-1500, 1500], [-1500, 1500], [-1500, 1500], [-1500, 1500], [0.1, 0.8]]
 
         # Specify either partition or genomes
         #self.partition = [5, 5, 5, 5, 5]
         #self.genomes = 100
         
         # Documentation
-        self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
+        self.genelabels = ['CV1/T1','CV2/T3','CV3/T11','CV4/T13','CV5/T15', 'Input scaling']
 
         ################################################
         ######### USER-SPECIFIC PARAMETERS #############
         ################################################
 
         ################# Save settings ################
-        self.filepath = r'D:\data\path\to\your\directory'
-        self.name = 'AND'
+        self.filepath = r'D:\data\Bram\Evolutioncheck\\'
+        self.name = 'XNOR'
 
         ############## New Fitness function ############
 
