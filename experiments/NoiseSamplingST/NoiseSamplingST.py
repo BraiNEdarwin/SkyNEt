@@ -38,11 +38,9 @@ T = config.sampleTime
 # Initialize data container and save directory
 if config.T_test:
     saveDirectoryT = SaveLib.createSaveDirectory(config.filepath, config.name_T)
-    copyfile(configSrc, config.filepath + 'config_NoiseSamplingST.py')
     Tcurrents = np.zeros((samples * config.iterations, fs * T))
 if config.S_test:
     saveDirectoryS = SaveLib.createSaveDirectory(config.filepath, config.name_S)
-    copyfile(configSrc, config.filepath + 'config_NoiseSamplingST.py')
     Scurrents = np.zeros((samples * config.iterations, fs * T))
 
 # Initialize instruments
@@ -80,9 +78,11 @@ IVVIrack.setControlVoltages(ivvi, np.zeros(8))
 # Save obtained data (the two tests are saved in separate files)
 if config.T_test:
     np.savez(os.path.join(saveDirectoryT, 'nparrays'), CV = controlVoltages, output = Tcurrents)
+	copyfile(configSrc, config.filepath + config.name_T +'\\config_NoiseSamplingST.py')
 
 if config.S_test:
     np.savez(os.path.join(saveDirectoryS, 'nparrays'), CV = controlVoltages, output = Scurrents)
+	copyfile(configSrc, config.filepath + config.name_S + '\\config_NoiseSamplingST.py')
     
 
 
