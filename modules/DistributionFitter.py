@@ -36,7 +36,7 @@ class Distribution(object):
         self.params = {}
         for dist_name in self.dist_names:
             dist = getattr(scipy.stats, dist_name)
-            param = dist.fit(y)
+            param = dist.fit(y) # Uses MLE to find the fit for the parameters
             
             self.params[dist_name] = param
             #Applying the Kolmogorov-Smirnov test
