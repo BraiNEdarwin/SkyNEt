@@ -13,12 +13,18 @@ import numpy as np
 from scipy.signal import welch
 
 
-'''
-Removes clipped data from the measured data.
-CV: used control voltages
-currents: output currents
-'''
 def removeClipping(currents, CV = 0):
+    '''
+    Removes clipped data from the measured data.
+    
+    Parameters:
+        currents: output currents
+        CV: used control voltages (optional)
+    Returns:
+        cleanCV: use _ if not used
+        cleanCurrents: array of currents without the clipped samples
+    '''
+    
     Imean = np.mean(currents, axis = 1)
     cleanCurrents = currents[abs(Imean) < 3.1] # TODO: find exact clipping value
     cleanCV = 0
@@ -26,12 +32,16 @@ def removeClipping(currents, CV = 0):
         cleanCV = CV[abs(Imean) < 3.1]
     return cleanCV, cleanCurrents
     
-'''
-Computes the PSDs of a dataset of output currents
-data: (samples, sample points)
-fs: sample frequency
-'''
+
 def createPSD(data, fs, window = 'hann'):
+    '''
+    Computes the PSDs of a dataset of output currents
+    
+    Parameters:
+        data: (samples, sample points)
+        fs: sample frequency
+        window: window for Welch's method (default: hann)
+    '''
     m = data.shape[0]
     n = int(fs/2) + 1
     P = np.zeros((m, n))
@@ -42,14 +52,17 @@ def createPSD(data, fs, window = 'hann'):
         print('test')
     return f, P
 
-'''
-Computes the variance of the signal up to a specific frequency given the PSDs
-f: list of frequencies corresponding to the PSD values
-P: PSD values
-f_cut: maximum frequency for variance calculation (optional)
-'''
+
 def variancePSD(f, P, f_cut = None, window = 'hann'):
-    #[f, P] = createPSD(data, fs, window = 'hann')
+    '''
+    Computes the variance of the signal up to a specific frequency given the PSDs.
+    
+    Parameters:
+        f: list of frequencies corresponding to the PSD values
+        P: PSD values
+        f_cut: maximum frequency for variance calculation (optional)
+    '''
+    
     area = np.zeros((P.shape[0],1))
     cutoff = f[-2]
     if f_cut != None:
@@ -58,49 +71,55 @@ def variancePSD(f, P, f_cut = None, window = 'hann'):
         i = 1
         area[j] = 0
         while cutoff >= f[i]:        
-            area[j] += P[j, i - 1] * (f[i] - f[i - 1])
+            area[j] += P[j, i - 1] * (f[i] - f[i - 1]) if P.shape[0] > 1 else P[i - 1] * (f[i] - f[i - 1]) 
             i += 1
     return area
 
 
-'''
-Computes the variance of the current variance of a CV configuration.
-
-returns:
-    var: variance of the currents
-    spread: variance of the variance of different samples
-'''
-def varianceSpread(currents, fs, f_cut = None, window = 'hann'):
+def varianceSpread(currents):
+    """
+    Computes the variance of the current variance of a CV configuration.
+    
+    Parameters:
+        currents: array of currents for the samples
+    returns:
+        var: variance of the currents
+        spread: variance of the variance of different samples
+    """
+    
     _, currents = removeClipping(currents)
-    [f, P] = createPSD(currents, fs, window)
-    var = variancePSD(f, P, f_cut)
-    spread = np.var(var)
-    return var, spread
+    Ivar = np.var(currents, axis = 1)
+    spread = np.var(Ivar)
+    return Ivar, spread
 
 
-'''
-Plots the spread of the variance found of the sampled data.
-currents: measured currents
-nr_samples: amount of different CV configs
-sampleSize: amount of samples for one specific CV config.
-fs: sample frequency
-'''
-def spreadPlotter(currents, nr_samples, sampleSize, fs, f_cut = None, window = 'hann'):
+def spreadPlotter(currents, nr_samples, sampleSize):
+    """
+    Plots the spread of the variance found of the sampled data versus the mean.
+    The variance is calculated using np.var(), not a PSD integral.
+    
+    Parameters:
+        currents: measured currents
+        nr_samples: amount of different CV configs
+        sampleSize: amount of samples for one specific CV config
+    Returns:
+        Ivar: variance of the currents
+        spread: variance of the variance of currents with the same CV config
+    """
     _, currents = removeClipping(currents)
     spread = np.zeros((nr_samples,1))
     Imean = np.mean(currents, axis = 1)
-    [f,P] = createPSD(currents, fs, window)
-    varPSD = variancePSD(f, P, f_cut, window)
+    Ivar = np.var(currents, axis = 1)
     
     for i in range(nr_samples):
-        spread[i] = np.var(varPSD[i * sampleSize : (i + 1) * sampleSize])
-        spread[i] /= np.mean(varPSD[i * sampleSize : (i + 1) * sampleSize])
+        spread[i] = np.var(Ivar[i * sampleSize : (i + 1) * sampleSize])
+        spread[i] /= np.mean(Ivar[i * sampleSize : (i + 1) * sampleSize])
     
     plt.figure()
-    plt.plot(Imean, varPSD,'.')
+    plt.plot(Imean, Ivar,'.')
     plt.xlabel('Mean current')
     plt.ylabel('Variance of current')
     plt.title('Variance spread of CV configurations')
-    plt.tight_layout()
-        
-    return varPSD, spread
+    plt.tight_layout()     
+    return Ivar, spread
+

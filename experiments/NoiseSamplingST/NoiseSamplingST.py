@@ -57,7 +57,7 @@ if config.T_test:
             print('Sampling ' + str(j + 1) + '/' + str(samples) +'...')
             IVVIrack.setControlVoltages(ivvi, controlVoltages[i,:]) 
             time.sleep(2)  # Pause in between two samples
-            Tcurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T + 1), fs) 
+            Tcurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T + 1), fs)
 
 if config.S_test:
     print('Testing accuracy of switching CV config ...')
