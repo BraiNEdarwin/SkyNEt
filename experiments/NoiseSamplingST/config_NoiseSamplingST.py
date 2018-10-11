@@ -17,7 +17,7 @@ class experiment_config():
         self.fs = 1000          # Sampling freq (Hz)
         self.sampleTime = 2     # Sampling time (s)
         self.amplification = 1E9
-        self.steps = [[400],[400],[400],[400],[400],[400],[400]]  # Steps per control voltage
+        self.steps = [[400, 600, 800, 900],[400],[400],[400],[400],[400],[400]]  # Steps per control voltage
         self.gridHeight = len(self.steps[0])        # Amount of steps for a CV
         self.controls = 7
         self.T_test = True      # Tests variations in the variance for a sample time
@@ -28,8 +28,7 @@ class experiment_config():
         self.iterations = np.prod(self.CVsteps)
         
         
-        #self.filepath = 'D:\data\Mark\ST_tests'
-        self.filepath = 'D:\\data\\Mark\\'
+        self.filepath = 'D:\\data\\Mark\\ST_tests\\'
         self.name_T = 'SampleTimeMeas'
         self.name_S = 'SwitchMeas'
         

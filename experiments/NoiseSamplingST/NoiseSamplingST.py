@@ -25,7 +25,8 @@ import time
 import os
 from shutil import copyfile
 
-#%% Initialization 
+#%% Initialization of saving config file
+configSrc = config.__file__
 
 # Initialize config object
 config = config.experiment_config()
@@ -37,11 +38,11 @@ T = config.sampleTime
 # Initialize data container and save directory
 if config.T_test:
     saveDirectoryT = SaveLib.createSaveDirectory(config.filepath, config.name_T)
-    copyfile(config.__file__, config.filepath + 'config_NoiseSamplingST.py')
+    copyfile(configSrc, config.filepath + 'config_NoiseSamplingST.py')
     Tcurrents = np.zeros((samples * config.iterations, fs * T))
 if config.S_test:
     saveDirectoryS = SaveLib.createSaveDirectory(config.filepath, config.name_S)
-    copyfile(config.__file__, config.filepath + 'config_NoiseSamplingST.py')
+    copyfile(configSrc, config.filepath + 'config_NoiseSamplingST.py')
     Scurrents = np.zeros((samples * config.iterations, fs * T))
 
 # Initialize instruments
