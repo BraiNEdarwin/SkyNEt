@@ -23,6 +23,7 @@ import experiments.NoiseSamplingST.config_NoiseSamplingST as config
 import numpy as np
 import time
 import os
+from shutil import copyfile
 
 #%% Initialization 
 
@@ -32,15 +33,15 @@ samples = config.samples
 fs = config.fs
 T = config.sampleTime
 
-# Initialize save directory
 
-
-# Initialize data container
+# Initialize data container and save directory
 if config.T_test:
     saveDirectoryT = SaveLib.createSaveDirectory(config.filepath, config.name_T)
+    copyfile(config.__file__, config.filepath + 'config_NoiseSamplingST.py')
     Tcurrents = np.zeros((samples * config.iterations, fs * T))
 if config.S_test:
     saveDirectoryS = SaveLib.createSaveDirectory(config.filepath, config.name_S)
+    copyfile(config.__file__, config.filepath + 'config_NoiseSamplingST.py')
     Scurrents = np.zeros((samples * config.iterations, fs * T))
 
 # Initialize instruments

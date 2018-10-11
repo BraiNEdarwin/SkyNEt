@@ -52,6 +52,19 @@ def createPSD(data, fs, window = 'hann'):
         print('test')
     return f, P
 
+def PSDPlotter(f, P):
+    """
+    Plots the PSDs of the given samples in one plot.
+    
+    Parameters:
+        f: freq list
+        P: PSDs
+    """
+    for i in range(P.shape[0]):
+        plt.plot(f,P[i,:])
+    plt.yscale('log')
+    plt.xlabel('Frequency (Hz)')
+    plt.ylabel('PSD (I**2/Hz')
 
 def variancePSD(f, P, f_cut = None, window = 'hann'):
     '''
