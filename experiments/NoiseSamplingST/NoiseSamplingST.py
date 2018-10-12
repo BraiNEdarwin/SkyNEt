@@ -39,19 +39,20 @@ T = config.sampleTime
 # Initialize data container and save directory
 if config.T_test:
     saveDirectoryT = SaveLib.createSaveDirectory(config.filepath, config.name_T)
-    Tcurrents = np.zeros((samples * config.iterations, fs * T))
+    #Tcurrents = np.zeros((samples * config.iterations, fs * T))
 if config.S_test:
     saveDirectoryS = SaveLib.createSaveDirectory(config.filepath, config.name_S)
-    Scurrents = np.zeros((samples * config.iterations, fs * T))
+    #Scurrents = np.zeros((samples * config.iterations, fs * T))
 
 # Initialize instruments
-ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
+#ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
 
 
 # Find control voltages:
 
 controlVoltages = CVFinder(config)
-
+print(controlVoltages)
+"""
 # Main acquisition loop
 #controlVoltages = gridConstructor(config.controls, config.steps)
 
@@ -89,6 +90,6 @@ if config.T_test:
 if config.S_test:
     np.savez(os.path.join(saveDirectoryS, 'nparrays'), CV = controlVoltages, output = Scurrents)
 	copyfile(configSrc, config.filepath + config.name_S + '\\config_NoiseSamplingST.py')
-    
+"""
 
 

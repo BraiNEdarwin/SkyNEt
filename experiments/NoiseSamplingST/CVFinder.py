@@ -94,6 +94,7 @@ def CVFinder(config):
         genePool.fitness = fitnessTemp.min(1)  # Save fitness
     
         # Status print
+        print(str(controlVoltages))
         print("Generation nr. " + str(i + 1) + " completed")
         print("Highest fitness: " + str(max(genePool.fitness)))
     

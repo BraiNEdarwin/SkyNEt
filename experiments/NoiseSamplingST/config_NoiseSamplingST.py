@@ -26,8 +26,8 @@ class experiment_config(config_class):
         self.S_test = False      # Tests variations in the variance for measure - switch - measure for one CV
         self.samples = 10       # Amount of measurements for one CV config
         
-        self.CVsteps = [len(self.steps[i]) for i in range(len(self.steps))]
-        self.iterations = np.prod(self.CVsteps)
+        # self.CVsteps = [len(self.steps[i]) for i in range(len(self.steps))]
+        # self.iterations = np.prod(self.CVsteps)
         
         self.filepath = 'D:\\data\\Mark\\ST_tests\\'
         self.name_T = 'SampleTimeMeas'
@@ -38,7 +38,7 @@ class experiment_config(config_class):
         
         #%% Use boolean logic script to find current outputs to use for noise measurement
         
-        self.genelabels = ['CV1/T1','CV2/T3','CV3/T11','CV4/T13','CV5/T15', 'Input scaling']
+        self.genelabels = ['CV1/T1','CV2/T3','CV3/T5','CV4/T7','CV5/T11','CV6/T13','CV7/T15','input scaling']
         self.name = 'CVs'
         self.targetCurrent = 0.5    # The desired output current
         self.amplification = 1 
