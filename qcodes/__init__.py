@@ -2,6 +2,14 @@
 
 # flake8: noqa (we don't need the "<...> imported but unused" error)
 
+# small workaround to fix namespace.
+import sys
+import os
+current_dir = os.getcwd()
+current_dir = current_dir.split(os.sep)
+parent_dir = os.sep.join(current_dir[:-2])
+sys.path.append(parent_dir)
+
 # config
 
 from qcodes.config import Config
