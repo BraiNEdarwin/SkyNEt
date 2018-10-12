@@ -50,8 +50,12 @@ if config.S_test:
 
 # Find control voltages:
 
-controlVoltages = CVFinder(config)
-print(controlVoltages)
+if config.findCV:
+    controlVoltages = CVFinder(config)
+else:
+    controlVoltages = gridConstructor(config.controls, config.steps)
+
+print(str(controlVoltages))
 """
 # Main acquisition loop
 #controlVoltages = gridConstructor(config.controls, config.steps)

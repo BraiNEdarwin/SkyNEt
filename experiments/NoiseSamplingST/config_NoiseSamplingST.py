@@ -38,6 +38,7 @@ class experiment_config(config_class):
         
         #%% Use boolean logic script to find current outputs to use for noise measurement
         
+        self.findCV = True
         self.genelabels = ['CV1/T1','CV2/T3','CV3/T5','CV4/T7','CV5/T11','CV6/T13','CV7/T15','input scaling']
         self.name = 'CVs'
         self.targetCurrent = 0.5    # The desired output current
