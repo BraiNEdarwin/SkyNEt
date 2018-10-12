@@ -35,33 +35,27 @@ samples = config.samples
 fs = config.fs
 T = config.sampleTime
 
+# Find control voltages:
+if config.findCV:
+    controlVoltages = np.zeros((len(config.targetCurrent), config.genes - 1))
+    for i in range(len(config.targetCurrent)):
+        print('\nFinding control voltages, ' + str(i + 1) + '/' +str(len(config.targetCurrent) + 1) +'...')
+        target = config.Target()[1][i]
+        controlVoltages[i,:] = CVFinder(config, target)
+else:
+    ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
+    controlVoltages = gridConstructor(config.controls, config.steps)
+print(str(controlVoltages))
 
 # Initialize data container and save directory
 if config.T_test:
     saveDirectoryT = SaveLib.createSaveDirectory(config.filepath, config.name_T)
-    #Tcurrents = np.zeros((samples * config.iterations, fs * T))
+    Tcurrents = np.zeros((samples * controlVoltages.shape[0], fs * T))
 if config.S_test:
     saveDirectoryS = SaveLib.createSaveDirectory(config.filepath, config.name_S)
-    #Scurrents = np.zeros((samples * config.iterations, fs * T))
+    Scurrents = np.zeros((samples * controlVoltages.shape[0], fs * T))
 
-# Initialize instruments
-#ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
-
-
-# Find control voltages:
-
-if config.findCV:
-    controlVoltages = np.zeros((len(config.targetCurrent), config.genes - 1))
-    for i in range(len(config.targetCurrent)):
-        target = config.Target()[1][i]
-        controlVoltages[i,:] = CVFinder(config, target)
-else:
-    controlVoltages = gridConstructor(config.controls, config.steps)
-
-print(str(controlVoltages))
-"""
 # Main acquisition loop
-#controlVoltages = gridConstructor(config.controls, config.steps)
 
 if config.T_test:
     print('Testing accuracy of sample time ...')
@@ -92,11 +86,10 @@ IVVIrack.setControlVoltages(ivvi, np.zeros(8))
 # Save obtained data (the two tests are saved in separate files)
 if config.T_test:
     np.savez(os.path.join(saveDirectoryT, 'nparrays'), CV = controlVoltages, output = Tcurrents)
-	copyfile(configSrc, config.filepath + config.name_T +'\\config_NoiseSamplingST.py')
-
+    copyfile(configSrc, config.filepath + config.name_T +'\\config_NoiseSamplingST.py')
 if config.S_test:
     np.savez(os.path.join(saveDirectoryS, 'nparrays'), CV = controlVoltages, output = Scurrents)
-	copyfile(configSrc, config.filepath + config.name_S + '\\config_NoiseSamplingST.py')
-"""
+    copyfile(configSrc, config.filepath + config.name_S + '\\config_NoiseSamplingST.py')
+
 
 
