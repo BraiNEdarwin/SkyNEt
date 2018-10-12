@@ -59,9 +59,9 @@ class experiment_config(config_class):
     def Target(self):        # Dummy function so that the boolean_logic script can be used
         samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
         t = np.linspace(0, samples/self.fs, samples)
-        x = np.zeros((len(self.targetCurrent, samples)))
+        x = np.zeros((len(self.targetCurrent), samples))
         for i in range(len(self.targetCurrent)):
-            x[i,:] = self.targetCurrent * np.ones((samples))
+            x[i,:] = self.targetCurrent[i] * np.ones((samples))
         return t, x
         
         

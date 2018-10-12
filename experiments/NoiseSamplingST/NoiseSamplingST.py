@@ -53,7 +53,7 @@ if config.S_test:
 if config.findCV:
     controlVoltages = np.zeros((len(config.targetCurrent), config.genes - 1))
     for i in range(len(config.targetCurrent)):
-        target = config.Target()[1]
+        target = config.Target()[1][i]
         controlVoltages[i,:] = CVFinder(config, target)
 else:
     controlVoltages = gridConstructor(config.controls, config.steps)
