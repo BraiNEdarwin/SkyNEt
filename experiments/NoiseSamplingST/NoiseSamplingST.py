@@ -17,6 +17,7 @@ import modules.SaveLib as SaveLib
 from instruments.DAC import IVVIrack
 from instruments.niDAQ import nidaqIO
 from modules.GenericGridConstructor import gridConstructor
+from CVFinder import CVFinder
 import experiments.NoiseSamplingST.config_NoiseSamplingST as config
 
 # Other imports
@@ -46,8 +47,13 @@ if config.S_test:
 # Initialize instruments
 ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
 
+
+# Find control voltages:
+
+controlVoltages = CVFinder(config)
+
 # Main acquisition loop
-controlVoltages = gridConstructor(config.controls, config.steps)
+#controlVoltages = gridConstructor(config.controls, config.steps)
 
 if config.T_test:
     print('Testing accuracy of sample time ...')

@@ -36,7 +36,7 @@ class experiment_config(config_class):
         ################################################
 
         ################# Save settings ################
-        self.filepath = r'D:\data\Bram\Evolutioncheck\\'
+        self.filepath = r'D:\data\Mark\Evolutioncheck\\'
         self.name = 'XNOR'
 
         ############## New Fitness function ############
