@@ -54,11 +54,16 @@ def CVFinder(config):
     #%% Measurement loop
     
     for i in range(config.generations):
+        print('i = ' + str(i))
+        print(str(config.genomes))
+        print(str(config.partition))
         for j in range(config.genomes):
+            print('j = ' +str(j))
             # Set the DAC voltages
             for k in range(config.genes-1):
                 controlVoltages[k] = genePool.MapGenes(
                                         config.generange[k], genePool.pool[j, k])
+                print(str(controlVoltages))
             IVVIrack.setControlVoltages(ivvi, controlVoltages)
             time.sleep(1)  # Wait after setting DACs
     
@@ -78,8 +83,7 @@ def CVFinder(config):
     
                 # Calculate fitness
                 fitnessTemp[j, avgIndex]= config.Fitness(outputAvg[avgIndex],
-                                                         target,
-                                                         w)
+                                                         target)
     
                 # Plot output
                 PlotBuilder.currentOutputEvolution(mainFig,

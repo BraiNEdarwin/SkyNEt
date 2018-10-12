@@ -45,26 +45,10 @@ class experiment_config(config_class):
         self.genes = 8              # Must be 8 because boolean_logic defines control voltages for genes - 1
         self.genomes = 20
         self.generations = 10
-        self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]
+        self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900],[0., 1.]]
         self.TargetGen = self.Target
         self.Fitness = self.FitnessNMSE
         
-        ################################################
-        ################# OFF-LIMITS ###################
-        ################################################
-        # Check if genomes parameter has been changed
-        if(self.genomes != sum(self.default_partition)):
-            if(self.genomes%5 == 0):
-                self.partition = [self.genomes%5]*5  # Construct equally partitioned genomes
-            else:
-                print('WARNING: The specified number of genomes is not divisible by 5.'
-                      + ' The remaining genomes are generated randomly each generation. '
-                      + ' Specify partition in the config instead of genomes if you do not want this.')
-                self.partition = [self.genomes//5]*5  # Construct equally partitioned genomes
-                self.partition[-1] += self.genomes%5  # Add remainder to last entry of partition
-
-        self.genomes = sum(self.partition)  # Make sure genomes parameter is correct
-        self.genes = len(self.generange)  # Make sure genes parameter is correct
         
         
     def Target(self):        # Dummy function so that the boolean_logic script can be used
