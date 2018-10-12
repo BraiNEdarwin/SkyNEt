@@ -41,22 +41,27 @@ class experiment_config(config_class):
         self.findCV = True
         self.genelabels = ['CV1/T1','CV2/T3','CV3/T5','CV4/T7','CV5/T11','CV6/T13','CV7/T15','input scaling']
         self.name = 'CVs'
-        self.targetCurrent = 0.5    # The desired output current
+        
         self.amplification = 1 
         self.genes = 8              # Must be 8 because boolean_logic defines control voltages for genes - 1
-        self.genomes = 20
+        self.genomes = 25
         self.generations = 10
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900],[0., 1.]]
+
+
+        self.targetCurrent = [0.5, 1., 1.5]    # The desired output current
         self.TargetGen = self.Target
         self.Fitness = self.FitnessNMSE
-        self.fitThres = 3000            #Threshold for high enough fitness value during search
+        self.fitThres = 1000            #Threshold for high enough fitness value during search
         
         
         
     def Target(self):        # Dummy function so that the boolean_logic script can be used
         samples = 4 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength)
         t = np.linspace(0, samples/self.fs, samples)
-        x = self.targetCurrent * np.ones((samples))
+        x = np.zeros((len(self.targetCurrent, samples)))
+        for i in range(len(self.targetCurrent)):
+            x[i,:] = self.targetCurrent * np.ones((samples))
         return t, x
         
         

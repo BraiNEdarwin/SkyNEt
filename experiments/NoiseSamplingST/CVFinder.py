@@ -21,12 +21,12 @@ import numpy as np
 #%% Initialization
 
 
-def CVFinder(config):
+def CVFinder(config, outputTarget):
     # Initialize input and target
     t = config.InputGen()[0]  # Time array
     x = np.asarray(config.InputGen()[1:3])  # Array with P and Q signal
     w = config.InputGen()[3]  # Weight array
-    target = config.TargetGen()[1]  # Target signal
+    target = outputTarget  # Target signal
     
     # np arrays to save genePools, outputs and fitness
     geneArray = np.zeros((config.generations, config.genomes, config.genes))
