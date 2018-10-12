@@ -9,8 +9,6 @@ data into training and validation sets and returns a tensor object used by the N
 
 import numpy as np
 from matplotlib import pyplot as plt
-import torch
-from torch.autograd import Variable
 from Nets.predNNet import predNNet
 from Nets.DataHandler import DataLoader as dl
 from Nets.DataHandler import GetData as gtd
@@ -18,11 +16,9 @@ from Nets.DataHandler import GetData as gtd
 ###############################################################################
 ########################### LOAD DATA  ########################################
 ###############################################################################
-main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/'
-dir_data = '2018_08_07_164652_CP_FullSwipe/'
-data_dir = main_dir+dir_data
-
-data, baseline_var = dl(data_dir,test_set=True)
+main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/data4nn/2018_10_12/'
+file_name = 'data_for_training.npz'
+data, baseline_var = dl(main_dir, file_name, test_set=True)
 
 #%%
 ###############################################################################
@@ -30,7 +26,7 @@ data, baseline_var = dl(data_dir,test_set=True)
 ###############################################################################
 depth = 5
 width = 90
-learning_rate,nr_epochs,batch_size = 3e-4, 100, 512 #3e-4, 100, 512 obtained 0.0005 #batch_size #1e-3 worked well with 500 epochs
+learning_rate,nr_epochs,batch_size = 3e-4, 100, 512
 runs = 1
 valerror = np.zeros((runs,nr_epochs))
 for i in range(runs):
@@ -46,7 +42,7 @@ norm_valerror = valerror/baseline_var
 ###############################################################################
 ############################## SAVE NN ########################################
 ###############################################################################
-net.save_model(data_dir+'748387423_TEST_NN.pt')
+net.save_model(main_dir+'TEST_NN.pt')
 #Then later: net = predNNet(path)
 # Save other stuff? e.g. generalization/test error...
 
@@ -54,12 +50,12 @@ net.save_model(data_dir+'748387423_TEST_NN.pt')
 ###############################################################################
 ########################### LOAD NN & TEST ####################################
 ###############################################################################
-net = predNNet(data_dir+'748387423_TEST_NN.pt')
+net = predNNet(main_dir+'TEST_NN.pt')
 
 ########################## TEST GENERALIZATION  ###############################
-file_dir = data_dir+'test_data_from_trainbatch.npz'
+file_dir = main_dir+'test_set_from_trainbatch.npz'
 inputs, targets = gtd(file_dir) #function to load data returning torch Variable with correct form and dtype 
-prediction = net.model(inputs).data.cpu().numpy()[:,0]
+prediction = net.outputs(inputs)
 
 #TODO: Two scripts where the CV prediction using GD and GA are done respectively
  
@@ -80,13 +76,13 @@ plt.subplot(1,2,1)
 plt.plot(targets[subsample],prediction[subsample],'.')
 plt.xlabel('True Output')
 plt.ylabel('Predicted Output')
-min_out = np.min(np.concatenate((targets[subsample],prediction[subsample])))
-max_out = np.max(np.concatenate((targets[subsample],prediction[subsample])))
+min_out = np.min(np.concatenate((targets[subsample],prediction[subsample,np.newaxis])))
+max_out = np.max(np.concatenate((targets[subsample],prediction[subsample,np.newaxis])))
 plt.plot(np.linspace(min_out,max_out),np.linspace(min_out,max_out),'k')
 plt.title('Predicted vs True values')
 
-error = (targets-prediction.T).T/np.sqrt(baseline_var)
+error = (targets[:,0]-prediction.T).T/np.sqrt(baseline_var)
 plt.subplot(1,2,2)
-plt.hist(error,50)
+plt.hist(error,100)
 plt.title('Scaled error histogram')
 plt.show()
