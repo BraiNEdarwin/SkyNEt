@@ -49,6 +49,7 @@ class experiment_config(config_class):
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900],[0., 1.]]
         self.TargetGen = self.Target
         self.Fitness = self.FitnessNMSE
+        self.fitThres = 3000            #Threshold for high enough fitness value during search
         
         
         

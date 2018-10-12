@@ -91,9 +91,8 @@ def CVFinder(config):
             outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
     
         genePool.fitness = fitnessTemp.min(1)  # Save fitness
-    
+        
         # Status print
-        print(str(controlVoltages))
         print("Generation nr. " + str(i + 1) + " completed")
         print("Highest fitness: " + str(max(genePool.fitness)))
     
@@ -121,13 +120,28 @@ def CVFinder(config):
                          t,
                          x,
                          config.amplification*target)
-    
+        
+        
+        if max(genePool.fitness) > config.fitThres:
+            bestGenes = geneArray[i, genePool.fitness.argmax(), :]
+            bestCV = np.zeros(len(bestGenes) - 1)
+            for k in range(len(bestGenes) - 1):
+                bestCV[k] = genePool.MapGenes(config.generange[k], bestGenes[k])        
+            return bestCV       # If fitness is high enough, break the GA and keep this value
+        
         # Evolve to the next generation
         genePool.NextGen()
     
     PlotBuilder.finalMain(mainFig)
     
-    return geneArray[-1, genePool.fitness.argmax(), :]
+    # If threshold fitness is not reached, take best CV found so far
+    bestGeneration = int(fitnessArray.argmax() / config.genomes)
+    bestGenome = int(fitnessArray.argmax() % config.genomes)
+    bestGenes = geneArray[bestGeneration, bestGenome , :]
+    bestCV = np.zeros(len(bestGenes) - 1)
+    for k in range(len(bestGenes) - 1):
+                bestCV[k] = genePool.MapGenes(config.generange[k], bestGenes[k])
+    return bestCV
     #raise KeyboardInterrupt
     #
     #finally:
