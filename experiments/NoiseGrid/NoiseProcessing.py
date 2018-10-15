@@ -32,6 +32,18 @@ def removeClipping(currents, CV = 0):
         cleanCV = CV[abs(Imean) < 3.1]
     return cleanCV, cleanCurrents
     
+def currentPlotter(data):
+    '''
+    Plots the current in a single graph
+    
+    Parameters:
+        data: the currents in an array
+    '''
+    for i in range(data.shape[0]):
+        plt.plot(data[i,:])
+    plt.xlabel('time')
+    plt.ylabel('current')
+    
 
 def createPSD(data, fs, window = 'hann'):
     '''
