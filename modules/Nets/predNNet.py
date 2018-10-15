@@ -9,7 +9,7 @@ Created on Mon Mar 12 14:39:57 2018
 import torch
 import torch.nn as nn
 import numpy as np 
-from Nets.staNNet import staNNet
+from SkyNEt.modules.Nets.staNNet import staNNet
 
 class predNNet(staNNet):
     
