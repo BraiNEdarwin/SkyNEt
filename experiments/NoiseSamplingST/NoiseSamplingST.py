@@ -86,7 +86,7 @@ IVVIrack.setControlVoltages(ivvi, np.zeros(8))
 # Save obtained data (the two tests are saved in separate files)
 if config.T_test:
     np.savez(os.path.join(saveDirectoryT, 'nparrays'), CV = controlVoltages, output = Tcurrents)
-    copyfile(configSrc, config.filepath + config.name_T +'\\config_NoiseSamplingST.py')
+    copyfile(configSrc, config.filepath + config.name_T +'\\config_NoiseSamplingST.py') # TODO: fix bug with configSrc
 if config.S_test:
     np.savez(os.path.join(saveDirectoryS, 'nparrays'), CV = controlVoltages, output = Scurrents)
     copyfile(configSrc, config.filepath + config.name_S + '\\config_NoiseSamplingST.py')

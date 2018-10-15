@@ -21,7 +21,7 @@ class experiment_config(config_class):
         self.steps = [[-623.79],[247.38],[826.70],[-294.96],[-108.88],[668.49],[-563.18]]  # Steps per control voltage
         self.controls = 7
         
-        self.findCV = False
+        self.findCV = True
         self.T_test = True      # Tests variations in the variance for a sample time
         self.S_test = False      # Tests variations in the variance for measure - switch - measure for one CV
         self.samples = 10       # Amount of measurements for one CV config
@@ -35,9 +35,8 @@ class experiment_config(config_class):
         
         #%% Use boolean logic script to find current outputs to use for noise measurement
         
-        
         self.genelabels = ['CV1/T1','CV2/T3','CV3/T5','CV4/T7','CV5/T11','CV6/T13','CV7/T15','input scaling']
-        self.name = 'CVs'
+        self.nameCV = 'CVs'
         
         self.amplification = 1 
         self.genes = 8              # Must be 8 because boolean_logic defines control voltages for genes - 1
@@ -46,7 +45,7 @@ class experiment_config(config_class):
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900],[0., 1.]]
 
 
-        self.targetCurrent = [0.5, 1., 1.5]    # The desired output current
+        self.targetCurrent = [0.5, 1., 1.5, 2., 2.5]    # The desired output current
         self.TargetGen = self.Target
         self.Fitness = self.FitnessNMSE
         self.fitThres = 1000            #Threshold for high enough fitness value during search

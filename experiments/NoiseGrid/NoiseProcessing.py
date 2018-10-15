@@ -64,7 +64,7 @@ def PSDPlotter(f, P):
         plt.plot(f,P[i,:])
     plt.yscale('log')
     plt.xlabel('Frequency (Hz)')
-    plt.ylabel('PSD (I**2/Hz')
+    plt.ylabel('PSD (I**2/Hz)')
 
 def variancePSD(f, P, f_cut = None, window = 'hann'):
     '''
