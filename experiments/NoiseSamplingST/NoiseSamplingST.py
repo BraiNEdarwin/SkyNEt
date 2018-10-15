@@ -45,8 +45,12 @@ if config.findCV:
         print('\nFinding control voltages, ' + str(i + 1) + '/' +str(len(config.targetCurrent)) +'...')
         target = config.Target()[1][i]
         controlVoltages[i,:] = CVFinder(config, target, ivvi)
-else:
+elif config.gridSearch:
     controlVoltages = gridConstructor(config.controls, config.steps)
+else:
+    controlVoltages = config.CVs
+    
+print('Control voltages used:')
 print(str(controlVoltages))
 
 # Initialize data container and save directory
