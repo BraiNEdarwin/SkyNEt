@@ -35,15 +35,17 @@ samples = config.samples
 fs = config.fs
 T = config.sampleTime
 
+# Initialize instrument
+ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
+
 # Find control voltages:
 if config.findCV:
     controlVoltages = np.zeros((len(config.targetCurrent), config.genes - 1))
     for i in range(len(config.targetCurrent)):
-        print('\nFinding control voltages, ' + str(i + 1) + '/' +str(len(config.targetCurrent) + 1) +'...')
+        print('\nFinding control voltages, ' + str(i + 1) + '/' +str(len(config.targetCurrent)) +'...')
         target = config.Target()[1][i]
-        controlVoltages[i,:] = CVFinder(config, target)
+        controlVoltages[i,:] = CVFinder(config, target, ivvi)
 else:
-    ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
     controlVoltages = gridConstructor(config.controls, config.steps)
 print(str(controlVoltages))
 

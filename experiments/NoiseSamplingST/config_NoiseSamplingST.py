@@ -23,7 +23,7 @@ class experiment_config(config_class):
         
         self.findCV = True
         self.T_test = True      # Tests variations in the variance for a sample time
-        self.S_test = False      # Tests variations in the variance for measure - switch - measure for one CV
+        self.S_test = True      # Tests variations in the variance for measure - switch - measure for one CV
         self.samples = 10       # Amount of measurements for one CV config
         
         self.filepath = 'D:\\data\\Mark\\ST_tests\\'

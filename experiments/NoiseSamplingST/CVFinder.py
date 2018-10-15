@@ -21,12 +21,13 @@ import numpy as np
 #%% Initialization
 
 
-def CVFinder(config, outputTarget):
+def CVFinder(config, outputTarget, instrumentInit):
     # Initialize input and target
     t = config.InputGen()[0]  # Time array
     x = np.asarray(config.InputGen()[1:3])  # Array with P and Q signal
     w = config.InputGen()[3]  # Weight array
     target = outputTarget  # Target signal
+    ivvi = instrumentInit
     
     # np arrays to save genePools, outputs and fitness
     geneArray = np.zeros((config.generations, config.genomes, config.genes))
@@ -40,13 +41,10 @@ def CVFinder(config, outputTarget):
     controlVoltages = np.zeros(config.genes)
     
     # Initialize save directory
-    saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.nameCV)
+    saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.nameCV + '_target_' + str(outputTarget))
     
     # Initialize main figure
     mainFig = PlotBuilder.initMainFigEvolution(config.genes, config.generations, config.genelabels, config.generange)
-    
-    # Initialize instruments
-    ivvi = IVVIrack.initInstrument()
     
     # Initialize genepool
     genePool = Evolution.GenePool(config)
@@ -140,7 +138,7 @@ def CVFinder(config, outputTarget):
     bestGenes = geneArray[bestGeneration, bestGenome , :]
     bestCV = np.zeros(len(bestGenes) - 1)
     for k in range(len(bestGenes) - 1):
-                bestCV[k] = genePool.MapGenes(config.generange[k], bestGenes[k])
+        bestCV[k] = genePool.MapGenes(config.generange[k], bestGenes[k])
     return bestCV
     #raise KeyboardInterrupt
     #
