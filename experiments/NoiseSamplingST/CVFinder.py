@@ -41,7 +41,7 @@ def CVFinder(config, outputTarget, instrumentInit):
     controlVoltages = np.zeros(config.genes)
     
     # Initialize save directory
-    saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.nameCV + '_target_' + str(outputTarget))
+    saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.nameCV + '_target_' + str(outputTarget[0]))
     
     # Initialize main figure
     mainFig = PlotBuilder.initMainFigEvolution(config.genes, config.generations, config.genelabels, config.generange)
@@ -126,11 +126,8 @@ def CVFinder(config, outputTarget, instrumentInit):
             for k in range(len(bestGenes) - 1):
                 bestCV[k] = genePool.MapGenes(config.generange[k], bestGenes[k])        
             return bestCV       # If fitness is high enough, break the GA and keep this value
-        
         # Evolve to the next generation
         genePool.NextGen()
-    
-    PlotBuilder.finalMain(mainFig)
     
     # If threshold fitness is not reached, take best CV found so far
     bestGeneration = int(fitnessArray.argmax() / config.genomes)
@@ -140,6 +137,7 @@ def CVFinder(config, outputTarget, instrumentInit):
     for k in range(len(bestGenes) - 1):
         bestCV[k] = genePool.MapGenes(config.generange[k], bestGenes[k])
     return bestCV
+
     #raise KeyboardInterrupt
     #
     #finally:
