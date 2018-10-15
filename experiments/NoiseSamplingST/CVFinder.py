@@ -41,7 +41,7 @@ def CVFinder(config, outputTarget, instrumentInit):
     controlVoltages = np.zeros(config.genes)
     
     # Initialize save directory
-    saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.nameCV + '_target_' + str(outputTarget[0]))
+    saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.nameCV + '_target_' + str(outputTarget[0])[:4].replace('.','_'))
     
     # Initialize main figure
     mainFig = PlotBuilder.initMainFigEvolution(config.genes, config.generations, config.genelabels, config.generange)
