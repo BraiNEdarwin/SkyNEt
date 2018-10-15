@@ -1,5 +1,14 @@
 '''
-Experiment description goes here.
+In this script the controlvoltages corresponding to different genomes are set and a boulean logic measurement is performed.
+This is done withing 3 for loops:
+1. for i in range generations for every generation rankes the fitnsessed of the genomes (control voltage sets) of the generation and used the GA to define the genomes of the next generation.
+   After this the output with the best fitness as well as this fitness compared to the generation are plotted.
+2. for j in range genomes for ever genome in a generation it sets the desisred control voltages on the DAC's of the IVVI-rack and scales the boulean logic input.
+   Next, it uses either the adwin or nidaq to measure the boulean logic input output relation after which the coresponding fitness is calculated.
+   Finally, the genomes and output of each genome is plotted.
+3. for k in range genes is use to map the 0-1 generated genome to the generange at put it in the desired orded in the coltrolvoltage array. 
+
+
 '''
 
 # SkyNEt imports
