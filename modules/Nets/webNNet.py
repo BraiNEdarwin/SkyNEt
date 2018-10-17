@@ -15,7 +15,8 @@ Structure of graph (dictionary):
 Structure of arcs (dictionary):
     keys: tuple: (sink_name, sink_gate)
     values: source_name
-
+    
+See webNN_template.py for example use.
 @author: ljknoll
 """
 
@@ -28,20 +29,12 @@ from matplotlib.collections import PatchCollection
 
 
 class webNNet(torch.nn.Module):
-    def __init__(self, input_data = None):
+    def __init__(self):
         super(webNNet, self).__init__()
         self.graph = {} # vertices of graph
         self.arcs = {} # arcs of graph
         self.output_data = None # output data of graph
         
-        if input_data:
-            self.input_data = input_data
-        else:
-            # define default input_data
-            self.input_data = torch.ones(10, 2)
-            self.input_data[:,0] *= 0.
-            self.input_data[:,1] *= 0.9
-    
     def add_vertex(self, network, name, output=False):
         """Adds neural network as a vertex to the graph.
         Args:
@@ -51,6 +44,7 @@ class webNNet(torch.nn.Module):
         """
         
         assert not hasattr(self, name), "Name %s already in use, choose other name for vertex!" % name
+#        cv = torch.rand(5)
         cv = 0.9*torch.ones(5)
         self.register_parameter(name, torch.nn.Parameter(cv))
         
@@ -75,10 +69,10 @@ class webNNet(torch.nn.Module):
         
         # skip if vertex is already evaluated
         if 'output' not in v:
-            # control voltages, repeated to match batch size of input_data
-            cv_data = getattr(self, vertex).repeat(len(self.input_data), 1)
+            # control voltages, repeated to match batch size of train_data
+            cv_data = getattr(self, vertex).repeat(len(v['train_data']), 1)
             # concatenate input with control voltage data
-            data = torch.cat((self.input_data, cv_data), dim=1)
+            data = torch.cat((v['train_data'], cv_data), dim=1)
             
             # check dependencies of vertex by looping through all arcs
             for sink,source_name in self.arcs.items():
@@ -95,12 +89,13 @@ class webNNet(torch.nn.Module):
             v['output'] = v['network'].model(data)
 
     def forward(self):
-        """Evaluates the graph, returns output (torch.tensor)"""
-        # start at network which is the output of the whole graph, 
-        # then recursively step through graph vertex by vertex
+        """Evaluates the graph, returns output (torch.tensor)
+        Start at network which is the output of the whole graph, 
+        then recursively step through graph vertex by vertex
+        """
         
-        # reset the graph
-        self.reset()
+        # reset output of the graph
+        self.clear_output()
         
         for key,value in self.graph.items():
             # start at vertex which is defined as output
@@ -110,8 +105,9 @@ class webNNet(torch.nn.Module):
                 self.output_data = value['output']
                 return value['output']
     
-    def train(self, y, verbose=False):
+    def train(self, x, y, verbose=False):
         self.check_graph()
+        self.set_train_data(x)
         criterion = torch.nn.MSELoss(reduction='sum')
         optimizer = torch.optim.SGD(self.parameters(), lr=1e-3)
         
@@ -130,17 +126,36 @@ class webNNet(torch.nn.Module):
         plt.ylabel('MSE loss')
         return loss_list
     
+    def set_train_data(self, x):
+        """Store training data for each network, assumes the torch tensor is the same ordering as the dictionary"""
+        dim = x.shape[1]
+        if int(dim/2) is len(self.graph):
+            i = 0
+            keys = []
+            for key,v in self.graph.items():
+                v['train_data'] = x[:,i:i+2]
+                i += 2
+                keys.append(key)
+            print("INFO: Assumed order of input data is %s" % keys)
+        elif dim==2:
+            for v in self.graph.values():
+                v['train_data'] = x
+            print("INFO: reusing input data for all networks")
+        else:
+            assert False, "Number of input columns/2 (%s) should match number of vertices in graph (%s)" % (dim/2, len(self.graph))
+    
     def get_output(self):
         return self.output_data
     
-    def reset(self):
-        # reset output data of graph
+    def clear_output(self):
+        """Reset output data of graph, NOT the parameters"""
         self.output_data = None
         for v in self.graph.values():
             # remove output data of vertex, return None if key does not exist
             v.pop('output', None)
 
     def check_graph(self, print_graph=False):
+        """Checks if the build graph is valid"""
         vertices = [*self.graph.keys()]
         arcs = self.arcs.copy()
         

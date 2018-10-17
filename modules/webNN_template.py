@@ -29,10 +29,20 @@ web.add_vertex(net1, 'B')
 web.add_arc('B', 'A', 2)
 
 # Check if web is valid (and optionally plot)
-web.check_graph(print_graph=True)
+#web.check_graph(print_graph=True)
 
-# data for all vertices:
 N = 10  # batch_size
+
+# different train data:
+#train_data = torch.zeros(N, 4)
+#train_data[:,1] = 0.2
+#train_data[:,3] = 0.3
+
+# repeat train data for all vertices:
+train_data = torch.zeros(N,2)
+train_data[:,1] = 0.5
+
+# target data 
 targets = 0.9*torch.ones(N,1)
 
-loss = web.train(targets)
+loss = web.train(train_data, targets)
