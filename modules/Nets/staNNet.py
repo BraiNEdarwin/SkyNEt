@@ -62,7 +62,10 @@ class staNNet(object):
         
     def _load_model(self,data_dir):
         print('Loading the model from '+data_dir)
-        state_dic = torch.load(data_dir)
+        if torch.cuda.is_available():
+            state_dic = torch.load(data_dir)
+        else:
+            state_dic = torch.load(data_dir, map_location='cpu')
         if list(filter(lambda x: 'running_mean' in x,state_dic.keys())):
             print('BN active in loaded model')
             self._BN = True
@@ -86,13 +89,13 @@ class staNNet(object):
         
         self.model.load_state_dict(state_dic)
 
-        if isinstance(layers[-1][1],torch.cuda.FloatTensor): 
+        if isinstance(layers[-1][1],torch.FloatTensor): 
+            self.itype = torch.LongTensor
+        else: 
             self.itype = torch.cuda.LongTensor
             self.C.cuda()
             self.model.cuda()
             self.loss_fn.cuda()    
-        else: 
-            self.itype = torch.LongTensor
         self.model.eval()
             
     def _contruct_model(self):
