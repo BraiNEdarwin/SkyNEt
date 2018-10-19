@@ -40,9 +40,9 @@ N = 10  # batch_size
 
 # repeat train data for all vertices:
 train_data = torch.zeros(N,2)
-train_data[:,1] = 0.5
+train_data[:,1] = 0.9
 
 # target data 
-targets = 0.9*torch.ones(N,1)
+targets = 0.5*torch.ones(N,1)
 
-loss = web.train(train_data, targets)
+loss = web.train(train_data, targets, beta=0.01)

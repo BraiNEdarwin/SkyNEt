@@ -104,23 +104,38 @@ class webNNet(torch.nn.Module):
                 self.forward_vertex(key)
                 self.output_data = value['output']
                 return value['output']
+
+    def loss_fn(self, y_pred, y, beta):
+        loss = torch.nn.MSELoss(reduction='sum')
+        reg_loss = 0
+        for x in self.parameters():
+            reg_loss += torch.relu(-x) + torch.relu(x-1.0)
+        reg_loss = torch.sum(reg_loss)
+        return loss(y_pred, y) + beta*reg_loss
     
-    def train(self, x, y, verbose=False):
+    def train(self, x, y, verbose=False, beta=0.01):
         self.check_graph()
         self.set_train_data(x)
-        criterion = torch.nn.MSELoss(reduction='sum')
         optimizer = torch.optim.SGD(self.parameters(), lr=1e-3)
         
         loss_list = []
         for i in range(100):
             y_pred = self.forward()
-            loss = criterion(y_pred, y)
+            loss = self.loss_fn(y_pred, y, beta)
             loss_list.append(loss.item())
             if verbose:
                 print(loss.item())
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+#            if loss.item() < 1e-3:
+#                print("INFO: error low enough, stop at iteration %s" % i)
+#                break
+#            if i>1:
+#                diff = loss_list[-2]-loss_list[-1]
+#                if diff>0. and diff<1e-3:
+#                    print("INFO: error decrease too small, stop at iteration %s" % i)
+#                    break
         plt.plot(loss_list)
         plt.xlabel('epochs')
         plt.ylabel('MSE loss')
