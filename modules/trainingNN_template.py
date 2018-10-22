@@ -9,14 +9,14 @@ data into training and validation sets and returns a tensor object used by the N
 
 import numpy as np
 from matplotlib import pyplot as plt
-from Nets.predNNet import predNNet
-from Nets.DataHandler import DataLoader as dl
-from Nets.DataHandler import GetData as gtd
+from SkyNET.modules.Nets.staNNet import staNNet
+from SkyNET.modules.Nets.DataHandler import DataLoader as dl
+from SkyNET.modules.Nets.DataHandler import GetData as gtd
 #%%
 ###############################################################################
 ########################### LOAD DATA  ########################################
 ###############################################################################
-main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/data4nn/2018_10_12/'
+main_dir = r'D:/data/2018_10_12'
 file_name = 'data_for_training.npz'
 data, baseline_var = dl(main_dir, file_name, test_set=True)
 
@@ -43,7 +43,7 @@ norm_valerror = valerror/baseline_var
 ############################## SAVE NN ########################################
 ###############################################################################
 net.save_model(main_dir+'TEST_NN.pt')
-#Then later: net = predNNet(path)
+#Then later: net = staNNet(path)
 # Save other stuff? e.g. generalization/test error...
 
 #%%
@@ -56,8 +56,6 @@ net = predNNet(main_dir+'TEST_NN.pt')
 file_dir = main_dir+'test_set_from_trainbatch.npz'
 inputs, targets = gtd(file_dir) #function to load data returning torch Variable with correct form and dtype 
 prediction = net.outputs(inputs)
-
-#TODO: Two scripts where the CV prediction using GD and GA are done respectively
  
 #%%
 ###################### ------- Basic Plotting ------- #######################
