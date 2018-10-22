@@ -16,12 +16,14 @@ class experiment_config(config_class):
     def __init__(self):
         super().__init__()
         self.fs = 1000          # Sampling freq (Hz)
-        self.sampleTime = 1000     # Sampling time (s)
+        self.signallength = 2   # Used for GA (s)
+        self.edgelength = 0.01  # Used for GA (s)
+        self.sampleTime = 1000    # Sampling time (s)
         self.res = 1E9
         self.steps = [[-623.79],[247.38],[826.70],[-294.96],[-108.88],[668.49],[-563.18]]  # Steps per control voltage
         self.controls = 7
         
-        self.findCV = False         # If true: use GA to find CVs for all targetCurrents
+        self.findCV = True         # If true: use GA to find CVs for all targetCurrents
         self.gridSearch = False     # If true: use a grid for sampling (use sekf.steps)
         self.T_test = True      # Tests variations in the variance for a sample time
         self.S_test = False      # Tests variations in the variance for measure - switch - measure for one CV
@@ -34,12 +36,19 @@ class experiment_config(config_class):
         self.electrodeSetup = [[1,2,3,4,5,6,7,'grnd A'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
         
         # IF CVs are already found, use this:
-        self.CVs = np.array([[-421.51,-293.851,818.862,-285.016,-22.1971,704.963,-739.663],
-[268.596,-78.589,-613.81,35.3767,-367.439,810.921,-629.311],
-[-681.055,-53.0367,48.3326,40.1132,-663.618,812.194,-619.485],
-[550.2,-817.53,640.832,-659.01,-581.936,405.044,579.165],
-[497.179,687.261,-613.696,-233.437,-322.216,-317.731,-467.174],
-[647.055,743.272,427.713,-554.105,484.863,112.871,-209.393]])
+        self.CVs = np.array([[285.875,575.273,-539.401,-233.522,-220.229,789.934,-308.457],
+[-686.219,763.966,-755.037,-369.096,757.369,790.724,-352.867],
+[-493.151,874.259,-256.779,-56.5794,-769.594,-76.1593,-379.087],
+[-624.662,-665.318,-156.936,719.789,-563.085,693.766,-736.543],
+[419.698,-173.237,520.219,-707.392,-305.152,268.228,-741.344],
+[624.015,816.139,-77.78,-187.469,-555.867,403.37,181.379],
+[47.7031,-761.01,-469.584,297.609,-579.117,-810.344,699.43],
+[545.732,-383.307,-280.978,249.724,354.602,-314.887,394.968],
+[76.1954,-749.319,454.49,729.533,-241.704,-807.347,735.137],
+[-468.735,-120.546,95.1499,352.884,-320.34,-841.181,678.089],
+[10.5064,234.343,638.217,-496.252,-632.652,-825.935,800.611],
+[602.51,385.086,226.637,-472.473,-756.897,-864.359,620.725],
+[605.027,433.85,21.4779,-702.346,736.333,83.085,-208.909]])
                     
     
     
@@ -51,10 +60,11 @@ class experiment_config(config_class):
         self.amplification = 1 
         self.genes = 8              # Must be 8 because boolean_logic defines control voltages for genes - 1
         self.genomes = 25
-        self.generations = 15
+        self.generations = 10
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900],[0., 1.]]
 
-        self.targetCurrent = [0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00]    # The desired output current
+        self.targetCurrent = [0.00, 0.25,0.50, 0.75, 1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00, 3.25]    # The desired output current
+        #self.targetCurrent = [3.25, 3.00, 2.75, 2.50, 2.25, 2.00, 1.75, 1.50, 1.25, 1.00, 0.75, 0.50, 0.25, 0.00]
         self.TargetGen = self.Target
         self.Fitness = self.FitnessNMSE
         self.fitThres = 1000            #Threshold for high enough fitness value during search

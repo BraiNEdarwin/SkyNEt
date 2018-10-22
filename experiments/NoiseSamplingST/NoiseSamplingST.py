@@ -80,10 +80,10 @@ if config.S_test:
         for j in range(samples):
             print('Sampling ' + str(j + 1) + '/' + str(samples) +'...')
             IVVIrack.setControlVoltages(ivvi, controlVoltages[i,:]) 
-            time.sleep(2)  # Pause in between two samples
+            time.sleep(1)  # Pause in between two samples
             Scurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T + 1), fs) 
             IVVIrack.setControlVoltages(ivvi, np.random.random(7) * 1400 - 700) # Switch to a random config.
-            time.sleep(1) # Keep the CV config on random for a short period
+            time.sleep(2) # Keep the CV config on random for a short period
 
 # Set IVVI back to zero
 IVVIrack.setControlVoltages(ivvi, np.zeros(8))   
