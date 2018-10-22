@@ -47,7 +47,7 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
 
 # Initialize NN
-main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/data4nn/2018_10_12/'
+main_dir = r'../../test/NN_test/data4nn/Data_for_testing/'
 dtype = torch.cuda.FloatTensor
 net = staNNet(main_dir+'TEST_NN.pt')
 
