@@ -34,6 +34,7 @@ class webNNet(torch.nn.Module):
         self.graph = {} # vertices of graph
         self.arcs = {} # arcs of graph
         self.output_data = None # output data of graph
+        self.default_param = 0.1
         
     def add_vertex(self, network, name, output=False):
         """Adds neural network as a vertex to the graph.
@@ -45,7 +46,7 @@ class webNNet(torch.nn.Module):
         
         assert not hasattr(self, name), "Name %s already in use, choose other name for vertex!" % name
 #        cv = torch.rand(5)
-        cv = 0.9*torch.ones(5)
+        cv = self.default_param*torch.ones(5)
         self.register_parameter(name, torch.nn.Parameter(cv))
         
         self.graph[name] = {  'network':network,
@@ -88,7 +89,7 @@ class webNNet(torch.nn.Module):
             # feed through network
             v['output'] = v['network'].model(data)
 
-    def forward(self):
+    def forward(self, x):
         """Evaluates the graph, returns output (torch.tensor)
         Start at network which is the output of the whole graph, 
         then recursively step through graph vertex by vertex
@@ -96,6 +97,9 @@ class webNNet(torch.nn.Module):
         
         # reset output of the graph
         self.clear_output()
+        
+        # define input data for all networks
+        self.set_input_data(x)
         
         for key,value in self.graph.items():
             # start at vertex which is defined as output
@@ -113,14 +117,22 @@ class webNNet(torch.nn.Module):
         reg_loss = torch.sum(reg_loss)
         return loss(y_pred, y) + beta*reg_loss
     
-    def train(self, x, y, verbose=False, beta=0.01):
+    def train(self, x, y, verbose=False, beta=0.01, mu = 1e-3, maxiterations=100):
+        """verbose prints loss at each iteration
+        beta is scaling parameter for relu regularization outside [0,1] for cv
+        mu is learning rate
+        maxiteraions is the number of iterations after which training stops
+        """
         self.check_graph()
-        self.set_train_data(x)
-        optimizer = torch.optim.SGD(self.parameters(), lr=1e-3)
+        self.set_input_data(x, verbose=True)
+        y = y.view(-1, 1)
+        
+#        optimizer = torch.optim.SGD(self.parameters(), lr=mu, momentum=0.7, nesterov=True) 
+        optimizer = torch.optim.Adam(self.parameters(), lr=mu, betas=(0.9,0.999))
         
         loss_list = []
-        for i in range(100):
-            y_pred = self.forward()
+        for i in range(maxiterations):
+            y_pred = self.forward(x)
             loss = self.loss_fn(y_pred, y, beta)
             loss_list.append(loss.item())
             if verbose:
@@ -132,17 +144,20 @@ class webNNet(torch.nn.Module):
 #                print("INFO: error low enough, stop at iteration %s" % i)
 #                break
 #            if i>1:
+#                if loss_list[-1] > loss_list[-2]:
+#                    factor = 1.2
+#                else:
+#                    factor = 0.5
+#                for g in optimizer.param_groups:
+#                    g['lr'] *= factor
 #                diff = loss_list[-2]-loss_list[-1]
 #                if diff>0. and diff<1e-3:
 #                    print("INFO: error decrease too small, stop at iteration %s" % i)
 #                    break
-        plt.plot(loss_list)
-        plt.xlabel('epochs')
-        plt.ylabel('MSE loss')
         return loss_list
     
-    def set_train_data(self, x):
-        """Store training data for each network, assumes the torch tensor is the same ordering as the dictionary"""
+    def set_input_data(self, x, verbose=False):
+        """Store training data for each network, assumes the torch tensor has the same ordering as in the dictionary"""
         dim = x.shape[1]
         if int(dim/2) is len(self.graph):
             i = 0
@@ -151,11 +166,13 @@ class webNNet(torch.nn.Module):
                 v['train_data'] = x[:,i:i+2]
                 i += 2
                 keys.append(key)
-            print("INFO: Assumed order of input data is %s" % keys)
+            if verbose:
+                print("INFO: Assumed order of input data is %s" % keys)
         elif dim==2:
             for v in self.graph.values():
                 v['train_data'] = x
-            print("INFO: reusing input data for all networks")
+            if verbose:
+                print("INFO: reusing input data for all networks")
         else:
             assert False, "Number of input columns/2 (%s) should match number of vertices in graph (%s)" % (dim/2, len(self.graph))
     
@@ -168,6 +185,18 @@ class webNNet(torch.nn.Module):
         for v in self.graph.values():
             # remove output data of vertex, return None if key does not exist
             v.pop('output', None)
+    
+    def reset_parameters(self, value = None):
+        """sets the control voltages of all networks to given value.
+        value can be a None, number or tensor
+        """
+        if value is None:
+            value = self.default_param
+        
+        # set parameters, control voltages of networks
+        for param in self.parameters():
+            with torch.no_grad():
+                param.data = value*torch.ones(len(param))
 
     def check_graph(self, print_graph=False):
         """Checks if the build graph is valid"""
