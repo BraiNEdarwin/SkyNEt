@@ -33,7 +33,7 @@ web.add_arc('B', 'A', 2)
 
 N = 10  # batch_size
 
-# different train data:
+# explicit train data for each network:
 #train_data = torch.zeros(N, 4)
 #train_data[:,1] = 0.2
 #train_data[:,3] = 0.3
@@ -45,4 +45,4 @@ train_data[:,1] = 0.9
 # target data 
 targets = 0.5*torch.ones(N,1)
 
-loss = web.train(train_data, targets, beta=0.01)
+loss = web.train(train_data, targets)
