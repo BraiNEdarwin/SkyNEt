@@ -35,6 +35,8 @@ class webNNet(torch.nn.Module):
         self.arcs = {} # arcs of graph
         self.output_data = None # output data of graph
         self.default_param = 0.1
+        self.loss = torch.nn.MSELoss(reduction='sum')
+        self.optimizer = torch.optim.SGD 
         
     def add_vertex(self, network, name, output=False):
         """Adds neural network as a vertex to the graph.
@@ -109,52 +111,61 @@ class webNNet(torch.nn.Module):
                 self.output_data = value['output']
                 return value['output']
 
-    def loss_fn(self, y_pred, y, beta):
-        loss = torch.nn.MSELoss(reduction='sum')
+    def error_fn(self, y_pred, y, beta, loss=None):
+        """Error function: loss function with added regularization"""
+        # default loss function: MSE
+        if loss is None:
+            loss = self.loss
+        # calculate regularization
         reg_loss = 0
         for x in self.parameters():
             reg_loss += torch.relu(-x) + torch.relu(x-1.0)
         reg_loss = torch.sum(reg_loss)
         return loss(y_pred, y) + beta*reg_loss
     
-    def train(self, x, y, verbose=False, beta=0.01, mu = 1e-3, maxiterations=100):
-        """verbose prints loss at each iteration
-        beta is scaling parameter for relu regularization outside [0,1] for cv
-        mu is learning rate
-        maxiteraions is the number of iterations after which training stops
+    def train(self, x, y, verbose=False, beta=0.01, maxiterations=100, optimizer=None, loss_fn=None, **kwargs):
+        """verbose: prints error at each iteration
+        beta: scaling parameter for relu regularization outside [0,1] for cv
+        maxiteraions: the number of iterations after which training stops
         """
         self.check_graph()
         self.set_input_data(x, verbose=True)
         y = y.view(-1, 1)
         
-#        optimizer = torch.optim.SGD(self.parameters(), lr=mu, momentum=0.7, nesterov=True) 
-        optimizer = torch.optim.Adam(self.parameters(), lr=mu, betas=(0.9,0.999))
+        if optimizer is None:
+            optimizer = self.optimizer(self.parameters(), **kwargs)
+        else:
+            optimizer = optimizer(self.parameters(), **kwargs)
         
-        loss_list = []
+        error_list = []
         for i in range(maxiterations):
             y_pred = self.forward(x)
-            loss = self.loss_fn(y_pred, y, beta)
-            loss_list.append(loss.item())
+            error = self.error_fn(y_pred, y, beta, loss_fn)
+            error_list.append(error.item())
             if verbose:
-                print(loss.item())
+                print(error.item())
             optimizer.zero_grad()
-            loss.backward()
+            error.backward()
             optimizer.step()
-#            if loss.item() < 1e-3:
-#                print("INFO: error low enough, stop at iteration %s" % i)
-#                break
+            if error.item() < 1e-3:
+                print("INFO: error low enough, stop at iteration %s" % i)
+                break
 #            if i>1:
-#                if loss_list[-1] > loss_list[-2]:
+#                # variable learning rate for MSE?
+#                diff = error_list[-2]-error_list[-1]
+#                if diff<0: # error went up
 #                    factor = 1.2
-#                else:
+#                else: # error went down
 #                    factor = 0.5
 #                for g in optimizer.param_groups:
 #                    g['lr'] *= factor
-#                diff = loss_list[-2]-loss_list[-1]
-#                if diff>0. and diff<1e-3:
+#                
+#                # break at small error difference
+#                diff = error_list[-2]-error_list[-1]
+#                if diff>0 and diff<1e-3:
 #                    print("INFO: error decrease too small, stop at iteration %s" % i)
 #                    break
-        return loss_list
+        return error_list
     
     def set_input_data(self, x, verbose=False):
         """Store training data for each network, assumes the torch tensor has the same ordering as in the dictionary"""
