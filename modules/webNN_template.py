@@ -9,7 +9,6 @@ import torch
 from Nets.predNNet import predNNet
 from Nets.webNNet import webNNet
 
-
 # create nn object from which the web is made
 main_dir = r'/home/lennart/Desktop/nnweb/'
 data_dir = 'lr2e-4_eps400_mb512_20180807CP.pt'
@@ -38,11 +37,28 @@ N = 10  # batch_size
 #train_data[:,1] = 0.2
 #train_data[:,3] = 0.3
 
-# repeat train data for all vertices:
+# use same train data for all vertices:
 train_data = torch.zeros(N,2)
 train_data[:,1] = 0.9
 
 # target data 
 targets = 0.5*torch.ones(N,1)
 
-loss = web.train(train_data, targets)
+# training
+loss = web.train(train_data, targets, lr=0.01)
+
+# reset parameters of web
+web.reset_parameters()
+
+# OPTIONAL: define custom optimizer,
+# see https://pytorch.org/docs/stable/optim.html#torch.optim.Optimizer
+optimizer = torch.optim.Adam
+loss = web.train(train_data, targets, optimizer=optimizer, lr=0.01)
+plt.plot(loss)
+
+web.reset_parameters()
+
+# OPTIONAL: define custom loss function
+#loss_fn = torch.nn.CrossEntropyLoss(reduction='sum')
+loss_fn = torch.nn.L1Loss(reduction='sum')
+loss = web.train(train_data, targets, optimizer=optimizer, loss_fn=loss_fn, lr=0.01)

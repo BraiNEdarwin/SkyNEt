@@ -71,7 +71,7 @@ else:
 trained_cv = []
 for (i,gate) in enumerate(gates):
     print(i, gate)
-    loss = web.train(input_data, target_data[:,i], beta=0.1, mu = 0.05, maxiterations=200)
+    loss = web.train(input_data, target_data[:,i], beta=0.01, maxiterations=200, lr = 0.0001, momentum=0.7, nesterov=True)
     trained_cv.append([i.data.tolist() for i in web.parameters()][0])
     
     # print training error
