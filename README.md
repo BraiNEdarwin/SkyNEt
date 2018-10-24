@@ -35,10 +35,20 @@ sys.path
 You will now see all directories where python will look for modules if you try to import one. There should be a path that looks something like this:
 
 ```
-~/anaconda3/envs/skynet/lib/python3.6
+~/anaconda3/envs/skynet/lib/python3.6/site-packages/
 ```
 
-This is the directory where you should place this repo. So download/clone this full reporitory and place it in the directory you found above. Make sure that you set up git to recognize this location and feel free to ask any of the code maintainers (listed at the bottom of this document) for help.
+This is the directory where you should place a path configuration file named skynet.pth. This will allow python to find the SkyNEt modules when imported. To do this, follow the instructions below:
+
+
+    1. Go to the directory
+    ```
+    ~/anaconda3/envs/skynet/lib/python3.6/site-packages
+    ```
+    2. Make a file named skynet.pth containing a line with the absolute path to your SkyNEt repo
+    3. Start your python and check sys.path; you should see the path to the repo there
+ 
+ 
 
 To finish off the installation process, there is one package left to install. Activate the skynet environment again and run the following command:
 
@@ -47,6 +57,11 @@ pip install nidaqmx
 ```
 
 Now you are done with the installation process and ready to get to work!
+
+Note: if you want to work with the neural networks you have to install PyTorch yourself. As this is OS dependent, please have a look at the instructions on the [website](https://pytorch.org/get-started/locally/)
+
+Feel free to ask any of the code maintainers (listed at the bottom of this document) for help.
+
 
 ## Repository structure
 
