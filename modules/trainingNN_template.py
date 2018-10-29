@@ -9,9 +9,9 @@ data into training and validation sets and returns a tensor object used by the N
 
 import numpy as np
 from matplotlib import pyplot as plt
-from SkyNET.modules.Nets.staNNet import staNNet
-from SkyNET.modules.Nets.DataHandler import DataLoader as dl
-from SkyNET.modules.Nets.DataHandler import GetData as gtd
+from SkyNEt.modules.Nets.staNNet import staNNet
+from SkyNEt.modules.Nets.DataHandler import DataLoader as dl
+from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 #%%
 ###############################################################################
 ########################### LOAD DATA  ########################################
