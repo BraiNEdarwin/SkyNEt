@@ -38,17 +38,15 @@ You will now see all directories where python will look for modules if you try t
 ~/anaconda3/envs/skynet/lib/python3.6/site-packages/
 ```
 
-This is the directory where you should place a path configuration file named skynet.pth. This will allow python to find the SkyNEt modules when imported. To do this, follow the instructions below:
+This is the directory where you should place a path configuration file named 'skynet.pth'. This will allow python to find the SkyNEt modules when imported. To do this, follow the instructions below:
 
 
-    1. Go to the directory
-    ```
-    ~/anaconda3/envs/skynet/lib/python3.6/site-packages
-    ```
-    2. Make a file named skynet.pth containing a line with the absolute path to your SkyNEt repo
+    1. Go to the directory ~/anaconda3/envs/skynet/lib/python3.6/site-packages
+    2. Make a file named 'skynet.pth' containing a line with the absolute path to your SkyNEt repo
     3. Start your python and check sys.path; you should see the path to the repo there
- 
- 
+  
+
+Note: by convention, you should import SkyNEt explicitly, i.e. in the path to the repo do not include the SkyNEt directory, only include the directory a level higher. Since Python will look for scripts on that path, we recommend you keep it separated from all your other scripts to avoid interference.
 
 To finish off the installation process, there is one package left to install. Activate the skynet environment again and run the following command:
 
@@ -58,7 +56,7 @@ pip install nidaqmx
 
 Now you are done with the installation process and ready to get to work!
 
-Note: if you want to work with the neural networks you have to install PyTorch yourself. As this is OS dependent, please have a look at the instructions on the [website](https://pytorch.org/get-started/locally/)
+Note: if you want to work with neural networks you have to install PyTorch yourself. As this is OS dependent, please have a look at the instructions on the [website](https://pytorch.org/get-started/locally/)
 
 Feel free to ask any of the code maintainers (listed at the bottom of this document) for help.
 
