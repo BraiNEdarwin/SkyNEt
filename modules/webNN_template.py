@@ -27,25 +27,28 @@ web.add_vertex(net1, 'B')
 # source vertex, sink vertex, sink gate index
 web.add_arc('B', 'A', 2)
 
+
 # Check if web is valid (and optionally plot)
 #web.check_graph(print_graph=True)
 
-N = 10  # batch_size
+N = 10
+batch_size = 2
+nr_epochs = 100
 
-# explicit train data for each network:
-#train_data = torch.zeros(N, 4)
-#train_data[:,1] = 0.2
-#train_data[:,3] = 0.3
+# explicitly set traindata for each network:
+train_data = torch.zeros(N, 4)
+train_data[:,1] = 0.2
+train_data[:,3] = 0.3
 
 # use same train data for all vertices:
-train_data = torch.zeros(N,2)
-train_data[:,1] = 0.9
+#train_data = torch.zeros(N, 2)
+#train_data[:,1] = 0.9
 
 # target data 
-targets = 0.5*torch.ones(N,1)
+targets = 0.5*torch.ones(N, 1)
 
 # training
-loss = web.train(train_data, targets, lr=0.01)
+loss, params = web.train(train_data, targets, batch_size, nr_epochs, lr=0.01)
 
 # reset parameters of web
 web.reset_parameters()
@@ -53,12 +56,14 @@ web.reset_parameters()
 # OPTIONAL: define custom optimizer,
 # see https://pytorch.org/docs/stable/optim.html#torch.optim.Optimizer
 optimizer = torch.optim.Adam
-loss = web.train(train_data, targets, optimizer=optimizer, lr=0.01)
-plt.plot(loss)
+loss, params = web.train(train_data, targets, batch_size, nr_epochs, optimizer=optimizer, lr=0.05)
 
 web.reset_parameters()
 
 # OPTIONAL: define custom loss function
-#loss_fn = torch.nn.CrossEntropyLoss(reduction='sum')
-loss_fn = torch.nn.L1Loss(reduction='sum')
-loss = web.train(train_data, targets, optimizer=optimizer, loss_fn=loss_fn, lr=0.01)
+targets = torch.ones(N,).long()
+torch_loss_fn = torch.nn.CrossEntropyLoss(reduction='sum')
+def loss_fn(y_pred, y):
+    y_pred = torch.cat((y_pred, -y_pred), dim=1)
+    return torch_loss_fn(y_pred, y)
+loss, params = web.train(train_data, targets, batch_size, nr_epochs, optimizer=optimizer, loss_fn=loss_fn, lr=0.05)
