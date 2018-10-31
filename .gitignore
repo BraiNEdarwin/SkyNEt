@@ -99,3 +99,5 @@ ENV/
 .mypy_cache/
 qcodes.bat
 .directory
+test/evolution_test/NN_testing/
+Release.key

@@ -3,9 +3,6 @@ This is a template for evolving the NN based on the boolean_logic experiment.
 The only difference to the measurement scripts are on lines where the device is called.
 
 '''
-import sys
-sys.path
-sys.path.append('../../../')
 # SkyNEt imports
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
@@ -120,13 +117,13 @@ for i in range(cf.generations):
 #                                       w)
 
     # Save generation
-    SaveLib.saveMain(saveDirectory,
-                     geneArray,
-                     outputArray,
-                     fitnessArray,
-                     t,
-                     x,
-                     cf.amplification*target)
+#    SaveLib.saveMain(saveDirectory, ## Atribute saveMain does not exist!!
+#                     geneArray,
+#                     outputArray,
+#                     fitnessArray,
+#                     t,
+#                     x,
+#                     cf.amplification*target)
 
     # Evolve to the next generation
     genePool.NextGen()
