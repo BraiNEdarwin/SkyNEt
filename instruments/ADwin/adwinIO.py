@@ -3,7 +3,7 @@ This module provides an input/output function for communicating with the
 ADwin.
 It is broken right now and maybe it is best to rewrite.
 '''
-from instruments.ADwin.adwin import ADwin, ADwinError
+from SkyNEt.instruments.ADwin.adwin import ADwin, ADwinError
 import sys
 import os
 import numpy as np

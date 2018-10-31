@@ -4,11 +4,11 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import evolution_test_config as conf
-import modules.Evolution as evo
+import config_evolution_test as cf
+import SkyNEt.modules.Evolution as evo
 
 # Initialize config object
-conf_obj = conf.experiment_config()
+conf_obj = cf.experiment_config()
 
 # Initialize genepool
 pool = evo.GenePool(conf_obj)
@@ -25,7 +25,11 @@ for i in range(conf_obj.generations):
     print('Best genome of generation ' + str(i) + ': ' + str(pool.pool[np.argmax(pool.fitness)]))
     pool.NextGen()
 
+passed_test = np.linalg.norm(pool.pool[0] - 0) < 1E-12
+
 plt.figure()
 plt.plot(fitness)
+plt.title(f'passed_test = {passed_test}')
 plt.xlabel('Generation')
 plt.ylabel('Fitness')
+plt.show()
