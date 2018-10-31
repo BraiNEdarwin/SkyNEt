@@ -16,7 +16,7 @@ from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 ###############################################################################
 ########################### LOAD DATA  ########################################
 ###############################################################################
-main_dir = r'../../test/NN_test/data4nn/Data_for_testing/'
+main_dir = r'../test/NN_test/data4nn/Data_for_testing/'
 file_name = 'data_for_training.npz'
 data, baseline_var = dl(main_dir, file_name, test_set=True)
 
@@ -30,7 +30,7 @@ learning_rate,nr_epochs,batch_size = 3e-4, 100, 512
 runs = 1
 valerror = np.zeros((runs,nr_epochs))
 for i in range(runs):
-    net = predNNet(data,depth,width)
+    net = staNNet(data,depth,width)
     net.train_nn(learning_rate,nr_epochs,batch_size,betas=(0.9, 0.75))
     valerror[i] = net.L_val
     print('Run nr. ',i)
@@ -50,7 +50,7 @@ net.save_model(main_dir+'TEST_NN.pt')
 ###############################################################################
 ########################### LOAD NN & TEST ####################################
 ###############################################################################
-net = predNNet(main_dir+'TEST_NN.pt')
+net = staNNet(main_dir+'TEST_NN.pt')
 
 ########################## TEST GENERALIZATION  ###############################
 file_dir = main_dir+'test_set_from_trainbatch.npz'
