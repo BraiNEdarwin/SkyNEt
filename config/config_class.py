@@ -318,6 +318,7 @@ class config_class(object):
         try:
             global ivvi
             ivvi.set_dacs_zero()
+            del ivvi  # Test if this works!
         except:
             print('ivvi was not initialized, so also not reset')
 
