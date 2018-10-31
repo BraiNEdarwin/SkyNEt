@@ -117,13 +117,10 @@ for i in range(cf.generations):
 #                                       w)
 
     # Save generation
-#    SaveLib.saveMain(saveDirectory, ## Atribute saveMain does not exist!!
-#                     geneArray,
-#                     outputArray,
-#                     fitnessArray,
-#                     t,
-#                     x,
-#                     cf.amplification*target)
+    SaveLib.saveExperiment(saveDirectory,
+                           genes = geneArray,
+                           output = outputArray,
+                           fitness = fitnessArray)
 
     # Evolve to the next generation
     genePool.NextGen()
