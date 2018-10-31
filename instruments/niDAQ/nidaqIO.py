@@ -1,5 +1,5 @@
 '''
-This module provides an input/output functions for communicating with the
+This module provides input/output functions for communicating with the
 NI USB 6216. (Note that nidaqmx has to be installed seperately first.)
 '''
 import nidaqmx

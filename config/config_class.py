@@ -74,6 +74,7 @@ class config_class(object):
         ###### Config params for the experiments #######
         ################################################
         self.fs = 1000
+        self.comport = 'COM3'  # COM port for the ivvi rack
 
         ################################################
         ############### Evolution settings #############

@@ -1,6 +1,7 @@
 '''
 This module provides an input/output function for communicating with the
 ADwin.
+It is broken right now and maybe it is best to rewrite.
 '''
 from instruments.ADwin.adwin import ADwin, ADwinError
 import sys
@@ -94,7 +95,7 @@ def IO(adw, x, Fs):
                     j += full
 
                 # write to FIFO
-                if (empty > 2000 and k + empty <= InputSize): 
+                if (empty > 2000 and k + empty <= InputSize):
                     adw.SetFifo_Long(2, list(InputBin[k:k + empty]), empty)
                     k = k + empty
                 elif (k + empty > InputSize and not writeFinished):
@@ -198,7 +199,7 @@ def IO_2D(adw, x, Fs):
                     j += full
 
                 # write to FIFO2
-                if (empty2 > 2000 and k2 + empty2 <= InputSize): 
+                if (empty2 > 2000 and k2 + empty2 <= InputSize):
                     adw.SetFifo_Long(2, list(InputBin[0, k2:k2 + empty2]), empty2)
                     k2 = k2 + empty2
                 elif (k2 + empty2 > InputSize and not writeFinished1):
@@ -207,7 +208,7 @@ def IO_2D(adw, x, Fs):
                     writeFinished1 = True #write fifo is now filled with last of InputBin
 
                 # write to FIFO2
-                if (empty3 > 2000 and k3 + empty3 <= InputSize): 
+                if (empty3 > 2000 and k3 + empty3 <= InputSize):
                     adw.SetFifo_Long(3, list(InputBin[1, k3:k3 + empty3]), empty3)
                     k3 = k3 + empty3
                 elif (k3 + empt3 > InputSize and not writeFinished2):
