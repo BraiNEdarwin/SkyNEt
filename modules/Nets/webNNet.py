@@ -74,21 +74,18 @@ class webNNet(torch.nn.Module):
                 y_pred = self.forward(train_data[indices])
                 error = self.error_fn(y_pred, targets[indices], beta, loss_fn)
                 error_value = error.item()
-                error_list.append(error_value)
                 optimizer.zero_grad()
                 error.backward()
                 optimizer.step()
             
             predictions = self.forward(train_data)
             error_value = self.error_fn(predictions, targets, beta, loss_fn).item()
+            error_list.append(error_value)
             if verbose:
                 print("INFO: error at epoch %s: %s" % (epoch, error_value))
             if error_value < best_error:
                 best_error = error_value
                 best_params = self.get_parameters()
-            if error_value < 1e-3:
-                print("INFO: error %s low enough, stop at epoch %s" % (error_value, epoch))
-                break
         return error_list, best_params
 
     def add_vertex(self, network, name, output=False):
@@ -208,7 +205,7 @@ class webNNet(torch.nn.Module):
         """Sets the control voltages of all networks to:
         None: default value
         'rand': randomly generated values
-        can also be number or a list of tensors for each parameter
+        can also be number, single tensor for each parameter or list of tensors 
         """
         if value is None:
             value = self.default_param
@@ -217,11 +214,14 @@ class webNNet(torch.nn.Module):
             with torch.no_grad():
                 if value is 'rand':
                     param.data = torch.rand(len(param))
-                try: # try to index value
-                    assert param.shape == value[i].shape, "Given dimension of parameter %s (%s) does not match (%s)!" % (i, [*value[i].shape], [*param.shape])
-                    param.data = value[i]
-                except TypeError: # if its not subscriptable, its a single value
-                    param.data = value*torch.ones(len(param))
+                else:
+                    try: # try to subscript value
+                        if param.shape == value[i].shape:
+                            param.data = value[i]
+                        else: # if value shape does not match param's, use value for each parameter
+                            param.data = value
+                    except TypeError: # if its not subscriptable, its a single value
+                        param.data = value*torch.ones(len(param))
     
     def get_output(self):
         """Returns last computed output of web"""
