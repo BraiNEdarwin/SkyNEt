@@ -3,11 +3,11 @@ Measurement script to perform an experiment generating data for NN training
 '''
 
 # Import packages
-import modules.SaveLib as SaveLib
-from instruments.niDAQ import nidaqIO
-from instruments.DAC import IVVIrack
+import SkyNEt.modules.SaveLib as SaveLib
+from SkyNEt.instruments.niDAQ import nidaqIO
+from SkyNEt.instruments.DAC import IVVIrack
 import time
-from modules.GenericGridConstructor import gridConstructor as grid
+from SkyNEt.modules.GridConstructor import gridConstructor as grid
 # temporary imports
 import numpy as np
 import os
@@ -55,4 +55,4 @@ for j in range(nr_blocks):
 #SAVE DATA following conventions for NN training
 np.savez(os.path.join(saveDirectory, 'training_NN_data'), data=data)
 
-IVVIrack.setControlVoltages(ivvi, np.zeros(8)) #why 8?!
+IVVIrack.setControlVoltages(ivvi, np.zeros(8))
