@@ -38,6 +38,8 @@ T = config.sampleTime
 # Initialize instrument
 ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
 
+
+
 # Find control voltages:
 if config.findCV:
     controlVoltages = np.zeros((len(config.targetCurrent), config.genes - 1))
@@ -70,7 +72,7 @@ if config.T_test:
         for j in range(samples):
             print('Sampling ' + str(j + 1) + '/' + str(samples) +'...')
             IVVIrack.setControlVoltages(ivvi, controlVoltages[i,:]) 
-            time.sleep(2)  # Pause in between two samples
+            time.sleep(0.5)  # Pause in between two samples
             Tcurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T + 1), fs)
 
 if config.S_test:
