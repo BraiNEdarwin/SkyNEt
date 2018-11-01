@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 class Distribution(object):
     
     def __init__(self,dist_names_list = []):
-        self.dist_names = ['norm','lognorm','expon','exponpow','pareto','cauchy','burr','burr12','dweibull']
+        self.dist_names = ['norm','lognorm','expon','exponpow','cauchy','maxwell','laplace']
         self.dist_results = []
         self.params = {}
         
@@ -68,6 +68,6 @@ class Distribution(object):
     def Plot(self, y, bins = 20):
         """Visualize the results"""
         x = self.Random(n=len(y))
-        plt.hist(x, bins, alpha = 0.5, label='Fitted')
-        plt.hist(y, bins, alpha = 0.5, label='Actual')
+        plt.hist(x, bins, alpha = 0.5, label='Fitted', normed=True)
+        plt.hist(y, bins, alpha = 0.5, label='Actual', normed=True)
         plt.legend(loc='upper right')

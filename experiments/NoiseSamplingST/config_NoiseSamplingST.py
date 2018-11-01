@@ -6,7 +6,7 @@ Config file corresponding to NoiseSamplingST.py
 @author: Mark Boon
 """
 
-from config.config_class import config_class
+from SkyNEt.config.config_class import config_class
 import numpy as np
 
 
