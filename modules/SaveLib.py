@@ -13,7 +13,11 @@ def saveArrays(filepath, **kwargs):
     Saves an arbitrary amount of numpy arrays in a numpy array archive named
     data. Saves it at the location specified by filepath.
     '''
-    np.savez(os.path.join(filepath, 'data'), **kwargs)
+    if 'filename' in kwargs:
+        filename = kwargs['filename']
+    else:
+        filename = 'data'
+    np.savez(os.path.join(filepath, filename), **kwargs)
 
 def copyFiles(filepath):
     '''
