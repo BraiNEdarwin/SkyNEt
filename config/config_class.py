@@ -318,8 +318,8 @@ class config_class(object):
         '''
         try:
             global ivvi
-            ivvi.set_dacs_zero()
-            del ivvi  # Test if this works!
+            ivvi
+            #del ivvi  # Test if this works!
         except:
             print('ivvi was not initialized, so also not reset')
 
@@ -339,4 +339,4 @@ class config_class(object):
         sys.exit()
 
     # Setup the signal handling
-    signal.signal(signal.SIGINT, reset)
+    # signal.signal(signal.SIGINT, reset)

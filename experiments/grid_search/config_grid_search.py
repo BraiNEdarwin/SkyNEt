@@ -27,16 +27,16 @@ class experiment_config(config_class):
         ################################################
 
         # Specify CVs as list of lists.
-        self.controlVoltages = [[-900, -600, -300, 0, 300, 600, 900]]*5
-        self.input2 = [-900, -600, -300, 0, 300, 600, 900]
-        self.input1 = [-900,0,900]
-        self.voltageGrid = [*controlVoltages,input2,input1]
+        self.controlVoltages = [[-500, 500]]*5
+        self.input2 = [-500, 500]
+        self.input1 = [-500, 500]
+        self.voltageGrid = [*self.controlVoltages,self.input2,self.input1]
         self.electrodes = len(self.voltageGrid)
         self.acqTime = 0.01
         self.samples = 50
 
         # Save settings
-        self.filepath = r'D:\data\path\to\your\directory'
+        self.filepath = r'D:\data\path\to\your\directory\\'
         self.name = 'AND'
 
     #####################################################

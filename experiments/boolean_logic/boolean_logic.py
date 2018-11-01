@@ -22,8 +22,43 @@ import config_boolean_logic as config
 # Other imports
 import time
 import numpy as np
+import signal
+import sys
 
+def reset(signum, frame):
+        '''
+        This functions performs the following reset tasks:
+        - Set IVVI rack DACs to zero
+        - Apply zero signal to the NI daq
+        - Apply zero signal to the ADwin
+        '''
+        try:
+            global ivvi
+            ivvi.set_dacs_zero()
+            print('ivvi DACs set to zero')
+            del ivvi  # Test if this works!
+        except:
+            print('ivvi was not initialized, so also not reset')
+			
+        try:
+            nidaqIO.reset_device()
+            print('nidaq has been reset')
+        except:
+            print('nidaq not connected to PC, so also not reset')
+
+        try:
+            global adw
+            reset_signal = np.zeros((2, 40003))
+            adwinIO.IO_2D(adw, reset_signal, 1000)
+        except:
+            print('adwin was not initialized, so also not reset')
+
+        # Finally stop the script execution
+        sys.exit()
+
+		
 #%% Initialization
+signal.signal(signal.SIGINT, reset)
 
 # Initialize config object
 cf = config.experiment_config()
@@ -120,32 +155,18 @@ for i in range(cf.generations):
                                        w)
 
     # Save generation
-    SaveLib.saveMain(saveDirectory,
-                     geneArray,
-                     outputArray,
-                     fitnessArray,
-                     t,
-                     x,
-                     cf.amplification*target)
+    SaveLib.saveExperiment(saveDirectory,
+                     geneArray = geneArray,
+                     outputArray = outputArray,
+                     fitnessArray = fitnessArray,
+                     t = t,
+                     x = x,
+                     amplified_target = cf.amplification*target)
 
     # Evolve to the next generation
     genePool.NextGen()
 
 PlotBuilder.finalMain(mainFig)
-#raise KeyboardInterrupt
-#
-#finally:
-#    inp = np.zeros((2,20))
-#
-#    controlVoltages = np.zeros(16)
-#
-#    IVVIrack.setControlVoltages(ivvi, controlVoltages)
-#
-#    # feed 0 to nidaq
-#    nidaqIO.IO_2D(inp, SampleFreq)
-#
-#    fname = filepath + '\\main_figure.png'
-#    plt.savefig(fname)
-#    print('All good')
 
-# genePool = Evolution.GenePool(cf.genes, cf.genomes)
+reset(0, 0)
+

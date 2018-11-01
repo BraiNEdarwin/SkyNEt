@@ -4,8 +4,13 @@ NI USB 6216. (Note that nidaqmx has to be installed seperately first.)
 '''
 import SkyNEt.instruments.niDAQ.nidaqmx as nidaqmx
 import SkyNEt.instruments.niDAQ.nidaqmx.constants as constants
+import SkyNEt.instruments.niDAQ.nidaqmx.system.device as device
 import numpy as np
 
+def reset_device():
+	dev = device.Device(name='Dev1')
+	dev.reset_device()
+	
 def IO(y, Fs):
     '''
     Input/output function for communicating with the NI USB 6216 when measuring

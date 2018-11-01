@@ -8,9 +8,48 @@ from SkyNEt.instruments.niDAQ import nidaqIO
 from SkyNEt.instruments.DAC import IVVIrack
 import time
 from SkyNEt.modules.GridConstructor import gridConstructor as grid
+import SkyNEt.experiments.grid_search.config_grid_search as config
 # temporary imports
 import numpy as np
 import os
+import signal
+import sys
+
+def reset(signum, frame):
+        '''
+        This functions performs the following reset tasks:
+        - Set IVVI rack DACs to zero
+        - Apply zero signal to the NI daq
+        - Apply zero signal to the ADwin
+        '''
+        try:
+            global ivvi
+            ivvi.set_dacs_zero()
+            print('ivvi DACs set to zero')
+            del ivvi  # Test if this works!
+        except:
+            print('ivvi was not initialized, so also not reset')
+			
+        try:
+            nidaqIO.reset_device()
+            print('nidaq has been reset')
+        except:
+            print('nidaq not connected to PC, so also not reset')
+
+        try:
+            global adw
+            reset_signal = np.zeros((2, 40003))
+            adwinIO.IO_2D(adw, reset_signal, 1000)
+        except:
+            print('adwin was not initialized, so also not reset')
+
+        # Finally stop the script execution
+        sys.exit()
+
+		
+#%% Initialization
+signal.signal(signal.SIGINT, reset)
+
 
 # Initialize config object
 cf = config.experiment_config()
@@ -42,12 +81,11 @@ for j in range(nr_blocks):
     for i in range(blockSize):
         IVVIrack.setControlVoltages(ivvi, voltages[j * blockSize + i, :])
         time.sleep(0.01)  #tune this to avoid transients
-        data[j * blockSize + i, -samples:] = nidaqIO.IO(np.zeros(samples+1), samples/acqTime)
+        data[j * blockSize + i, -cf.samples:] = nidaqIO.IO(np.zeros(cf.samples), cf.samples/cf.acqTime)
     end_block = time.time()
     print('CV-sweep over one input state took '+str(end_block-start_block)+' sec.')
 
 #SAVE DATA following conventions for NN training
 SaveLib.saveExperiment(saveDirectory, data=data, filename = 'training_NN_data')
-# np.savez(os.path.join(saveDirectory, 'training_NN_data'), data=data)
 
-ivvi.set_dacs_zero()
+reset(0,0)
