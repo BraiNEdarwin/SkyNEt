@@ -69,24 +69,19 @@ class experiment_config(config_class):
         # Define experiment
         self.amplification = 1
         self.TargetGen = self.NOR
-        self.generations = 1
-        self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600], [0.1, 0.5]]
-
+        self.generations = 100
+        self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600]]
+        self.input_scaling = 0.9
 
         # Specify either partition or genomes
         self.partition = [5, 5, 5, 5, 5]
-        #self.genomes = 100
 
         # Documentation
-        self.genelabels = ['CV1/T1','CV2/T3','CV3/T11','CV4/T13','CV5/T15', 'Input scaling']
+        self.genelabels = ['CV1','CV2','CV3','CV4','CV5']
 
-        ################################################
-        ######### USER-SPECIFIC PARAMETERS #############
-        ################################################
-
-        ################# Save settings ################
-        self.filepath = r'D:\data\Mark\Evolutioncheck\\'
-        self.name = 'XNOR'
+        # Save settings
+        self.filepath = r'../../test/evolution_test/NN_testing/'
+        self.name = 'AND'
 
         ################################################
         ################# OFF-LIMITS ###################

@@ -209,17 +209,11 @@ class staNNet(object):
             raise NameError('Input and Output Batch Sizes do not match!')
     
     def save_model(self,path):
+        self.model.eval()
         state_dic = self.model.state_dict()
         state_dic['activation'] = self.activ
         state_dic['loss'] = self.loss_str
         torch.save(state_dic,path)
-#class Net(nn.Module):
-#    
-#    def __init__(self,depth,width,D_in,D_out):
-#        super(Net, self).__init__()
-#        self.depth = depth
-#        self.l_in = nn.Linear(D_in, width)
-#        self.l_out = nn.Linear(width, D_out)
-#        self.l_hid = nn.Linear(width,width)
-#        
-#    def forward(self,x):
+
+    def outputs(self,inputs):
+        return self.model(inputs).data.cpu().numpy()[:,0]

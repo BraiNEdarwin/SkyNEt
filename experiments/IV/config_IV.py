@@ -22,13 +22,13 @@ class experiment_config(object):
 
 
         #define where you want to save the data.
-        self.filepath = r'D:\data\Bram\IV\\'
-        self.name = 'e5vse4'
+        self.filepath = r'D:\Bram\test'
+        self.name = 'test'
         
         #define the IV you want to take in volts.
-        self.v_low = -1.5
-        self.v_high = 1.5
-        self.n_points = 5000
+        self.v_low = -0.9
+        self.v_high = 0.9
+        self.n_points = 10000
         self.direction = 'up'
 
         #define the input and output amplifications.

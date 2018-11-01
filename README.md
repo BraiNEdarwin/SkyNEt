@@ -14,8 +14,10 @@ conda env create -f environment.yml
 Now all that is left to do, is add the SkyNEt repository to the skynet environment, such that all script will be able to import it. To do this, go to your Anaconda prompt and activate the skynet environment by running:
 
 ```
-conda activate skynet
+activate skynet
 ```
+
+Note that for non-windows users this will probably be `conda activate skynet` instead.
 
 Now open up an iPython console
 
