@@ -24,8 +24,8 @@ elif config.device == 'adwin':
 else:
     print('specify measurement device')
 
-# Save the Input and Output.
-np.savez(os.path.join(saveDirectory, config.name),Input=Input, Output=Output)
+# Save the Input and Output
+SaveLib.saveExperiment(saveDirectory, input = Input, output = Output)
 
 # Plot the IV curve.
 plt.figure()

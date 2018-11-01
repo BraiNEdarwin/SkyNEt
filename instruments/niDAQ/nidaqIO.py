@@ -2,7 +2,8 @@
 This module provides input/output functions for communicating with the
 NI USB 6216. (Note that nidaqmx has to be installed seperately first.)
 '''
-import nidaqmx
+import SkyNEt.instruments.niDAQ.nidaqmx as nidaqmx
+import SkyNEt.instruments.niDAQ.nidaqmx.constants as constants
 import numpy as np
 
 def IO(y, Fs):
@@ -16,15 +17,15 @@ def IO(y, Fs):
     data; 1D numpy array with data measured on ai0
     '''
     N = len(y)
-    np.append(x, 0)  # Finish by setting dacs to 0
+    np.append(y, 0)  # Finish by setting dacs to 0
     with nidaqmx.Task() as output_task, nidaqmx.Task() as input_task:
         # Define ao/ai channels
         output_task.ao_channels.add_ao_voltage_chan('Dev1/ao0', 'ao0', -10, 10)
         input_task.ai_channels.add_ai_voltage_chan('Dev1/ai0')
 
         # Configure sample rate and set acquisition mode to finite
-        output_task.timing.cfg_samp_clk_timing(Fs, sample_mode=nidaqmx.constants.AcquisitionType.FINITE, samps_per_chan = N)
-        input_task.timing.cfg_samp_clk_timing(Fs, sample_mode=nidaqmx.constants.AcquisitionType.FINITE, samps_per_chan = N)
+        output_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan = N+1)
+        input_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan = N+1)
 
         # Output triggers on the read operation
         output_task.triggers.start_trigger.cfg_dig_edge_start_trig('/Dev1/ai/StartTrigger')
@@ -66,8 +67,8 @@ def IO_2D(x, Fs):
         input_task.ai_channels.add_ai_voltage_chan('Dev1/ai0')
 
         # Configure sample rate and set acquisition mode to finite
-        output_task.timing.cfg_samp_clk_timing(Fs, sample_mode=nidaqmx.constants.AcquisitionType.FINITE, samps_per_chan = N + 1)
-        input_task.timing.cfg_samp_clk_timing(Fs, sample_mode=nidaqmx.constants.AcquisitionType.FINITE, samps_per_chan = N + 1)
+        output_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan = N + 1)
+        input_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan = N + 1)
 
         # Output triggers on the read operation
         output_task.triggers.start_trigger.cfg_dig_edge_start_trig('/Dev1/ai/StartTrigger')
@@ -109,8 +110,8 @@ def IO_2D2I(x, Fs):
         input_task.ai_channels.add_ai_voltage_chan('Dev1/ai1')
 
         # Configure sample rate and set acquisition mode to finite
-        output_task.timing.cfg_samp_clk_timing(Fs, sample_mode=nidaqmx.constants.AcquisitionType.FINITE, samps_per_chan = N + 1)
-        input_task.timing.cfg_samp_clk_timing(Fs, sample_mode=nidaqmx.constants.AcquisitionType.FINITE, samps_per_chan = N + 1)
+        output_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan = N + 1)
+        input_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan = N + 1)
 
         # Output triggers on the read operation
         output_task.triggers.start_trigger.cfg_dig_edge_start_trig('/Dev1/ai/StartTrigger')
