@@ -16,7 +16,7 @@ from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 ###############################################################################
 ########################### LOAD DATA  ########################################
 ###############################################################################
-main_dir = r'../test/NN_test/data4nn/Data_for_testing/'
+main_dir = r'../../test/NN_test/data4nn/Data_for_testing/'
 file_name = 'data_for_training.npz'
 data, baseline_var = dl(main_dir, file_name, test_set=True)
 
