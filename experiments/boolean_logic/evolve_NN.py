@@ -7,7 +7,7 @@ The only difference to the measurement scripts are on lines where the device is 
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
 import SkyNEt.modules.PlotBuilder as PlotBuilder
-import config_evoNN_template as config
+import config_evolve_NN as config
 from SkyNEt.modules.Nets.staNNet import staNNet 
 # Other imports
 import torch
