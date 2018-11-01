@@ -5,6 +5,7 @@ For now it is one output, one input.
 '''
 import nidaqmx
 import numpy as np
+import math
 
 def IO(y, Fs):
     N = len(y)
@@ -28,7 +29,7 @@ def IO(y, Fs):
         input_task.start()
         
         #read data
-        read_data = input_task.read(N + 1)
+        read_data = input_task.read(N + 1, math.ceil(N/Fs))
         data = read_data[1:] #trim off the first datapoint, read lags one sample behind write
 
         #stop and close the tasks
