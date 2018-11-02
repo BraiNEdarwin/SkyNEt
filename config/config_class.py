@@ -6,6 +6,10 @@ Created on Tue Aug  7 14:29:12 2018
 """
 
 import numpy as np
+import signal
+import sys
+from SkyNEt.instruments.niDAQ import nidaqIO  # Import needed for reset handling
+from SkyNEt.instruments.ADwin import adwinIO  # Import needed for reset handling
 
 class config_class(object):
     '''
@@ -19,6 +23,8 @@ class config_class(object):
     self.Fitness, self.TargetGen and self.InputGen respectively. Notice that methods are written
     with CamelCase to differentiate from parameters with smallletters. This convention should also be
     carried to the user-specific experiment_config() classes.
+    Lastly, this config_class object also implements signal handling, specifically
+    ctrl-C events.
 
     ----------------------------------------------------------------------------
     Description of general parameters
@@ -68,6 +74,7 @@ class config_class(object):
         ###### Config params for the experiments #######
         ################################################
         self.fs = 1000
+        self.comport = 'COM3'  # COM port for the ivvi rack
 
         ################################################
         ############### Evolution settings #############
@@ -296,3 +303,40 @@ class config_class(object):
         W[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength): 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) + 40] = 0
         W[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength): 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) + 40] = 0
         return t, x, y, W
+
+    #%%
+    ####################################################
+    ############# SIGNAL HANDLING ######################
+    ####################################################
+
+    def reset(signum, frame):
+        '''
+        This functions performs the following reset tasks:
+        - Set IVVI rack DACs to zero
+        - Apply zero signal to the NI daq
+        - Apply zero signal to the ADwin
+        '''
+        try:
+            global ivvi
+            ivvi
+            #del ivvi  # Test if this works!
+        except:
+            print('ivvi was not initialized, so also not reset')
+
+        try:
+            nidaqIO.IO_2D(np.array([[0],[0]]), 1000)
+        except:
+            print('nidaq not connected to PC, so also not reset')
+
+        try:
+            global adw
+            reset_signal = np.zeros((2, 40003))
+            adwinIO.IO_2D(adw, reset_signal, 1000)
+        except:
+            print('adwin was not initialized, so also not reset')
+
+        # Finally stop the script execution
+        sys.exit()
+
+    # Setup the signal handling
+    # signal.signal(signal.SIGINT, reset)

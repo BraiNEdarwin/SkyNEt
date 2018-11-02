@@ -9,8 +9,8 @@ class GenePool(object):
     def __init__(self, config_obj):
 
         self.config_obj = config_obj
-        self.genes = len(config_obj.generange)
-        self.genomes = sum(config_obj.partition)
+        self.genes = config_obj.genes
+        self.genomes = config_obj.genomes
         self.pool = np.random.rand(self.genomes, self.genes)
         self.fitness = np.zeros(self.genomes)
         self.partition = config_obj.partition

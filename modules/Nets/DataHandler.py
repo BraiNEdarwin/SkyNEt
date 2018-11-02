@@ -215,8 +215,8 @@ if __name__ == '__main__':
         if len(sys.argv) > 2:
             data_dir = sys.argv[2]
         else:
-            main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/'
-            dir_data = 'data4nn/2018_10_12/'
+            main_dir = r'../../test/NN_test/'
+            dir_data = 'data4nn/Data_for_testing/'
             data_dir = main_dir+dir_data    
         file_name = 'data_for_training.npz'
         print('Loading data...')
@@ -224,6 +224,6 @@ if __name__ == '__main__':
     
     elif sys.argv[1] == '-pd': 
         print('Cleaning and preparing data...')
-        main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/'
-        list_dirs = ['25_07_2018_CP-full-search-77K/','2018_08_07_164652_CP_FullSwipe/']
+        main_dir = r'../../test/NN_test/'
+        list_dirs = ['data4nn/Data_for_testing/']
         PrepData(main_dir, list_dirs, threshold = 3.57)

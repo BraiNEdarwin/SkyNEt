@@ -14,6 +14,7 @@ class experiment_config(config_class):
     ----------------------------------------------------------------------------
     Description of general parameters
     ----------------------------------------------------------------------------
+    comport; the COM port to which the ivvi rack is connected.
     amplification; specify the amount of nA/V. E.g. if you set the IVVI to 100M,
         then amplification = 10
     generations; the amount of generations for the GA
@@ -65,17 +66,18 @@ class experiment_config(config_class):
         ################################################
         ######### SPECIFY PARAMETERS ###################
         ################################################
+        self.comport = 'COM3'  # COM port for the ivvi rack
 
         # Define experiment
         self.amplification = 1
         self.TargetGen = self.NOR
-        self.generations = 1
+        self.generations = 2
         self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600], [0.1, 0.5]]
 
 
         # Specify either partition or genomes
-        self.partition = [5, 5, 5, 5, 5]
-        #self.genomes = 100
+        #self.partition = [5, 5, 5, 5, 5]
+        self.genomes = 10
 
         # Documentation
         self.genelabels = ['CV1/T1','CV2/T3','CV3/T11','CV4/T13','CV5/T15', 'Input scaling']
@@ -94,7 +96,7 @@ class experiment_config(config_class):
         # Check if genomes parameter has been changed
         if(self.genomes != sum(self.default_partition)):
             if(self.genomes%5 == 0):
-                self.partition = [self.genomes%5]*5  # Construct equally partitioned genomes
+                self.partition = [int(self.genomes/5)]*5  # Construct equally partitioned genomes
             else:
                 print('WARNING: The specified number of genomes is not divisible by 5.'
                       + ' The remaining genomes are generated randomly each generation. '
@@ -102,8 +104,8 @@ class experiment_config(config_class):
                 self.partition = [self.genomes//5]*5  # Construct equally partitioned genomes
                 self.partition[-1] += self.genomes%5  # Add remainder to last entry of partition
 
-        self.genomes = sum(self.partition)  # Make sure genomes parameter is correct
-        self.genes = len(self.generange)  # Make sure genes parameter is correct
+        self.genomes = int(sum(self.partition))  # Make sure genomes parameter is correct
+        self.genes = int(len(self.generange))  # Make sure genes parameter is correct
 
     #####################################################
     ############# USER-SPECIFIC METHODS #################
