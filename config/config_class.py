@@ -73,17 +73,11 @@ class config_class(object):
         ############### Evolution settings #############
         ################################################
         self.generations = 500
-<<<<<<< HEAD
-        self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [0.1, 1.5]]
-        self.partition = [5, 5, 5, 5, 5]
-        self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
-=======
         self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600], [0.1, 0.5]]
         self.default_partition = [5, 5, 5, 5, 5]
         self.partition = self.default_partition.copy()
         self.genomes = 25
         self.genes = 6
->>>>>>> dev
         self.mutationrate = 0.1
         self.fitnessavg = 1
         self.fitnessparameters = [1, 0, 1, 0.01]

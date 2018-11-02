@@ -9,6 +9,7 @@ import SkyNEt.modules.Evolution as Evolution
 from SkyNEt.instruments.DAC import IVVIrack
 import SkyNEt.modules.PlotBuilder as PlotBuilder
 import config_boolean_logic as config
+from SkyNEt.instruments.ADwin import adwinIO
 
 # Other imports
 import time
@@ -45,7 +46,7 @@ mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabe
 
 
 # Initialize instruments
-ivvi = IVVIrack.initInstrument()
+adw = adwinIO.initInstrument()
 
 # Initialize genepool
 genePool = Evolution.GenePool(cf)
@@ -58,7 +59,7 @@ for i in range(cf.generations):
         for k in range(cf.genes-1):
             controlVoltages[k] = genePool.MapGenes(
                                     cf.generange[k], genePool.pool[j, k])
-        IVVIrack.setControlVoltages(ivvi, controlVoltages)
+        adwinIO.setControlVoltages(adw, controlVoltages, cf.fs)
         time.sleep(1)  # Wait after setting DACs
 
         # Set the input scaling

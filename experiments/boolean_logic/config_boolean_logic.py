@@ -25,17 +25,16 @@ class experiment_config(config_class):
 
         self.amplification = 1 #makes up for the different IVVI amplifications, 1G = 1 and 1M = 1000 such that the output is in nA
         self.TargetGen = self.NOR
-        self.partition = [2, 2, 2, 2, 2]
-        self.generations = 1
-        self.genomes = 1000
-        self.fs = 500
+        self.generations = 100
+        self.fs = 1000
         self.signallength = 0.45
         self.edgelength = 0.01
-        self.generange = [[-600,900], [-1200, 1200], [-1200, 1200], [-1200, 1200], [-600, 600], [0.1, 0.5]]
+        self.generange = [[-1, 1], [-1, 1], [-1, 1], [-1, 1], [0.1, 0.5]]
+        self.genese = 5
 
 
         # Specify either partition or genomes
-        #self.partition = [5, 5, 5, 5, 5]
+        self.partition = [5, 5, 5, 5, 5]
         #self.genomes = 100
 
         # Documentation
@@ -48,7 +47,7 @@ class experiment_config(config_class):
 
         ################# Save settings ################
 
-        self.filepath = r'D:\Tao\test'
+        self.filepath = r'D:\Tao\test\\'
         self.name = 'test'
 
 
