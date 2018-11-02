@@ -39,6 +39,9 @@ class webNNet(torch.nn.Module):
         self.loss = torch.nn.MSELoss(reduction='sum')
         self.optimizer = torch.optim.SGD
         
+        self.register_parameter('bias', torch.nn.Parameter(torch.tensor([])))
+        self.register_parameter('scale', torch.nn.Parameter(torch.tensor([])))
+        
     def train(self, 
               train_data,
               targets,
@@ -47,7 +50,9 @@ class webNNet(torch.nn.Module):
               verbose=False,
               beta=0.01,
               optimizer=None,
-              loss_fn=None, 
+              loss_fn=None,
+              bias = False,
+              scale=False,
               **kwargs):
         """verbose: prints error at each iteration
         beta: scaling parameter for relu regularization outside [0,1] for cv
@@ -71,14 +76,14 @@ class webNNet(torch.nn.Module):
             permutation = torch.randperm(len(train_data))
             for i in range(0,len(permutation), batch_size):
                 indices = permutation[i:i+batch_size]
-                y_pred = self.forward(train_data[indices])
+                y_pred = self.forward(train_data[indices], bias=bias, scale=scale)
                 error = self.error_fn(y_pred, targets[indices], beta, loss_fn)
                 error_value = error.item()
                 optimizer.zero_grad()
                 error.backward()
                 optimizer.step()
             
-            predictions = self.forward(train_data)
+            predictions = self.forward(train_data, bias=bias, scale=scale)
             error_value = self.error_fn(predictions, targets, beta, loss_fn).item()
             error_list.append(error_value)
             if verbose:
@@ -102,6 +107,9 @@ class webNNet(torch.nn.Module):
         
         self.graph[name] = {  'network':network,
                               'isoutput':output}
+        if output:
+            self.bias = torch.cat((self.bias, torch.nn.Parameter(torch.tensor([0.0]))))
+            self.scale = torch.cat((self.scale, torch.nn.Parameter(torch.tensor([0.0]))))
     
     def add_arc(self, source_name, sink_name, sink_gate):
         """Adds arc to graph, which connects an output of one vertex to the input of another.
@@ -114,7 +122,7 @@ class webNNet(torch.nn.Module):
         assert (sink_name, sink_gate) not in self.arcs, "Sink gate (%s, %s), already in use!" % (sink_name, sink_gate)
         self.arcs[(sink_name, sink_gate)] = source_name
         
-    def forward(self, x):
+    def forward(self, x, bias=False, scale=False):
         """Evaluates the graph, returns output (torch.tensor)
         Start at network which is the output of the whole graph, 
         then recursively step through graph vertex by vertex
@@ -132,7 +140,12 @@ class webNNet(torch.nn.Module):
                 # recursively evaluate vertices
                 self.forward_vertex(key)
                 self.output_data = value['output']
-                return value['output']
+                out_value = value['output']
+                if scale:
+                    out_value *= self.scale+1.
+                if bias:
+                    out_value += self.bias
+                return out_value
 
     def forward_vertex(self, vertex):
         """Calculates output of vertex"""
@@ -167,9 +180,9 @@ class webNNet(torch.nn.Module):
         
         # calculate regularization
         reg_loss = 0
-        for x in self.parameters():
-            reg_loss += torch.relu(-x) + torch.relu(x-1.0)
-        reg_loss = torch.sum(reg_loss)
+        for name, x in self.named_parameters():
+            if name not in ['bias', 'scale']:
+                reg_loss += torch.sum(torch.relu(-x) + torch.relu(x-1.0))
         return loss(y_pred, y) + beta*reg_loss
     
     def set_input_data(self, x, verbose=False):
@@ -195,10 +208,10 @@ class webNNet(torch.nn.Module):
             assert False, "Number of input columns/2 (%s) should match number of vertices in graph (%s)" % (dim/2, len(self.graph))
 
     def get_parameters(self):
-        """Returns all learnable parameters of object in a list of torch tensors (can have different sizes)"""
-        params = []
-        for param in self.parameters():
-            params.append(param.data)
+        """Returns all learnable parameters of object in dictionary"""
+        params = {}
+        for name, param in self.named_parameters():
+            params[name] = param.data
         return params
     
     def reset_parameters(self, value = None):
@@ -210,17 +223,24 @@ class webNNet(torch.nn.Module):
         if value is None:
             value = self.default_param
         # set parameters, control voltages of networks
-        for i, param in enumerate(self.parameters()):
+        for name, param in self.named_parameters():
             with torch.no_grad():
                 if value is 'rand':
-                    param.data = torch.rand(len(param))
+                    if name in ['bias', 'scale']:
+                        param.data = torch.zeros(len(param))
+                    else:
+                        param.data = torch.rand(len(param))
+                elif isinstance(value, dict):
+                    param.data = value[name]
+                elif isinstance(value, torch.Tensor):
+                    if name in ['bias', 'scale']:
+                        param.data = torch.zeros(len(param))
+                    else:
+                        param.data = value
                 else:
-                    try: # try to subscript value
-                        if param.shape == value[i].shape:
-                            param.data = value[i]
-                        else: # if value shape does not match param's, use value for each parameter
-                            param.data = value
-                    except TypeError: # if its not subscriptable, its a single value
+                    if name in ['bias', 'scale']:
+                        param.data = torch.zeros(len(param))
+                    else:
                         param.data = value*torch.ones(len(param))
     
     def get_output(self):
