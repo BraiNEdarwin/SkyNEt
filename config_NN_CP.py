@@ -32,5 +32,5 @@ n_points = 1000
 # output = t11/e1
 
 # Save settings
-filepath = r'.\TEST_Evolution_NN_CP_2InpV'
-name = 'CP'
+filepath = r'../../Evolution_NN_CP_2InpV/'
+name = 'CP_inputs_and_targets'

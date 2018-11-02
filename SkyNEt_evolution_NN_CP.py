@@ -56,6 +56,9 @@ genePool = Evolution.GenePool(genes, genomes)
 
 inputs, target, W, t = GenerateInput.ControlProblem_2Iv()
 
+# initialize save directory
+saveDirectory = SaveLib.createSaveDirectory(filepath, name)
+np.savez(saveDirectory,inputs = inputs, target = target)
 # np arrays to save genePools, outputs and fitness
 geneArray = np.empty((generations, genes, genomes))
 outputArray = np.empty((generations, len(target) - skipstates, genomes))
@@ -66,9 +69,6 @@ fitnessTemp = np.empty((genomes, fitnessAvg))
 trained_output = np.empty((len(target) - skipstates, fitnessAvg))
 outputTemp = np.empty((len(target) - skipstates, genomes))
 controlVoltages = np.empty(genes)
-
-# initialize save directory
-#saveDirectory = SaveLib.createSaveDirectory(filepath, name)
 
 # initialize main figure
 mainFig = PlotBuilder.initMainFigEvolution(genes, generations, genelabels, generange)
