@@ -224,3 +224,36 @@ def IO_2D(adw, x, Fs):
     ArrayFloat = [20 * (a - (65536 / 2)) / 65536 for a in ArrayFloat]
 
     return ArrayFloat[:InputSize] # trim off excess datapoints
+
+    def setControlVoltages(adw, x, Fs):
+    '''
+    x is a list of 4 values with desired control voltages in V.
+    '''
+    x = np.asarray(x)  #convert x to numpy array
+    x = (x + 10) / 20 * 65536
+    x = x.astype(int)
+    
+    x = np.tile(x, (FifoSize, 1))
+
+    InputBin = x.copy() # convert float array to integer values
+    InputSize = len(x)
+    try:
+        #adw = ADwin(DEVICENUMBER, RAISE_EXCEPTIONS)
+        if os.name == 'posix':
+            adw.Boot(str('adwin' + PROCESSORTYPE + '.btl'))
+        else:
+            adw.Boot('C:\\ADwin\\ADwin' + PROCESSORTYPE + '.btl')
+        #proc = os.path.abspath(os.path.dirname(sys.argv[0])) + os.sep + 'intstruments' + os.sep + 'ADwin' + os.sep + PROCESS
+        adw.Load_Process('C:\\Users\\PNPNteam\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8write.TB1')
+        adw.Set_Processdelay(1, int(300e6 / Fs))  # delay in clock cycles
+
+        # fill the write FIFO
+        print(x[:, 1])
+        for i in range(4):
+            adw.Fifo_Clear(i + 1)
+            adw.SetFifo_Long(i+1, list(x[:, i]), FifoSize)
+
+        adw.Start_Process(1)
+
+    except ADwinError as e:
+        print('***', e)
