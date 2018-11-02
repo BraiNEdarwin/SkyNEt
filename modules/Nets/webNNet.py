@@ -108,8 +108,8 @@ class webNNet(torch.nn.Module):
         self.graph[name] = {  'network':network,
                               'isoutput':output}
         if output:
-            self.bias = torch.cat((self.bias, torch.nn.Parameter(torch.tensor([0.0]))))
-            self.scale = torch.cat((self.scale, torch.nn.Parameter(torch.tensor([0.0]))))
+            self.bias = torch.nn.Parameter(torch.cat((self.bias, torch.tensor([0.0]))))
+            self.scale = torch.nn.Parameter(torch.cat((self.scale, torch.tensor([0.0]))))
     
     def add_arc(self, source_name, sink_name, sink_gate):
         """Adds arc to graph, which connects an output of one vertex to the input of another.
