@@ -250,9 +250,14 @@ class webNNet(torch.nn.Module):
                     else:
                         param.data = value*torch.ones(len(param))
     
-    def get_output(self):
+    def get_output(self, scale=True, bias=True):
         """Returns last computed output of web"""
-        return self.output_data
+        d = self.output_data
+        if scale:
+            d *= 1+self.scale
+        if bias:
+            d += self.bias
+        return d
     
     def clear_output(self):
         """Reset output data of graph, NOT the parameters"""
