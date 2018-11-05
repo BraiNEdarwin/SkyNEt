@@ -76,7 +76,7 @@ class webNNet(torch.nn.Module):
             permutation = torch.randperm(len(train_data))
             for i in range(0,len(permutation), batch_size):
                 indices = permutation[i:i+batch_size]
-                y_pred = self.forward(train_data[indices], bias=bias, scale=scale)
+                y_pred = self.forward(train_data[indices], bias=bias, scale=scale, verbose=verbose)
                 error = self.error_fn(y_pred, targets[indices], beta, loss_fn)
                 error_value = error.item()
                 optimizer.zero_grad()
@@ -122,7 +122,7 @@ class webNNet(torch.nn.Module):
         assert (sink_name, sink_gate) not in self.arcs, "Sink gate (%s, %s), already in use!" % (sink_name, sink_gate)
         self.arcs[(sink_name, sink_gate)] = source_name
         
-    def forward(self, x, bias=False, scale=False):
+    def forward(self, x, bias=False, scale=False, verbose=False):
         """Evaluates the graph, returns output (torch.tensor)
         Start at network which is the output of the whole graph, 
         then recursively step through graph vertex by vertex
@@ -134,18 +134,25 @@ class webNNet(torch.nn.Module):
         # define input data for all networks
         self.set_input_data(x)
         
+        tuple_scaled_data = ()
+        order = []
         for key,value in self.graph.items():
             # start at vertex which is defined as output
             if value['isoutput']:
+                order.append(key)
                 # recursively evaluate vertices
                 self.forward_vertex(key)
-                self.output_data = value['output']
-                out_value = value['output']
-                if scale:
-                    out_value *= self.scale+1.
-                if bias:
-                    out_value += self.bias
-                return out_value
+                return_value = value['output']
+                tuple_scaled_data += (return_value,)
+        if verbose:
+            print("Assumed order of output is: %s" % order)
+        returned_data = torch.cat(tuple_scaled_data, dim=1)
+        self.output_data = returned_data.data
+        if scale:
+            returned_data *= self.scale+1.
+        if bias:
+            returned_data += self.bias
+        return returned_data
 
     def forward_vertex(self, vertex):
         """Calculates output of vertex"""
