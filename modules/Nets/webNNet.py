@@ -76,7 +76,7 @@ class webNNet(torch.nn.Module):
             permutation = torch.randperm(len(train_data))
             for i in range(0,len(permutation), batch_size):
                 indices = permutation[i:i+batch_size]
-                y_pred = self.forward(train_data[indices], bias=bias, scale=scale, verbose=verbose)
+                y_pred = self.forward(train_data[indices], bias=bias, scale=scale)
                 error = self.error_fn(y_pred, targets[indices], beta, loss_fn)
                 error_value = error.item()
                 optimizer.zero_grad()
@@ -190,6 +190,8 @@ class webNNet(torch.nn.Module):
         for name, x in self.named_parameters():
             if name not in ['bias', 'scale']:
                 reg_loss += torch.sum(torch.relu(-x) + torch.relu(x-1.0))
+            else:
+                reg_loss += torch.abs(x)
         return loss(y_pred, y) + beta*reg_loss
     
     def set_input_data(self, x, verbose=False):
@@ -215,10 +217,10 @@ class webNNet(torch.nn.Module):
             assert False, "Number of input columns/2 (%s) should match number of vertices in graph (%s)" % (dim/2, len(self.graph))
 
     def get_parameters(self):
-        """Returns all learnable parameters of object in dictionary"""
+        """Returns a copy of all learnable parameters of object in dictionary"""
         params = {}
         for name, param in self.named_parameters():
-            params[name] = param.data
+            params[name] = torch.tensor(param.data)
         return params
     
     def reset_parameters(self, value = None):
