@@ -191,7 +191,7 @@ class webNNet(torch.nn.Module):
             if name not in ['bias', 'scale']:
                 reg_loss += torch.sum(torch.relu(-x) + torch.relu(x-1.0))
             else:
-                reg_loss += torch.abs(x)
+                reg_loss += torch.sum(torch.abs(x))
         return loss(y_pred, y) + beta*reg_loss
     
     def set_input_data(self, x, verbose=False):
