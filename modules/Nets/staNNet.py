@@ -172,7 +172,7 @@ class staNNet(object):
                 
                 # Compute and print loss.
                 loss = self.loss_fn(y_pred, self.y_train[indices])
-                loss = loss*(self.C.cuda())
+                #loss = loss*(self.C.cuda())
                 running_loss += loss.item()      
                 # Before the backward pass, use the optimizer object to zero all of the
                 # gradients for the variables it will update (which are the learnable
