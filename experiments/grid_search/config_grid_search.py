@@ -27,17 +27,20 @@ class experiment_config(config_class):
         ################################################
 
         # Specify CVs as list of lists.
-        self.controlVoltages = [[-500, 500]]*5
-        self.input2 = [-500, 500]
-        self.input1 = [-500, 500]
+        self.controlVoltages = [[-900, -600, -300, 0, 300, 600, 900]]*5
+        self.input2 = [-900, -600, -300, 0, 300, 600, 900]
+        self.input1 = [-900,0,900]
         self.voltageGrid = [*self.controlVoltages,self.input2,self.input1]
         self.electrodes = len(self.voltageGrid)
         self.acqTime = 0.01
         self.samples = 50
+        self.fs = 5000
 
+
+        self.electrodeSetup = [[3,4,5,1,2,6,7,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
         # Save settings
-        self.filepath = r'D:\data\path\to\your\directory\\'
-        self.name = 'AND'
+        self.filepath = r'D:\\data\\Mark\\NN_grid\\'
+        self.name = '5CV_full_swipe'
 
     #####################################################
     ############# USER-SPECIFIC METHODS #################

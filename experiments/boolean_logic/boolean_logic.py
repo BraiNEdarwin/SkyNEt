@@ -24,6 +24,9 @@ import time
 import numpy as np
 import signal
 import sys
+import os
+from shutil import copyfile
+
 
 def reset(signum, frame):
         '''
@@ -155,7 +158,7 @@ for i in range(cf.generations):
                                        w)
 
     # Save generation
-    SaveLib.saveExperiment(saveDirectory,
+    SaveLib.saveExperiment(cf.configSrc, saveDirectory,
                      geneArray = geneArray,
                      outputArray = outputArray,
                      fitnessArray = fitnessArray,

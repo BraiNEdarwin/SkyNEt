@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from SkyNEt.config.config_class import config_class
 
 class experiment_config(config_class):
@@ -69,15 +70,15 @@ class experiment_config(config_class):
         self.comport = 'COM3'  # COM port for the ivvi rack
 
         # Define experiment
-        self.amplification = 1
-        self.TargetGen = self.NOR
-        self.generations = 2
-        self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600], [0.1, 0.5]]
+        self.amplification = 10
+        self.TargetGen = self.XOR
+        self.generations = 50
+        self.generange = [[-900,900], [-900, 900], [-900, 900], [0, 900], [-900, 0], [0.2, 0.7]]
 
 
         # Specify either partition or genomes
         #self.partition = [5, 5, 5, 5, 5]
-        self.genomes = 10
+        self.genomes = 25
 
         # Documentation
         self.genelabels = ['CV1/T1','CV2/T3','CV3/T11','CV4/T13','CV5/T15', 'Input scaling']
@@ -88,7 +89,9 @@ class experiment_config(config_class):
 
         ################# Save settings ################
         self.filepath = r'D:\data\Mark\Evolutioncheck\\'
-        self.name = 'XNOR'
+        self.configSrc = os.path.dirname(os.path.abspath(__file__))
+        self.electrodeSetup = [[1,2,3,'ao0','ao1',4,5,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
+        self.name = 'XOR_100M_restricted_e5e6'
 
         ################################################
         ################# OFF-LIMITS ###################

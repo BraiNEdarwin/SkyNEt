@@ -19,23 +19,23 @@ def saveArrays(filepath, **kwargs):
         filename = 'data'
     np.savez(os.path.join(filepath, filename), **kwargs)
 
-def copyFiles(filepath):
+def copyFiles(sourcepath, filepath):
     '''
     This function copies any .py files in the current directory to the directory
     specified by filepath.
     '''
-    filenames = os.listdir()
+    filenames = os.listdir(sourcepath)
     for filename in filenames:
         if(os.path.isfile(filename)):
-            copyfile(filename, os.path.join(filepath, filename))
+            copyfile(sourcepath + '\\' + filename, os.path.join(filepath, filename))
 
-def saveExperiment(filepath, **kwargs):
+def saveExperiment(sourcepath, filepath, **kwargs):
     '''
     This function saves all .py files and any numpy arrays specified by **kwargs
     in the directory specified by filepath.
     '''
     saveArrays(filepath, **kwargs)
-    copyFiles(filepath)
+    copyFiles(sourcepath, filepath)
 
 def createSaveDirectory(filepath, name):
     '''

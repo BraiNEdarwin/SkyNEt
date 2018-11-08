@@ -225,15 +225,13 @@ def IO_2D(adw, x, Fs):
     ArrayFloat = [20 * (a - (65536 / 2)) / 65536 for a in ArrayFloat]
 
     return ArrayFloat[:InputSize] # trim off excess datapoints
-	
-def setControlVoltages(adw, x, Fs):
-	'''
-	x is a list of 4 values with desired control voltages in V.
-	'''
-    x = np.asarray(x)  #convert x to numpy array
+
+
+def setControlVoltages(adw, x, Fs):    
+    '''x is a list of 4 values with desired control voltages in V.'''
+    x = np.asarray(x)   #convert x to numpy array
     x = (x + 10) / 20 * 65536
     x = x.astype(int)
-	
     x = np.tile(x, (FifoSize, 1))
 
     InputBin = x.copy() # convert float array to integer values
@@ -258,4 +256,4 @@ def setControlVoltages(adw, x, Fs):
 
     except ADwinError as e:
         print('***', e)
-		
+

@@ -14,6 +14,10 @@ import numpy as np
 import os
 import signal
 import sys
+from shutil import copyfile
+
+#%% Initialization of saving config file
+configSrc = config.__file__
 
 def reset(signum, frame):
         '''
@@ -57,6 +61,7 @@ cf = config.experiment_config()
 # Construct configuration array
 voltages = grid(cf.electrodes, cf.voltageGrid)
 voltages = voltages[:,::-1]
+#voltages = np.concatenate((voltages[:,0:3], voltages[:,-2:], voltages[:,3:5]), axis = 1) # Now boolean input is on electrode 3 and 4
 print('First two indices are inputs, rest CV. Fastest CV has the last index!')
 
 # Init data container
@@ -77,15 +82,15 @@ for j in range(nr_blocks):
     print('Getting Data for block '+str(j)+'...')
     start_block = time.time()
     IVVIrack.setControlVoltages(ivvi, voltages[j * blockSize, :])
-    time.sleep(1)  #extra delay to account for changing the input voltages
+    time.sleep(0.5)  #extra delay to account for changing the input voltages
     for i in range(blockSize):
         IVVIrack.setControlVoltages(ivvi, voltages[j * blockSize + i, :])
-        time.sleep(0.01)  #tune this to avoid transients
-        data[j * blockSize + i, -cf.samples:] = nidaqIO.IO(np.zeros(cf.samples), cf.samples/cf.acqTime)
+        time.sleep(0.2)  #tune this to avoid transients
+        data[j * blockSize + i, -cf.samples:] = nidaqIO.IO(np.zeros(cf.samples), cf.fs)
     end_block = time.time()
     print('CV-sweep over one input state took '+str(end_block-start_block)+' sec.')
 
 #SAVE DATA following conventions for NN training
 SaveLib.saveExperiment(saveDirectory, data=data, filename = 'training_NN_data')
-
-reset(0,0)
+copyfile(configSrc, saveDirectory + '\\config_grid_search.py')
+#reset(0,0)
