@@ -6,6 +6,7 @@ import SkyNEt.instruments.niDAQ.nidaqmx as nidaqmx
 import SkyNEt.instruments.niDAQ.nidaqmx.constants as constants
 import SkyNEt.instruments.niDAQ.nidaqmx.system.device as device
 import numpy as np
+import math
 
 def reset_device():
 	dev = device.Device(name='Dev1')
@@ -41,10 +42,10 @@ def IO(y, Fs):
         # Start tasks
         output_task.start()
         input_task.start()
-
-        # Read data
-        read_data = input_task.read(N + 1)
-        data = read_data[1:]  # Trim off the first datapoint, read lags one sample behind write
+        
+        #read data
+        read_data = input_task.read(N + 1, math.ceil(N/Fs))
+        data = read_data[1:] #trim off the first datapoint, read lags one sample behind write
 
         # Stop and close the tasks
         input_task.stop()
