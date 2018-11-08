@@ -18,7 +18,7 @@ from torch.autograd import Variable
 #%%
 def DataLoader(data_dir, file_name,
                val_size = 0.1, test_size = 0.1, 
-               syst = 'cuda', batch_size = 4*512,
+               syst = 'CPU', batch_size = 4*512,
                test_set = False):
     '''
     This function loads the data and returns it in a format suitable for the NN to handle:
@@ -122,7 +122,7 @@ def DataLoader(data_dir, file_name,
     return [(x_train,y_train),(x_val,y_val)], baseline_var
 
 #%%
-def GetData(dir_file, syst = 'cuda'):
+def GetData(dir_file, syst = 'CPU'):
     '''Get data from dir_file. Returns the inputs as torch Variables and targets as numpy-arrays. 
     dtype of inputs is defined with kwarg syst. Default is 'cuda'.
     NOTES:
@@ -149,7 +149,7 @@ def GetData(dir_file, syst = 'cuda'):
     return inputs, targets
 
 #%%
-def PrepData(main_dir, list_dirs, threshold = 1000, scale_volts=1000, nr_electrodes=8):
+def PrepData(main_dir, list_dirs, threshold = 1000, scale_volts = 900, nr_electrodes = 8):
     '''Preprocess data to feed NN. It gets as arguments a string with path to main directory and
     a list of strings indicating directories with training_NN_data.npz containing 'data'. A kwarg threshold is given to crop data.
     The data arrays are merged into a single array, cropped given a threshold and the CVs are shifted & rescaled to be in [0,1]. This trafo is done with the [shift,range] of the data.
@@ -160,7 +160,7 @@ def PrepData(main_dir, list_dirs, threshold = 1000, scale_volts=1000, nr_electro
     '''
     data_list = []
     for dir_file in list_dirs:
-        data_buff = np.load(main_dir+dir_file+'training_NN_data.npz')['data']
+        data_buff = np.load(main_dir+dir_file+'training_NN_data_proc.npz')['data']
         data_list.append(data_buff)  
     data = np.concatenate(tuple(data_list))
     

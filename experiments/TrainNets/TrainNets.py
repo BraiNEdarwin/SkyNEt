@@ -16,9 +16,9 @@ from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 ###############################################################################
 ########################### LOAD DATA  ########################################
 ###############################################################################
-main_dir = r'../../test/NN_test/data4nn/Data_for_testing/'
+main_dir = 'C:\\Users\\User\\APH\\Thesis\\Data\\NN_grid\\data4nn\\2018_11_08\\'
 file_name = 'data_for_training.npz'
-data, baseline_var = dl(main_dir, file_name, test_set=True)
+data, baseline_var = dl(main_dir, file_name, test_set=False)
 
 #%%
 ###############################################################################
@@ -26,7 +26,7 @@ data, baseline_var = dl(main_dir, file_name, test_set=True)
 ###############################################################################
 depth = 5
 width = 90
-learning_rate,nr_epochs,batch_size = 3e-4, 100, 512
+learning_rate,nr_epochs,batch_size = 3e-4, 10, 512
 runs = 1
 valerror = np.zeros((runs,nr_epochs))
 for i in range(runs):
@@ -74,12 +74,12 @@ plt.subplot(1,2,1)
 plt.plot(targets[subsample],prediction[subsample],'.')
 plt.xlabel('True Output')
 plt.ylabel('Predicted Output')
-min_out = np.min(np.concatenate((targets[subsample],prediction[subsample,np.newaxis])))
-max_out = np.max(np.concatenate((targets[subsample],prediction[subsample,np.newaxis])))
+min_out = np.min(np.concatenate((targets[subsample, np.newaxis],prediction[subsample,np.newaxis])))
+max_out = np.max(np.concatenate((targets[subsample, np.newaxis],prediction[subsample,np.newaxis])))
 plt.plot(np.linspace(min_out,max_out),np.linspace(min_out,max_out),'k')
 plt.title('Predicted vs True values')
 
-error = (targets[:,0]-prediction.T).T/np.sqrt(baseline_var)
+error = (targets[:]-prediction.T).T/np.sqrt(baseline_var)
 plt.subplot(1,2,2)
 plt.hist(error,100)
 plt.title('Scaled error histogram')
