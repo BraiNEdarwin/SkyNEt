@@ -50,10 +50,10 @@ def bigDaddy(geneArray, fitnessArray):
 
 
 def bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration):
-    genes = geneArray.shape[1]
+    genes = geneArray.shape[2]
     bigDaddyArray = np.empty((currentGeneration, genes))
     for i in range(currentGeneration):
-        bigDaddyArray[i, :] = geneArray[i, :, np.argmax(fitnessArray[i, :])]
+        bigDaddyArray[i, :] = geneArray[i, np.argmax(fitnessArray[i, :])]
 
     for i in range(genes):
         mainFig.axes[i * 2].plot(range(1, currentGeneration + 1),
@@ -84,7 +84,7 @@ def outputMain(mainFig, t, target, outputArray, fitnessArray, currentGeneration)
     plt.pause(0.01)
 
 def outputMainEvolution(mainFig, t, target, outputArray, fitnessArray, currentGeneration, W):
-    x = outputArray[currentGeneration - 1,:, np.argmax(fitnessArray[currentGeneration - 1])]
+    x = outputArray[currentGeneration - 1, np.argmax(fitnessArray[currentGeneration - 1])]
 
     #extract fit data with weights W
     indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)

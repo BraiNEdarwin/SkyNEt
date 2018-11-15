@@ -25,26 +25,26 @@ def DataLoader(data_dir, file_name,
         -Partitions the data into training, validation and test sets
         -It defines the type of the tensor used by NN and defining if training is in CPU or GPU
         -Numpy arrays are converted to torch variables
-    Argument data_dir required is a path to the directory containing the data
+    Arguments data_dir and file_name required are strings: a path to the directory containing the data and the name of the data file respectively.
     Default keyword arguments are:
-                file_name = 'combi_data4nn.npz',
                 val_size = 0.1, 
                 test_size = 0.1, 
                 syst = 'cuda', 
                 batch_size = 4*512
                 test_set = False
-    Data structure is a .npz file with a directory having keys: 'inputs','outputs','var_outputs'
+    Data structure loaded must be a .npz file with a directory having keys: 'inputs','outputs','var_output'
     The inputs follow the convention that the first dimension is over CV configs and the second index is
     over [x_inp,CV], where x_inp are the inputs defined by the task. 
     NOTE: while the CV are scaled to the range [0,1], these x_inp values are not scaled!!
     '''
     assert isinstance(batch_size,int), 'Minibatch Size is not integer!!'
-    print('Loading data from: \n'+data_dir)
+    print('Loading data from: \n'+data_dir+file_name)
     
     data = np.load(data_dir+file_name)
     ## DEFINE INPUTS ##
     x_inp = data['inputs'][:,:2]
     np.save(data_dir+'X_inputs',x_inp)
+        
     #Shuffle indices
     shuffler = np.random.permutation(len(data['outputs']))
     inputs = data['inputs'][shuffler]
@@ -55,7 +55,7 @@ def DataLoader(data_dir, file_name,
     assert len(outputs)==len(inputs), 'Inputs and Outpus have NOT the same length'
     nr_samples = len(outputs)
     print('Nr. of samples is ', nr_samples)
-    baseline_var = np.mean(data['var_outputs'])
+    baseline_var = np.mean(data['var_output'])
     
     if test_set:
         # Devide data in training and test set 
@@ -63,11 +63,10 @@ def DataLoader(data_dir, file_name,
         print('Size of TEST set is ',n_test)
         outputs_test = outputs[:n_test] 
         inputs_test = inputs[:n_test]
-        data = np.concatenate((inputs_test,outputs_test),axis=1)
         
         #Save test set
-        test_file = data_dir+'test_data_from_trainbatch'
-        np.savez(test_file, data=data)
+        test_file = data_dir+'test_set_from_trainbatch'
+        np.savez(test_file, inputs=inputs_test, outputs=outputs_test)
         print('Test set saved in \n'+test_file)
         
         outputs_train = outputs[n_test:] 
@@ -150,9 +149,9 @@ def GetData(dir_file, syst = 'cuda'):
     return inputs, targets
 
 #%%
-def PrepData(main_dir, list_dirs, threshold = 1000,nr_electrodes=8):
+def PrepData(main_dir, list_dirs, threshold = 1000, scale_volts=1000, nr_electrodes=8):
     '''Preprocess data to feed NN. It gets as arguments a string with path to main directory and
-    a list of strings indicating directories with nparrays.npz containing 'data'. A kwarg threshold is given to crop data.
+    a list of strings indicating directories with training_NN_data.npz containing 'data'. A kwarg threshold is given to crop data.
     The data arrays are merged into a single array, cropped given a threshold and the CVs are shifted & rescaled to be in [0,1]. This trafo is done with the [shift,range] of the data.
     NOTE:
         -The data is saved in main_dir+'/data4nn/ to a .npz file with keyes: inputs, cv_trafo, outputs, var_output,list_dirs
@@ -161,7 +160,7 @@ def PrepData(main_dir, list_dirs, threshold = 1000,nr_electrodes=8):
     '''
     data_list = []
     for dir_file in list_dirs:
-        data_buff = np.load(main_dir+dir_file+'nparrays.npz')['data']
+        data_buff = np.load(main_dir+dir_file+'training_NN_data.npz')['data']
         data_list.append(data_buff)  
     data = np.concatenate(tuple(data_list))
     
@@ -175,7 +174,7 @@ def PrepData(main_dir, list_dirs, threshold = 1000,nr_electrodes=8):
     
     outputs = mean_output[cropping_mask]
     # Rescale to Volts
-    inputs = cropped_data[:,:nr_electrodes-1]/1000 
+    inputs = cropped_data[:,:nr_electrodes-1]/scale_volts 
     # Shift and rescale CVs to [0,1]
     shift = np.min(inputs[:,2:])
     cv_range = np.max(inputs[:,2:])-np.min(inputs[:,2:])
@@ -195,7 +194,13 @@ def PrepData(main_dir, list_dirs, threshold = 1000,nr_electrodes=8):
     except FileExistsError:
         print("Directory " , dirName ,  " already exists")
     
-    save_to = dirName+'combined_'+now.strftime("%Y_%m_%d")
+    dirName += now.strftime("%Y_%m_%d")+'/'
+    try:
+        os.mkdir(dirName)
+    except FileExistsError:
+        print("Directory " , dirName ,  " already exists")
+        
+    save_to = dirName+'data_for_training'
     print('Cleaned data saved to \n',save_to)
     np.savez(save_to, inputs = inputs, cv_trafo = cv_trafo,
          outputs = outputs, var_output = var_output, list_dirs = list_dirs)
@@ -210,15 +215,15 @@ if __name__ == '__main__':
         if len(sys.argv) > 2:
             data_dir = sys.argv[2]
         else:
-            main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/'
-            dir_data = '2018_08_07_164652_CP_FullSwipe/'
+            main_dir = r'../../test/NN_test/'
+            dir_data = 'data4nn/Data_for_testing/'
             data_dir = main_dir+dir_data    
-        file_name = 'combi_data4nn.npz'
+        file_name = 'data_for_training.npz'
         print('Loading data...')
         data, baseline_var = DataLoader(data_dir, file_name, test_set = True)
     
     elif sys.argv[1] == '-pd': 
         print('Cleaning and preparing data...')
-        main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/'
-        list_dirs = ['25_07_2018_CP-full-search-77K/','2018_08_07_164652_CP_FullSwipe/']
+        main_dir = r'../../test/NN_test/'
+        list_dirs = ['data4nn/Data_for_testing/']
         PrepData(main_dir, list_dirs, threshold = 3.57)

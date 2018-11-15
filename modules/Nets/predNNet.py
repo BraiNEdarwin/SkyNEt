@@ -9,7 +9,7 @@ Created on Mon Mar 12 14:39:57 2018
 import torch
 import torch.nn as nn
 import numpy as np 
-from Nets.staNNet import staNNet
+from SkyNEt.modules.Nets.staNNet import staNNet
 
 class predNNet(staNNet):
     
@@ -22,7 +22,7 @@ class predNNet(staNNet):
             param.requires_grad = False
         pred_layer = nn.Linear(self.pred_in,self.D_in)
         self.dim_cv = self.D_in - self.pred_in
-        pred_layer.bias.data.uniform_(0.01,0.5)
+        pred_layer.bias.data.uniform_(0.0,1.0)
 #        print('Predictor Bias initialized with uniform: ',pred_layer.bias.data)
         #set weights to zero to supress mixture of input and control voltages
         pred_layer.weight.data[-self.dim_cv:] = torch.zeros_like(
@@ -41,9 +41,10 @@ class predNNet(staNNet):
         for name, param in self.predictor.named_parameters(): 
             if name == '0.bias': 
                 x = param[self.pred_in:]
-                reg_loss = (x-0.5)**6 + strength*(1/(x+boundary)**2+1/(x-(0.8-boundary))**2)
+#                reg_loss = (2*(x-0.5))**6 #+ strength*(1/(x+boundary)**2+1/(x-(0.8-boundary))**2)
 #                print('param = ',param)
 #                reg_loss = (2*abs(x-0.5))**50
+                reg_loss = torch.relu(-x) + torch.relu(x-1.0)
                 reg_loss = torch.sum(reg_loss)
 #                print('reg_loss = ',reg_loss)
         return reg_loss
@@ -85,8 +86,9 @@ class predNNet(staNNet):
                 
                 # Compute and print loss.
 #                loss = self.loss_fn(y_pred, y_train[indices])
-                loss = self.loss_fn(y_pred, y_train[indices]) + reg_scale*self.cv_regularizer()
-                loss = loss*scale/yt_var
+                loss = self.loss_fn(y_pred, y_train[indices])/yt_var + reg_scale*self.cv_regularizer()
+#                loss = torch.log10(self.loss_fn(y_pred, y_train[indices])) + reg_scale*self.cv_regularizer()
+                loss = loss*scale
                 
                 running_loss += loss.item()      
                 # Before the backward pass, use the optimizer object to zero all of the
@@ -116,8 +118,9 @@ class predNNet(staNNet):
                 
             y_pred = self.predictor(x_val)
 #            loss = self.loss_fn(y_pred, y_val)
-            loss = self.loss_fn(y_pred, y_val) + reg_scale*self.cv_regularizer()
-            loss = loss*scale/yt_var
+            loss = self.loss_fn(y_pred, y_val)/yt_var + reg_scale*self.cv_regularizer()
+#            loss = torch.log10(self.loss_fn(y_pred, y_val)) + reg_scale*self.cv_regularizer()
+            loss = loss*scale
             
             valErr_pred[epoch] = loss.item()
 
