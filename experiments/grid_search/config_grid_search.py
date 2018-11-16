@@ -1,5 +1,6 @@
 import numpy as np
 from SkyNEt.config.config_class import config_class
+import os
 
 class experiment_config(config_class):
     '''
@@ -27,20 +28,28 @@ class experiment_config(config_class):
         ################################################
 
         # Specify CVs as list of lists.
-        self.controlVoltages = [[-900, -600, -300, 0, 300, 600, 900]]*5
+        #self.controlVoltages = [[-750, -450, -150, 0, 150, 450, 750]]*5
+        #self.input2 = [-900, -600, -300, 0, 300, 600, 900]
+        #self.input1 = [-900,0,900]
+
+        self.controlVoltages =  [[-850, -200, 0, 200, 850]]*5
         self.input2 = [-900, -600, -300, 0, 300, 600, 900]
-        self.input1 = [-900,0,900]
+        self.input1 = [-900, 0, 900]
         self.voltageGrid = [*self.controlVoltages,self.input2,self.input1]
         self.electrodes = len(self.voltageGrid)
         self.acqTime = 0.01
         self.samples = 50
         self.fs = 5000
+        self.amplification = 1
+
+        self.keithley_address = 'GPIB0::17::INSTR'
 
 
         self.electrodeSetup = [[3,4,5,1,2,6,7,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
         # Save settings
         self.filepath = r'D:\\data\\Mark\\NN_grid\\'
-        self.name = '5CV_full_swipe'
+        self.name = '5CV_grid_3'
+        self.configSrc = os.path.dirname(os.path.abspath(__file__))
 
     #####################################################
     ############# USER-SPECIFIC METHODS #################

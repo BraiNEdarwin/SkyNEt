@@ -26,7 +26,7 @@ def copyFiles(sourcepath, filepath):
     '''
     filenames = os.listdir(sourcepath)
     for filename in filenames:
-        if(os.path.isfile(filename)):
+        if(os.path.isfile(sourcepath + '\\' + filename)):
             copyfile(sourcepath + '\\' + filename, os.path.join(filepath, filename))
 
 def saveExperiment(sourcepath, filepath, **kwargs):

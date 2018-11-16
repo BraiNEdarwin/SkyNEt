@@ -18,7 +18,7 @@ class experiment_config(config_class):
         self.fs = 1000          # Sampling freq (Hz)
         self.signallength = 2   # Used for GA (s)
         self.edgelength = 0.01  # Used for GA (s)
-        self.sampleTime = 5000    # Sampling time (s)
+        self.sampleTime = 10    # Sampling time (s)
         self.res = 1E9
         self.steps = [[-800,-600,-400,-200,0,200,400,600,800],[-800,-600,-400,-200,0,200,400,600,800],[0],[0],[0],[-800,-600,-400,-200,0,200,400,600,800],[-800,-600,-400,-200,0,200,400,600,800]]  # Steps per control voltage
         self.controls = 7
@@ -29,25 +29,14 @@ class experiment_config(config_class):
         self.S_test = False      # Tests variations in the variance for measure - switch - measure for one CV
         self.samples = 1       # Amount of measurements for one CV config
         
-        self.filepath = 'D:\\data\\Mark\\ST_tests\\'
-        self.name_T = 'SampleTimeMeas' + str(self.sampleTime) +'s'
+        self.filepath = 'D:\\data\\Mark\\bandwidth\\'
+        self.name_T = 'Tmeas' + str(self.sampleTime) +'s'
         self.name_S = 'SwitchMeas' + str(self.sampleTime) +'s'
         # [S2d, matrix module index, electrode on device]
-        self.electrodeSetup = [[1,2,3,4,5,6,7,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
+        self.electrodeSetup = [[3,4,5,1,2,6,7,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
         
         # IF CVs are already found, use this:
-        self.CVs = np.array([[-271.975,-760.161,562.445,518.329,145.908,705.555,-806.885],
-[564.963,146.272,576.712,-342.936,139.447,-532.064,508.789],
-[4.07539,495.843,-266.899,-324.84,6.39452,814.245,-318.706],
-[41.1826,-242.402,-721.716,308.773,-188.442,775.443,-362.874],
-[-262.662,-157.5,542.459,235.443,464.925,850.41,884.502],
-[488.295,-771.281,549.649,-337.996,339.306,66.1638,-54.8996],
-[-404.857,-279.603,-580.696,-428.617,-201.309,-698.45,608.057],
-[-72.2634,-854.05,606.87,-684.301,518.955,216.692,780.177],
-[-351.778,-799.656,646.86,-203.034,-276.96,352.817,758.577],
-[-785.115,-228.673,-506.417,-878.549,-470.357,-671.32,603.476],
-[662.221,553.607,441.048,-681.078,-388.27,-15.6731,644.703],
-[434.579,-778.963,-85.6676,231.625,-3.35899,-848.032,802.783]])
+        self.CVs = np.array([[-280.978,249.724,545.732,-383.307,354.602,-314.887,394.968]])
                     
     
     

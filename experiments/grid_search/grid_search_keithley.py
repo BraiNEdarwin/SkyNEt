@@ -6,6 +6,7 @@ Measurement script to perform an experiment generating data for NN training
 import SkyNEt.modules.SaveLib as SaveLib
 from SkyNEt.instruments.niDAQ import nidaqIO
 from SkyNEt.instruments.DAC import IVVIrack
+from SkyNEt.instruments.Keithley2000 import Keithley_2000
 import time
 from SkyNEt.modules.GridConstructor import gridConstructor as grid
 import SkyNEt.experiments.grid_search.config_grid_search as config
@@ -73,6 +74,7 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
 # Initialize instruments
 ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
+keithley = Keithley_2000.initInstrument(cf.keithley_address)
 
 nr_blocks = len(cf.input1)*len(cf.input2)
 blockSize = int(len(voltages)/nr_blocks)
@@ -85,8 +87,8 @@ for j in range(nr_blocks):
     time.sleep(0.4)  #extra delay to account for changing the input voltages
     for i in range(blockSize):
         IVVIrack.setControlVoltages(ivvi, voltages[j * blockSize + i, :])
-        time.sleep(0.175)  #tune this to avoid transients
-        data[j * blockSize + i, -cf.samples:] = nidaqIO.IO(np.zeros(cf.samples), cf.fs)
+        time.sleep(0.2)  #tune this to avoid transients
+        data[j * blockSize + i, -cf.samples:] = Keithley_2000.readValues(keithley, cf.samples, cf.fs)
     end_block = time.time()
     print('CV-sweep over one input state took '+str(end_block-start_block)+' sec.')
 
