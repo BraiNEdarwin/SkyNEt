@@ -18,8 +18,9 @@ class experiment_config(config_class):
         self.fs = 1000          # Sampling freq (Hz)
         self.signallength = 2   # Used for GA (s)
         self.edgelength = 0.01  # Used for GA (s)
-        self.sampleTime = 10    # Sampling time (s)
+        self.sampleTime = 100    # Sampling time (s)
         self.res = 1E9
+        self.amplification = 1
         self.steps = [[-800,-600,-400,-200,0,200,400,600,800],[-800,-600,-400,-200,0,200,400,600,800],[0],[0],[0],[-800,-600,-400,-200,0,200,400,600,800],[-800,-600,-400,-200,0,200,400,600,800]]  # Steps per control voltage
         self.controls = 7
         
@@ -37,24 +38,16 @@ class experiment_config(config_class):
         
         # IF CVs are already found, use this:
         self.CVs = np.array([[-280.978,249.724,545.732,-383.307,354.602,-314.887,394.968]])
-                    
-    
     
         #%% Use boolean logic script to find current outputs to use for noise measurement
-        
         self.genelabels = ['CV1/T1','CV2/T3','CV3/T5','CV4/T7','CV5/T11','CV6/T13','CV7/T15','input scaling']
         self.nameCV = 'CVs'
         
-        self.amplification = 1 
         self.genes = 8              # Must be 8 when controlling 7 because boolean_logic defines control voltages for genes - 1
         self.genomes = 25
         self.generations = 10
         self.generange = [[-900,900], [-900, 900], [0, 0], [0, 0], [0, 0], [-900, 900], [-300, -900],[0., 1.]]
-
-        #self.targetCurrent = [-1.50, -1.75, -2.00, -2.25, -2.50, -2.75]
-        #self.targetCurrent = [-3.00, -2.75, -2.50, -2.25, -2.00, -1.75, -1.50, -1.25, -1.00, -0.75, -0.50, -0.25, 
         self.targetCurrent = [1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00]    # The desired output current
-        #self.targetCurrent = [3.25, 3.00, 2.75, 2.50, 2.25, 2.00, 1.75, 1.50, 1.25, 1.00, 0.75, 0.50, 0.25, 0.00]
         self.TargetGen = self.Target
         self.Fitness = self.FitnessNMSE
         self.fitThres = 1000            #Threshold for high enough fitness value during search
