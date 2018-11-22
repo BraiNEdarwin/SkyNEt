@@ -78,7 +78,7 @@ for i in range(cf.generations):
 #            PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
 
             # Train output
-            outputAvg[avgIndex] = cf.amplification * np.asarray(output) + 0.1*(0.5+np.asarray(output))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
+            outputAvg[avgIndex] = cf.amplification * np.asarray(output) + 0.05*(0.5+np.asarray(output))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
 
             # Calculate fitness
             fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],
