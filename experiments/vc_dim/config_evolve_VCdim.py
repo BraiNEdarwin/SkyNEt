@@ -14,6 +14,7 @@ class experiment_config(config_class):
     ----------------------------------------------------------------------------
     Description of general parameters
     ----------------------------------------------------------------------------
+    comport; the COM port to which the ivvi rack is connected.
     amplification; specify the amount of nA/V. E.g. if you set the IVVI to 100M,
         then amplification = 10
     generations; the amount of generations for the GA
@@ -63,6 +64,7 @@ class experiment_config(config_class):
         ################################################
         ######### SPECIFY PARAMETERS ###################
         ################################################
+        self.comport = 'COM3'  # COM port for the ivvi rack
 
         # Define experiment
         self.lengths, self.slopes = [125], [10] # in 1/fs
