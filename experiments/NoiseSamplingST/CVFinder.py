@@ -111,13 +111,13 @@ def CVFinder(config, outputTarget, instrumentInit):
                                            w)
     
         # Save generation
-        SaveLib.saveMain(saveDirectory,
-                         geneArray,
-                         outputArray,
-                         fitnessArray,
-                         t,
-                         x,
-                         config.amplification*target)
+        SaveLib.saveExperiment(config.configSrc, saveDirectory,
+                     geneArray = geneArray,
+                     outputArray = outputArray,
+                     fitnessArray = fitnessArray,
+                     t = t,
+                     x = x,
+                     amplified_target = config.amplification*target)
         
         
         if max(genePool.fitness) > config.fitThres:
