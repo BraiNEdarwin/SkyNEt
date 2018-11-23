@@ -143,8 +143,16 @@ class staNNet(object):
         
         print('Model constructed with modules: /n',modules)
         self.model = nn.Sequential(*modules)
-        self.loss_fn = nn.MSELoss()
-        
+        #self.loss_fn = nn.MSELoss()
+ 
+    def loss_fn(self, pred, targets):
+        a = torch.tensor([-2.7856394298768052, 1.678204974771226])
+        b = torch.tensor([2.7269189780848916, 1.7542828847811897])
+        sign = torch.sign(pred)
+        w = (20 - (sign-1)/2*(a[0]*pred + b[0]) + (sign+1)/2*(a[1]*pred + b[1]))
+        r = torch.mean(((pred - targets) ** 2) * w ) #/ torch.sum(w)
+        return r
+   
     def train_nn(self,learning_rate,nr_epochs,batch_size,betas=(0.9, 0.999),seed=False):   
         """TO DO: 
             check if x_train, x_val and y_train and y_val are defined, if not, raise an error asking to define
@@ -155,7 +163,7 @@ class staNNet(object):
             print('The torch RNG is seeded!')
             
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, betas=betas) # OR SGD?!
-        print('Prediction using ADAM optimaizer')
+        print('Prediction using ADAM optimizer')
         self.L_val = np.zeros((nr_epochs,))
         self.L_train = np.zeros((nr_epochs,))
         for epoch in range(nr_epochs):
@@ -170,7 +178,7 @@ class staNNet(object):
                 indices = permutation[i:i+batch_size]
                 y_pred = self.model(self.x_train[indices])
                 
-                # Compute and print loss.
+                # Compute and print loss. #\\
                 loss = self.loss_fn(y_pred, self.y_train[indices])
                 #loss = loss*(self.C.cuda())
                 running_loss += loss.item()      
@@ -217,3 +225,6 @@ class staNNet(object):
 
     def outputs(self,inputs):
         return self.model(inputs).data.cpu().numpy()[:,0]
+
+
+  

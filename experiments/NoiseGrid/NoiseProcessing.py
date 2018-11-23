@@ -43,8 +43,9 @@ def currentPlotter(data):
     Parameters:
         data: the currents in an array
     '''
+    x = np.linspace(0,data.shape[1]/1000, data.shape[1])
     for i in range(data.shape[0]):
-        plt.plot(data[i,:])
+        plt.plot(x, data[i,:])
     plt.xlabel('time')
     plt.ylabel('current')
     
