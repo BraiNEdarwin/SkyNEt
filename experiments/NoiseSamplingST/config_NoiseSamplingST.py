@@ -19,19 +19,20 @@ class experiment_config(config_class):
         self.signallength = 2   # Used for GA (s)
         self.edgelength = 0.01  # Used for GA (s)
         self.sampleTime = 10    # Sampling time (s)
-        self.res = 100E6
-        self.amplification = 10
+        self.res = 1E6
+        self.amplification = 1000
+        self.postgain = 100
         self.steps = [[-800,-600,-400,-200,0,200,400,600,800],[-800,-600,-400,-200,0,200,400,600,800],[0],[0],[0],[-800,-600,-400,-200,0,200,400,600,800],[-800,-600,-400,-200,0,200,400,600,800]]  # Steps per control voltage
         self.controls = 7
         
-        self.findCV = False         # If true: use GA to find CVs for all targetCurrents
+        self.findCV = True         # If true: use GA to find CVs for all targetCurrents
         self.gridSearch = False     # If true: use a grid for sampling (use self.steps)
         self.T_test = True      # Tests variations in the variance for a sample time
         self.S_test = False      # Tests variations in the variance for measure - switch - measure for one CV
         self.samples = 1       # Amount of measurements for one CV config
         
         self.filepath = 'D:\\data\\Mark\\ST_tests\\'
-        self.name_T = '10x_low_noise_' + str(self.sampleTime) +'s'
+        self.name_T = '1000x_pg_100xdc_' + str(self.sampleTime) +'s'
         self.name_S = 'SwitchMeas' + str(self.sampleTime) +'s'
         # [S2d, matrix module index, electrode on device]
         self.electrodeSetup = [[3,4,5,1,2,6,7,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
@@ -48,11 +49,11 @@ class experiment_config(config_class):
         self.genomes = 25
         self.generations = 5
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [-900, 900],[0., 1.]]
-        self.targetCurrent = [1.5]
+        self.targetCurrent = [1.05, 1.1, 1.2]
         #self.targetCurrent = [1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00]    # The desired output current
         self.TargetGen = self.Target
         self.Fitness = self.FitnessNMSE
-        self.fitThres = 1000            #Threshold for high enough fitness value during search
+        self.fitThres = 2000            #Threshold for high enough fitness value during search
               
         
     def Target(self):        # Dummy function so that the boolean_logic script can be used

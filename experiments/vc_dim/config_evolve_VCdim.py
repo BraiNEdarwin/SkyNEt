@@ -84,7 +84,7 @@ class experiment_config(config_class):
         self.genelabels = ['CV1','CV2','CV3','CV4','CV5']
 
         # Save settings
-        self.filepath = r'../../test/evolution_test/VCdim_testing/'
+        self.filepath = r'D:\data\Mark\test\evolution_test\VCdim_testing\\'
         buf_str = str(labels)
         self.name = 'VCdim-'+''.join(buf_str.lstrip('[').strip(']').split())
 
