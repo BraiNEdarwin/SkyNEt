@@ -6,7 +6,7 @@ This script is a template to train the NN on the data loaded by DataLoader(dir),
 data into training and validation sets and returns a tensor object used by the NN class. 
 @author: hruiz
 """
-
+import random
 import numpy as np
 from matplotlib import pyplot as plt
 from SkyNEt.modules.Nets.staNNet import staNNet
@@ -16,7 +16,9 @@ from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 ###############################################################################
 ########################### LOAD DATA  ########################################
 ###############################################################################
-main_dir = 'C:\\Users\\User\\APH\\Thesis\\Data\\NN_grid\\data4nn\\2018_11_08\\'
+random.seed(22)
+Seed = True
+main_dir = 'C:\\Users\\User\\APH\\Thesis\\Data\\NN_grid\\data4nn\\2018_11_21_cust_loss_noisefit\\'
 file_name = 'data_for_training.npz'
 data, baseline_var = dl(main_dir, file_name, test_set=False)
 
@@ -26,12 +28,12 @@ data, baseline_var = dl(main_dir, file_name, test_set=False)
 ###############################################################################
 depth = 5
 width = 90
-learning_rate,nr_epochs,batch_size = 3e-4, 10, 512
+learning_rate,nr_epochs,batch_size = 3e-4, 100, 512
 runs = 1
 valerror = np.zeros((runs,nr_epochs))
 for i in range(runs):
     net = staNNet(data,depth,width)
-    net.train_nn(learning_rate,nr_epochs,batch_size,betas=(0.9, 0.75))
+    net.train_nn(learning_rate,nr_epochs,batch_size,betas=(0.9, 0.75),seed=Seed)
     valerror[i] = net.L_val
     print('Run nr. ',i)
 
