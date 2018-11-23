@@ -16,7 +16,7 @@ The two different experiments are saved in separate files.
 import modules.SaveLib as SaveLib
 from instruments.DAC import IVVIrack
 from instruments.niDAQ import nidaqIO
-from modules.GenericGridConstructor import gridConstructor
+from SkyNEt.modules.GridConstructor import gridConstructor
 from CVFinder import CVFinder
 import experiments.NoiseSamplingST.config_NoiseSamplingST as config
 
@@ -73,7 +73,7 @@ if config.T_test:
             print('Sampling ' + str(j + 1) + '/' + str(samples) +'...')
             IVVIrack.setControlVoltages(ivvi, controlVoltages[i,:]) 
             time.sleep(0.5)  # Pause in between two samples
-            Tcurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T + 1), fs)
+            Tcurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T), fs)
 
 if config.S_test:
     print('Testing accuracy of switching CV config ...')
@@ -83,7 +83,7 @@ if config.S_test:
             print('Sampling ' + str(j + 1) + '/' + str(samples) +'...')
             IVVIrack.setControlVoltages(ivvi, controlVoltages[i,:]) 
             time.sleep(1)  # Pause in between two samples
-            Scurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T + 1), fs) 
+            Scurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T), fs) 
             IVVIrack.setControlVoltages(ivvi, np.random.random(7) * 1400 - 700) # Switch to a random config.
             time.sleep(2) # Keep the CV config on random for a short period
 
@@ -93,10 +93,10 @@ IVVIrack.setControlVoltages(ivvi, np.zeros(8))
 
 # Save obtained data (the two tests are saved in separate files)
 if config.T_test:
-    np.savez(os.path.join(saveDirectoryT, 'nparrays'), CV = controlVoltages, output = Tcurrents)
+    np.savez(os.path.join(saveDirectoryT, 'nparrays'), CV = controlVoltages, output = config.amplification*Tcurrents)
     copyfile(configSrc, saveDirectoryT +'\\config_NoiseSamplingST.py') # TODO: fix bug with configSrc
 if config.S_test:
-    np.savez(os.path.join(saveDirectoryS, 'nparrays'), CV = controlVoltages, output = Scurrents)
+    np.savez(os.path.join(saveDirectoryS, 'nparrays'), CV = controlVoltages, output = config.amplification*Scurrents)
     copyfile(configSrc, saveDirectoryS + '\\config_NoiseSamplingST.py')
 
 

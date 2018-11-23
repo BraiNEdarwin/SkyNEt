@@ -107,7 +107,7 @@ for i in range(cf.generations):
         time.sleep(1)  # Wait after setting DACs
 
         # Set the input scaling
-        x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
+        x_scaled = 2 * (x - 0.5) * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
 
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
