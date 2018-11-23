@@ -23,7 +23,7 @@ import torch
 import torch.nn as nn
 import numpy as np 
 #from matplotlib import pyplot as plt
-
+noisefit = True
 class staNNet(object):
     
     def __init__(self,*args,loss='MSE',C=1.0,activation='ReLU',BN=False):
@@ -143,7 +143,8 @@ class staNNet(object):
         
         print('Model constructed with modules: /n',modules)
         self.model = nn.Sequential(*modules)
-        #self.loss_fn = nn.MSELoss()
+        if noisefit == False:
+            self.loss_fn = nn.MSELoss()
  
     def loss_fn(self, pred, targets):
         a = torch.tensor([-2.7856394298768052, 1.678204974771226])
