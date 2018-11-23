@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from SkyNEt.config.config_class import config_class
 from SkyNEt.modules.GenWaveform import GenWaveform
 from SkyNEt.modules.Classifiers import perceptron
@@ -17,6 +18,7 @@ class experiment_config(config_class):
     comport; the COM port to which the ivvi rack is connected.
     amplification; specify the amount of nA/V. E.g. if you set the IVVI to 100M,
         then amplification = 10
+    postgain; additional gain of the device after the V/A gain
     generations; the amount of generations for the GA
     generange; the range that each gene ([0, 1]) is mapped to. E.g. in the Boolean
         experiment the genes for the control voltages are mapped to the desired
@@ -69,9 +71,10 @@ class experiment_config(config_class):
         # Define experiment
         self.lengths, self.slopes = [125], [10] # in 1/fs
         self.InputGen = self.input_waveform(inputs)
-        self.amplification = 1
+        self.amplification = 1000
+        self.postgain = 100
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 100
+        self.generations = 10
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]
         self.input_scaling = 0.9
         self.Fitness = self.accuracy_fit
@@ -82,11 +85,13 @@ class experiment_config(config_class):
 
         # Documentation
         self.genelabels = ['CV1','CV2','CV3','CV4','CV5']
+        self.electrodeSetup = [[1,2,3,'ao0','ao1',4,5,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
 
         # Save settings
         self.filepath = r'D:\data\Mark\test\evolution_test\VCdim_testing\\'
         buf_str = str(labels)
         self.name = 'VCdim-'+''.join(buf_str.lstrip('[').strip(']').split())
+        self.configSrc = os.path.dirname(os.path.abspath(__file__))
 
         ################################################
         ################# OFF-LIMITS ###################

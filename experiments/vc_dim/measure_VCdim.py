@@ -51,7 +51,8 @@ signal.signal(signal.SIGINT, reset)
 
 #%% Initialization
 inputs = [[-1,1,-1,1],[-1,-1,1,1]]
-binary_labels = [0,1,1,0]
+binary_labels = [0,10,10,0]
+
 # Initialize config object
 cf = config.experiment_config(inputs,binary_labels)
 
@@ -97,7 +98,7 @@ for i in range(cf.generations):
         time.sleep(1)  # Wait after setting DACs
         
         # Set the input scaling
-        x_scaled = x * genePool.config_obj.input_scaling
+        x_scaled = 2 * (x - 0.5) * genePool.config_obj.input_scaling
 
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
@@ -108,7 +109,7 @@ for i in range(cf.generations):
             PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
 
             # Train output
-            outputAvg[avgIndex] = cf.amplification * np.asarray(output) + 0.05*(0.5+np.asarray(output))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
+            outputAvg[avgIndex] = cf.amplification / cf.postgain * np.asarray(output) + 0.05*(0.5+np.asarray(output))*np.random.standard_normal(np.array(output).shape) # empty for now, as we have only one output node
 
             # Calculate fitness
             fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],
@@ -119,7 +120,7 @@ for i in range(cf.generations):
             PlotBuilder.currentOutputEvolution(mainFig,
                                                t,
                                                target,
-                                               output,
+                                               cf.amplification / cf.postgain * np.array(output),
                                                j + 1, i + 1,
                                                fitnessTemp[j, avgIndex])
 
@@ -143,12 +144,12 @@ for i in range(cf.generations):
                                        outputArray,
                                        i + 1,
                                        t,
-                                       cf.amplification*target,
-                                       output,
+                                       target,
+                                       cf.amplification / cf.postgain * np.array(output),
                                        w)
 
     # Save generation
-    SaveLib.saveExperiment(saveDirectory,
+    SaveLib.saveExperiment(cf.configSrc, saveDirectory,
                            genes = geneArray,
                            output = outputArray,
                            fitness = fitnessArray)

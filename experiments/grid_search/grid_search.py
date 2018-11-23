@@ -91,6 +91,6 @@ for j in range(nr_blocks):
     print('CV-sweep over one input state took '+str(end_block-start_block)+' sec.')
 
 #SAVE DATA following conventions for NN training
-SaveLib.saveExperiment(cf.configSrc, saveDirectory, data=data, filename = 'training_NN_data')
+SaveLib.saveExperiment(cf.configSrc, saveDirectory, data=cf.amplification / cf.postgain * np.array(data), filename = 'training_NN_data')
 
 reset(0,0)
