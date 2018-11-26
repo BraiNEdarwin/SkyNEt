@@ -59,7 +59,7 @@ class experiment_config(config_class):
     Fitness; specify the fitness function, as the accuracy of a perceptron separating the data
     '''
 
-    def __init__(self, inputs, labels):
+    def __init__(self, inputs, labels,filepath=r'../../test/evolution_test/VCdim_testing/'):
         super().__init__() #DO NOT REMOVE!
         ################################################
         ######### SPECIFY PARAMETERS ###################
@@ -71,7 +71,7 @@ class experiment_config(config_class):
         self.InputGen = self.input_waveform(inputs)
         self.amplification = 1
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 100
+        self.generations = 50
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]
         self.input_scaling = 0.9
         self.Fitness = self.accuracy_fit
@@ -84,7 +84,7 @@ class experiment_config(config_class):
         self.genelabels = ['CV1','CV2','CV3','CV4','CV5']
 
         # Save settings
-        self.filepath = r'../../test/evolution_test/VCdim_testing/'
+        self.filepath = filepath
         buf_str = str(labels)
         self.name = 'VCdim-'+''.join(buf_str.lstrip('[').strip(']').split())
 
