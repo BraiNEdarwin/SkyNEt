@@ -15,7 +15,7 @@ import time
 import os
 
 # Create binary labels for N samples
-inputs = [[-1,1,-1,1],[-1,-1,1,1]]
+inputs = [[-1,1,-1,1,-0.6/0.9],[-1,-1,1,1,0]]
 N=len(inputs[0])
 binary_labels = bintarget(N)  
 threshold = 1-(0.65/N)*(1+1.0/N)
@@ -69,8 +69,17 @@ genes_classifier = np.array(genes_classifier)
 
 plt.figure()
 plt.plot(fitness_classifier,accuracy_classifier,'o')
+plt.plot(np.linspace(np.nanmin(fitness_classifier),1.0),threshold*np.ones_like(np.linspace(0,1)),'-k')
 plt.xlabel('Fitness')
 plt.ylabel('Accuracy')
+plt.show()
+
+not_found = found_classifier==0
+print('Classifiers not found: %s' % np.arange(len(found_classifier))[not_found])
+print('belongs to :', binary_labels[not_found])
+output_nf = output_classifier[not_found]
+plt.figure()
+plt.plot(output_nf.T)
 plt.show()
 
 np.savez(dirname+'VCdim_'+str(N)+'-samples', 

@@ -74,7 +74,7 @@ class experiment_config(config_class):
         self.generations = 50
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]
         self.input_scaling = 0.9
-        self.Fitness = self.accuracy_fit
+        self.Fitness = self.corr_fit
 #        self.fitnessparameters = [1, 0, 0, 1]
 
         # Specify either partition or genomes
@@ -134,9 +134,15 @@ class experiment_config(config_class):
         x = output[w][:,np.newaxis]
         y = target[w][:,np.newaxis]
 #        print('shape of x,y: ', x.shape,y.shape)
-#        acc, _, _ = perceptron(x,y)
-        acc = 1.
-        print('Perceptron is OFF!')
+        acc, _, _ = perceptron(x,y)
         X = np.stack((x, y), axis=0)[:,:,0]
         corr = np.corrcoef(X)[0,1]
         return acc*corr
+    
+    def corr_fit(self, output, target, w):
+        x = output[w][:,np.newaxis]
+        y = target[w][:,np.newaxis]
+        X = np.stack((x, y), axis=0)[:,:,0]
+        corr = np.corrcoef(X)[0,1]
+#        print('corr_fit')
+        return corr

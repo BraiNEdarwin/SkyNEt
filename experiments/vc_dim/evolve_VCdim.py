@@ -17,7 +17,7 @@ import time
 import numpy as np
 
 #%% Function definition
-def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_testing/'):
+def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_testing/', hush=True):
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
     
@@ -42,7 +42,8 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
     #saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
     
     # Initialize main figure
-    mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
+    if not hush:
+        mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
     
     # Initialize NN
     main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/2018_08_07_164652_CP_FullSwipe/'
@@ -74,9 +75,11 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
                 inputs = Variable(inputs)
                 output = net.outputs(inputs)
     
-    #            # Plot genome
-    #            PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
-    
+#                # Plot genome
+#                try:
+#                    PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
+#                except:
+#                    pass
                 # Train output
                 outputAvg[avgIndex] = cf.amplification * np.asarray(output) + 0.05*(0.5+np.abs(np.asarray(output)))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
                 noisy_target = target + 0.01*np.random.standard_normal(output.shape)
@@ -86,14 +89,17 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
                                                          noisy_target,
                                                          w)
     
-    #            # Plot output
-    #            PlotBuilder.currentOutputEvolution(mainFig,
-    #                                               t,
-    #                                               target,
-    #                                               output,
-    #                                               j + 1, i + 1,
-    #                                               fitnessTemp[j, avgIndex])
-    
+#                # Plot output
+#                try:
+#                    PlotBuilder.currentOutputEvolution(mainFig,
+#                                                       t,
+#                                                       target,
+#                                                       output,
+#                                                       j + 1, i + 1,
+#                                                       fitnessTemp[j, avgIndex])
+#                except:
+#                    pass
+                
             outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
     
         genePool.fitness = fitnessTemp.min(1)  # Save fitness
@@ -108,16 +114,18 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
         fitnessArray[i, :] = genePool.fitness
     
         # Update main figure
-        PlotBuilder.updateMainFigEvolution(mainFig,
-                                           geneArray,
-                                           fitnessArray,
-                                           outputArray,
-                                           i + 1,
-                                           t,
-                                           cf.amplification*target,
-                                           output,
-                                           w)
-    
+        try:
+            PlotBuilder.updateMainFigEvolution(mainFig,
+                                               geneArray,
+                                               fitnessArray,
+                                               outputArray,
+                                               i + 1,
+                                               t,
+                                               cf.amplification*target,
+                                               output,
+                                               w)
+        except:
+            pass    
         # Save generation
     #    SaveLib.saveExperiment(saveDirectory,
     #                           genes = geneArray,
@@ -127,8 +135,10 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
         # Evolve to the next generation
         genePool.NextGen()
     
-    PlotBuilder.finalMain(mainFig)
-    
+    try:
+        PlotBuilder.finalMain(mainFig)
+    except:
+        pass        
     #Get best results
     max_fitness = np.max(fitnessArray)
     a = fitnessArray
@@ -147,6 +157,6 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
 #%% Initialization
 if __name__=='__main__':
 
-    inputs = [[-1,1,-1,1],[-1,-1,1,1]]
-    binary_labels = [1,0,0,1]
+    inputs = [[-1,1],[1,-1]]
+    binary_labels = [1,0]
     _,_,_,_ = evolve(inputs,binary_labels)
