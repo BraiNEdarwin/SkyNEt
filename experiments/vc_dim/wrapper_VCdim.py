@@ -15,7 +15,7 @@ import time
 import os
 
 # Create binary labels for N samples
-inputs = [[-1,1,-1,1,-0.6/0.9],[-1,-1,1,1,0]]
+inputs = [[-1,1,-1,1,-1.5],[-1,-1,1,1,0]]
 N=len(inputs[0])
 binary_labels = bintarget(N)  
 threshold = 1-(0.65/N)*(1+1.0/N)
@@ -74,14 +74,16 @@ plt.xlabel('Fitness')
 plt.ylabel('Accuracy')
 plt.show()
 
-not_found = found_classifier==0
-print('Classifiers not found: %s' % np.arange(len(found_classifier))[not_found])
-print('belongs to :', binary_labels[not_found])
-output_nf = output_classifier[not_found]
-plt.figure()
-plt.plot(output_nf.T)
-plt.show()
-
+try:
+    not_found = found_classifier==0
+    print('Classifiers not found: %s' % np.arange(len(found_classifier))[not_found])
+    print('belongs to :', binary_labels[not_found])
+    output_nf = output_classifier[not_found]
+    plt.figure()
+    plt.plot(output_nf.T)
+    plt.show()
+except:
+    pass
 np.savez(dirname+'VCdim_'+str(N)+'-samples', 
          binary_labels = binary_labels,
          capacity = capacity,

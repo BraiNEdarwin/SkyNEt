@@ -81,7 +81,7 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
 #                except:
 #                    pass
                 # Train output
-                outputAvg[avgIndex] = cf.amplification * np.asarray(output) + 0.05*(0.5+np.abs(np.asarray(output)))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
+                outputAvg[avgIndex] = cf.amplification * np.asarray(output) + 0.005*(0.5+np.abs(np.asarray(output)))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
                 noisy_target = target + 0.01*np.random.standard_normal(output.shape)
     
                 # Calculate fitness
