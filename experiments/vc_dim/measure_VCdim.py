@@ -103,12 +103,13 @@ for i in range(cf.generations):
         for avgIndex in range(cf.fitnessavg):
             # Feed input to niDAQ
             output = nidaqIO.IO_2D(x_scaled, cf.fs)
+            output = np.array(output)
 
             # Plot genome
             PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
 
             # Train output
-            outputAvg[avgIndex] = cf.amplification * np.asarray(output) + 0.05*(0.5+np.asarray(output))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
+            outputAvg[avgIndex] = cf.amplification * output + 0.05*(0.5+output)*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
 
             # Calculate fitness
             fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],
