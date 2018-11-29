@@ -26,17 +26,17 @@ web.add_vertex(net1, 'A', output=True)
 target_hardcoded = True
 N = 100 # number of data points of one input, total 4*N
 
-batch_size = 50
-nr_epochs = 1000
+batch_size = 100
+nr_epochs = 500
 lr = 0.05
 beta = 0.1
-cv_reset = 'rand' # 0.6*torch.ones(5) # None, 'rand', tensor(5)
-    
+cv_reset = 'rand' #0.4*torch.ones(5)# None, 'rand', tensor(5)
+
 add_noise = True
 sigma = 0.01 # standard deviation of noise in target
 
 # None, mse, l1, bin, softmargin, binmse
-training_type = 'bin'
+training_type = 'mse'
 
 # wether to scale output and to add bias before returning
 bias=False
@@ -88,7 +88,9 @@ optimizer = torch.optim.Adam
 if training_type == 'bin':
     cross_fn = torch.nn.CrossEntropyLoss()
     target_data = target_data.long()
-    def loss_fn(y_pred, y):
+    def loss_fn(y_p, y):
+        y_pred = y_p - 0.5
+        y_pred = y_pred*8
         y_pred = torch.cat((-y_pred, y_pred), dim=1)
         return cross_fn(y_pred, y[:,0])
     add_noise = False
@@ -127,10 +129,11 @@ if add_noise:
 
 # Train each gate
 trained_cv = []
+losslist = []
 for (i,gate) in enumerate(gates):
     print(i, gate)
     web.reset_parameters(cv_reset)
-    loss, best_cv = web.train(input_data, target_data[i].view(-1,1), 
+    loss_l, best_cv = web.train(input_data, target_data[i].view(-1,1), 
                      beta=beta, 
                      batch_size=batch_size,
                      nr_epochs=nr_epochs,
@@ -139,17 +142,22 @@ for (i,gate) in enumerate(gates):
                      bias=bias,
                      scale=scale,
                      lr = lr)
-    
+#                     amsgrad=True)
+    losslist.append(loss_l)
     trained_cv.append(best_cv)
     
+def print_errors():
     # print training error
-    plt.subplot(2, 3 , 1 + i//2 + i%2*3)
-    plt.plot(loss)
-    plt.xlabel('epochs')
-    plt.ylabel('loss')
-    plt.title(gate)
-plt.show()
+    plt.figure()
+    for i,gate in enumerate(gates):
+        plt.subplot(2, 3 , 1 + i//2 + i%2*3)
+        plt.plot(losslist[i])
+        plt.xlabel('epochs')
+        plt.ylabel('loss')
+        plt.title(gate)
+    plt.show()
 
+print_errors()
 
 # printing
 def print_gates():
@@ -164,7 +172,7 @@ def print_gates():
     
         web.reset_parameters(trained_cv[i])
         output_data = web.forward(input_data).data 
-        loss = web.error_fn(cv_output, target_data[i].view(-1,1), beta, loss_fn).item()
+        loss = web.error_fn(output_data, target_data[i].view(-1,1), beta, loss_fn).item()
         print("loss:", loss)
         
         mseloss = torch.nn.MSELoss()(output_data, target_data[i].view(-1,1).float()).item()
