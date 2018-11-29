@@ -102,6 +102,8 @@ class webNNet(torch.nn.Module):
         """
         
         assert not hasattr(self, name), "Name %s already in use, choose other name for vertex!" % name
+        assert 'bias' not in name, "Name should not contain 'bias'"
+        assert 'scale' not in name, "Name should not contain 'scale'"
         cv = self.default_param*torch.ones(5)
         self.register_parameter(name, torch.nn.Parameter(cv))
         
@@ -132,7 +134,7 @@ class webNNet(torch.nn.Module):
         self.clear_output()
         
         # define input data for all networks
-        self.set_input_data(x)
+        self.set_input_data(x, verbose = verbose)
         
         tuple_scaled_data = ()
         order = []
@@ -188,10 +190,13 @@ class webNNet(torch.nn.Module):
         # calculate regularization
         reg_loss = 0
         for name, x in self.named_parameters():
-            if name not in ['bias', 'scale']:
-                reg_loss += torch.sum(torch.relu(-x) + torch.relu(x-1.0))
+            if 'bias' in name:
+                pass
+            elif 'scale' in name:
+#                reg_loss += torch.sum(torch.abs(x))                
+                pass
             else:
-                reg_loss += torch.sum(torch.abs(x))
+                reg_loss += torch.sum(torch.relu(-x) + torch.relu(x-1.0))
         return loss(y_pred, y) + beta*reg_loss
     
     def set_input_data(self, x, verbose=False):
@@ -235,30 +240,30 @@ class webNNet(torch.nn.Module):
         for name, param in self.named_parameters():
             with torch.no_grad():
                 if value is 'rand':
-                    if name in ['bias', 'scale']:
+                    if 'bias' in name or 'scale' in name:
                         param.data = torch.zeros(len(param))
                     else:
                         param.data = torch.rand(len(param))
                 elif isinstance(value, dict):
                     param.data = value[name]
                 elif isinstance(value, torch.Tensor):
-                    if name in ['bias', 'scale']:
+                    if 'bias' in name or 'scale' in name:
                         param.data = torch.zeros(len(param))
                     else:
                         param.data = value
                 else:
-                    if name in ['bias', 'scale']:
+                    if 'bias' in name or 'scale' in name:
                         param.data = torch.zeros(len(param))
                     else:
                         param.data = value*torch.ones(len(param))
     
     def get_output(self, scale=True, bias=True):
         """Returns last computed output of web"""
-        d = self.output_data
+        d = torch.tensor(self.output_data.data)
         if scale:
-            d *= 1+self.scale
+            d *= 1+self.scale.data
         if bias:
-            d += self.bias
+            d += self.bias.data
         return d
     
     def clear_output(self):
