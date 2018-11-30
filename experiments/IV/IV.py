@@ -25,7 +25,7 @@ else:
     print('specify measurement device')
 
 # Save the Input and Output
-SaveLib.saveExperiment(saveDirectory, input = Input, output = Output)
+SaveLib.saveExperiment(config.configSrc, saveDirectory, input = Input, output = Output)
 
 # Plot the IV curve.
 plt.figure()
