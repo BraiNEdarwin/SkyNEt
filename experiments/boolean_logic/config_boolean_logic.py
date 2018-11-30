@@ -71,8 +71,8 @@ class experiment_config(config_class):
         # Define experiment
         self.amplification = 1
         self.TargetGen = self.NOR
-        self.generations = 2
-        self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600], [0.1, 0.5]]
+        self.generations = 10
+        self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [0.1, 0.9]]
 
         # Specify either partition or genomes
         #self.partition = [5, 5, 5, 5, 5]
@@ -82,7 +82,7 @@ class experiment_config(config_class):
         self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
 
         # Save settings
-        self.filepath = r'D:\Data\Bram\evolution_test\\'  #Important: end path with double backslash
+        self.filepath = r'D:\Data\Hans\evolution_test\\'  #Important: end path with double backslash
         self.name = 'NOR'
 
         ################################################

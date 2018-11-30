@@ -26,7 +26,7 @@ def IO(y, Fs):
     np.append(y, 0)  # Finish by setting dacs to 0
     with nidaqmx.Task() as output_task, nidaqmx.Task() as input_task:
         # Define ao/ai channels
-        output_task.ao_channels.add_ao_voltage_chan('Dev1/ao0', 'ao0', -10, 10)
+        output_task.ao_channels.add_ao_voltage_chan('Dev1/ao0', 'ao0', -5, 5)
         input_task.ai_channels.add_ai_voltage_chan('Dev1/ai0')
 
         # Configure sample rate and set acquisition mode to finite
@@ -68,8 +68,8 @@ def IO_2D(x, Fs):
     np.append(x, [[0], [0]], axis=1)  # Finish by setting dacs to 0
     with nidaqmx.Task() as output_task, nidaqmx.Task() as input_task:
         # Define ao/ai channels
-        output_task.ao_channels.add_ao_voltage_chan('Dev1/ao0', 'ao0', -10, 10)
-        output_task.ao_channels.add_ao_voltage_chan('Dev1/ao1', 'ao1', -10, 10)
+        output_task.ao_channels.add_ao_voltage_chan('Dev1/ao0', 'ao0', -5, 5)
+        output_task.ao_channels.add_ao_voltage_chan('Dev1/ao1', 'ao1', -5, 5)
         input_task.ai_channels.add_ai_voltage_chan('Dev1/ai0')
 
         # Configure sample rate and set acquisition mode to finite
@@ -110,8 +110,8 @@ def IO_2D2I(x, Fs):
     np.append(x, [[0], [0]], axis=1)  # Finish by setting dacs to 0
     with nidaqmx.Task() as output_task, nidaqmx.Task() as input_task:
         # Define ao/ai channels
-        output_task.ao_channels.add_ao_voltage_chan('Dev1/ao0', 'ao0', -10, 10)
-        output_task.ao_channels.add_ao_voltage_chan('Dev1/ao1', 'ao1', -10, 10)
+        output_task.ao_channels.add_ao_voltage_chan('Dev1/ao0', 'ao0', -5, 5)
+        output_task.ao_channels.add_ao_voltage_chan('Dev1/ao1', 'ao1', -5, 5)
         input_task.ai_channels.add_ai_voltage_chan('Dev1/ai0')
         input_task.ai_channels.add_ai_voltage_chan('Dev1/ai1')
 

@@ -65,7 +65,7 @@ class GenePool(object):
     def AddNoise(self):
         '''Add Gaussian noise to the fittest partition[1] genes'''
         self.newpool[sum(self.partition[:1]):sum(self.partition[:2])] = (self.pool[:self.partition[1]] +
-                0.02*np.random.randn(self.partition[1],self.newpool.shape[1]))
+                0.1*np.random.randn(self.partition[1],self.newpool.shape[1]))
 
         # check that genes are in [0,1]
         buff = self.newpool[sum(self.partition[:1]):sum(self.partition[:2])] > 1.0
