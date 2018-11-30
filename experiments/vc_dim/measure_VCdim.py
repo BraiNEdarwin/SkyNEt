@@ -8,14 +8,49 @@ import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
 import SkyNEt.modules.PlotBuilder as PlotBuilder
 import config_evolve_VCdim as config
-from SkyNEt.instruments.niDAQ import nidaqIO
-from SkyNEt.instruments.DAC import IVVIrack
+try:
+    from SkyNEt.instruments.DAC import IVVIrack
+    from SkyNEt.instruments.niDAQ import nidaqIO
+except:
+    pass    
 from SkyNEt.modules.Classifiers import perceptron
 # Other imports
 import signal
 import sys
 import time
 import numpy as np
+
+#%% Help functions
+def reset(signum, frame):
+        '''
+        This functions performs the following reset tasks:
+        - Set IVVI rack DACs to zero
+        - Apply zero signal to the NI daq
+        - Apply zero signal to the ADwin
+        '''
+        try:
+            global ivvi
+            ivvi.set_dacs_zero()
+            print('ivvi DACs set to zero')
+            del ivvi  # Test if this works!
+        except:
+            print('ivvi was not initialized, so also not reset')
+			
+        try:
+            nidaqIO.reset_device()
+            print('nidaq has been reset')
+        except:
+            print('nidaq not connected to PC, so also not reset')
+
+        try:
+            global adw
+            reset_signal = np.zeros((2, 40003))
+            adwinIO.IO_2D(adw, reset_signal, 1000)
+        except:
+            print('adwin was not initialized, so also not reset')
+
+        # Finally stop the script execution
+        sys.exit() 
         
 signal.signal(signal.SIGINT, reset)
 
@@ -49,8 +84,10 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
         mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
     
     # Initialize instruments
-    ivvi = IVVIrack.initInstrument()
-    
+    try:
+        ivvi = IVVIrack.initInstrument()
+    except:
+        pass
     # Initialize genepool
     genePool = Evolution.GenePool(cf)
     
@@ -62,17 +99,22 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
             for k in range(cf.genes-1):
                 controlVoltages[k] = genePool.MapGenes(
                                         cf.generange[k], genePool.pool[j, k])
-            IVVIrack.setControlVoltages(ivvi, controlVoltages)
-            time.sleep(1)  # Wait after setting DACs
-            
+            try:
+                IVVIrack.setControlVoltages(ivvi, controlVoltages)
+                time.sleep(1)  # Wait after setting DACs
+            except:
+                pass
             # Set the input scaling
             x_scaled = x * genePool.config_obj.input_scaling
     
             # Measure cf.fitnessavg times the current configuration
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
-                output = nidaqIO.IO_2D(x_scaled, cf.fs)
-                output = np.array(output)
+                try:
+                    output = nidaqIO.IO_2D(x_scaled, cf.fs)
+                    output = np.array(output)
+                except:
+                    output = np.random.standard_normal(len(x[0]))
     
                 # Plot genome
                 try:
@@ -153,38 +195,6 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
     print('Best genome: ', best_genome)
     print('Accuracy of best genome: ', accuracy)
     return best_genome, best_output, max_fitness, accuracy
-
-#%% Help functions
-def reset(signum, frame):
-        '''
-        This functions performs the following reset tasks:
-        - Set IVVI rack DACs to zero
-        - Apply zero signal to the NI daq
-        - Apply zero signal to the ADwin
-        '''
-        try:
-            global ivvi
-            ivvi.set_dacs_zero()
-            print('ivvi DACs set to zero')
-            del ivvi  # Test if this works!
-        except:
-            print('ivvi was not initialized, so also not reset')
-			
-        try:
-            nidaqIO.reset_device()
-            print('nidaq has been reset')
-        except:
-            print('nidaq not connected to PC, so also not reset')
-
-        try:
-            global adw
-            reset_signal = np.zeros((2, 40003))
-            adwinIO.IO_2D(adw, reset_signal, 1000)
-        except:
-            print('adwin was not initialized, so also not reset')
-
-        # Finally stop the script execution
-        sys.exit()
         
 #%% MAIN
 if __name__=='__main__':
