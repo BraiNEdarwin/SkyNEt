@@ -14,9 +14,19 @@ from matplotlib import pyplot as plt
 import time
 import os
 
-# Create binary labels for N samples
-inputs = [[-1,1,-1,1,-1.5],[-1,-1,1,1,0]]
+inputs = [[-0.9,0.9,-0.9,0.9,0,0],[-0.9,-0.9,0.9,0.9,-0.6,0.6]]
 N=len(inputs[0])
+#Create save directory
+filepath0 = r'../../results/VC_dim'
+date = time.strftime('%Y_%m_%d')
+filepath1 = filepath0+'/'+date
+dirname = filepath1+'/Capacity_N'+str(N)+'/'
+if os.path.exists(filepath0):
+    os.makedirs(dirname)
+else:
+    assert 1==0, 'No directory created. Parent target directory '+filepath0+' does not exist'
+    
+# Create binary labels for N samples
 binary_labels = bintarget(N)  
 threshold = 1-(0.65/N)*(1+1.0/N)
 #Initialize container variables
@@ -25,16 +35,6 @@ genes_classifier = []
 output_classifier = []
 accuracy_classifier = []
 found_classifier = []
-
-#Create save directory
-filepath0 = r'../../test/evolution_test/'
-date = time.strftime('%Y_%m_%d-%H%M')
-filepath1 = filepath0+'VCdim_testing/'+date
-dirname = filepath1+'_Capacity/'
-if os.path.exists(filepath0):
-    os.makedirs(dirname)
-else:
-    assert 1==0, 'No directory created. Parent target directory '+filepath0+' does not exist'
     
 for bl in binary_labels:
     
@@ -84,7 +84,10 @@ try:
     plt.show()
 except:
     pass
-np.savez(dirname+'VCdim_'+str(N)+'-samples', 
+
+tstmp = time.strftime('%H-%M')
+np.savez(dirname+tstmp+'-VCdim_'+str(N)+'-inputs',
+         inputs = inputs,
          binary_labels = binary_labels,
          capacity = capacity,
          found_classifier = found_classifier,
