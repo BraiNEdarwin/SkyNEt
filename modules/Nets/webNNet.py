@@ -17,16 +17,20 @@ Structure of arcs (dictionary):
     values: source_name
     
 See webNN_template.py for example use.
+
 @author: ljknoll
 """
 
 import torch
 
+# imports for GA
+import numpy as np
+import SkyNEt.modules.Evolution as Evolution
+
 # imports for plotting graph
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.collections import PatchCollection
-
 
 class webNNet(torch.nn.Module):
     def __init__(self):
@@ -34,6 +38,7 @@ class webNNet(torch.nn.Module):
         self.graph = {} # vertices of graph
         self.arcs = {} # arcs of graph
         self.output_data = None # output data of graph
+        self.nr_cv = 0
         
         self.default_param = 0.8
         self.loss = torch.nn.MSELoss(reduction='sum')
@@ -41,10 +46,108 @@ class webNNet(torch.nn.Module):
         
         self.register_parameter('bias', torch.nn.Parameter(torch.tensor([])))
         self.register_parameter('scale', torch.nn.Parameter(torch.tensor([])))
+    
+    def prepare_config_obj(self, cf):
+        # 5 control voltages for each vertex, one less for each arc
+        cf.genes = len(self.graph)*5 - len(self.arcs)
+        # constant 5 equal partitions, see Evolution.py
+        cf.partition = [cf.genes,]*5
+        cf.genomes = sum(cf.partition)
+
+        def FitnessMSE(x, target):
+            return -(np.linalg.norm(x - target, 2)) ** 2 * (1 / len(x))
+
+        cf.Fitness = FitnessMSE
+    
+    def set_dict_indices_from_pool(self, pool):
+        """ For each registered parameter in this web object, 
+        store the indices of the parameters which are used.
+        For example, when there is an arc from 'A' to 'B' at gate 2, 
+        the GA does not need to update this control voltage as it is overwritten by the arc data.
+        Therefore, these parameters are not included in the pool.
+        """
+        parameters = self.get_parameters()
+        indices = {}
+        # loop through parameters of network
+        for par_name, par_params in parameters.items():
+            indices[par_name] = []
+            # check if parameter is from a vertex
+            if 'bias' not in par_name and 'scale' not in par_name:
+                # loop through control voltages of vertex 'par_name'
+                for j in range(len(par_params)):
+                    # check if current control voltage is in use by an arc, thus no value is needed
+                    # TODO: replace +2 by actual number of datainput of network
+                    if (par_name, j+2) not in self.arcs.keys():
+                        indices[par_name].append(j)
+            # TODO: implement checking for including bias and scale in pool
+            else:
+                indices[par_name] = []
         
+        self.indices = indices
+
+    def set_parameters_from_pool(self, pool):
+        pool_iter = iter(pool)
+        with torch.no_grad():
+            for par_name, indices in self.indices.items():
+                # replace parameter par_name values with values from pool
+                replacement = [next(pool_iter) for _ in range(len(indices))]
+                getattr(self, par_name)[indices] = torch.FloatTensor(replacement)
+            
+    def trainGA(self, 
+                input_data,
+                target_data,
+                cf,
+                verbose = False):
+        """train web with Genetic Algorithm"""
+        
+        self.check_graph()
+        
+        # dummy verbose call to print assumed order of input data once
+        self.set_input_data(input_data, verbose=True)
+        
+        self.prepare_config_obj(cf)
+        genepool = Evolution.GenePool(cf)
+        self.set_dict_indices_from_pool(genepool.pool[0])
+        
+        # np arrays to save genePools, outputs and fitness
+        geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
+        outputArray = np.zeros((cf.generations, cf.genomes, len(input_data)))
+        fitnessArray = np.zeros((cf.generations, cf.genomes))
+        
+        # Temporary arrays, overwritten each generation
+        fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
+        outputAvg = np.zeros((cf.fitnessavg, len(input_data)))
+        outputTemp = np.zeros((cf.genomes, len(input_data)))
+#        controlVoltages = np.zeros(cf.genes)
+
+        for i in range(cf.generations):
+            for j in range(cf.genomes):
+                for avgIndex in range(cf.fitnessavg):
+                    self.set_parameters_from_pool(genepool.pool[j])
+                    self.forward(input_data)
+                    outputAvg[avgIndex] = self.get_output().type(torch.DoubleTensor).numpy().T
+                    fitnessTemp[j, avgIndex] = cf.Fitness(outputAvg[avgIndex], target_data)
+                    
+                outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
+            
+            genepool.fitness = fitnessTemp.min(1)  # Save fitness
+
+            # Save generation data
+            geneArray[i, :, :] = genepool.pool
+            outputArray[i, :, :] = outputTemp
+            fitnessArray[i, :] = genepool.fitness
+
+            if verbose:
+                print("Generation nr. " + str(i + 1) + " completed")
+                print("Highest fitness: " + str(max(genepool.fitness)))
+            
+            genepool.NextGen()
+
+        return geneArray, outputArray, fitnessArray
+    
     def train(self, 
               train_data,
-              targets,
+              target_data,
               batch_size,
               nr_epochs=100,
               verbose=False,
@@ -60,6 +163,7 @@ class webNNet(torch.nn.Module):
         """
         self.check_graph()
         
+        # dummy verbose call to print assumed order of input data once
         self.set_input_data(train_data, verbose=True)
         
         if optimizer is None:
@@ -77,14 +181,14 @@ class webNNet(torch.nn.Module):
             for i in range(0,len(permutation), batch_size):
                 indices = permutation[i:i+batch_size]
                 y_pred = self.forward(train_data[indices], bias=bias, scale=scale)
-                error = self.error_fn(y_pred, targets[indices], beta, loss_fn)
+                error = self.error_fn(y_pred, target_data[indices], beta, loss_fn)
                 error_value = error.item()
                 optimizer.zero_grad()
                 error.backward()
                 optimizer.step()
             
             predictions = self.forward(train_data, bias=bias, scale=scale)
-            error_value = self.error_fn(predictions, targets, beta, loss_fn).item()
+            error_value = self.error_fn(predictions, target_data, beta, loss_fn).item()
             error_list.append(error_value)
             if verbose:
                 print("INFO: error at epoch %s: %s" % (epoch, error_value))
@@ -239,18 +343,22 @@ class webNNet(torch.nn.Module):
         # set parameters, control voltages of networks
         for name, param in self.named_parameters():
             with torch.no_grad():
+                # 'rand' => random values except for bias and scale, bias and scale are zeroed
                 if value is 'rand':
                     if 'bias' in name or 'scale' in name:
                         param.data = torch.zeros(len(param))
                     else:
                         param.data = torch.rand(len(param))
+                # dictionary => dict containing all parameters of web structure
                 elif isinstance(value, dict):
                     param.data = value[name]
+                # single tensor => used for all vertices, bias and scale are zeroed
                 elif isinstance(value, torch.Tensor):
                     if 'bias' in name or 'scale' in name:
                         param.data = torch.zeros(len(param))
                     else:
                         param.data = value
+                # single value => same number copied and used for all vertices, bias and scale are zeroed
                 else:
                     if 'bias' in name or 'scale' in name:
                         param.data = torch.zeros(len(param))
