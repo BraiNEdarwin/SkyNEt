@@ -41,17 +41,17 @@ class webNNet(torch.nn.Module):
         self.nr_cv = 0
         
         self.default_param = 0.8
-        self.loss = torch.nn.MSELoss(reduction='sum')
+        self.loss = torch.nn.MSELoss()
         self.optimizer = torch.optim.SGD
         
         self.register_parameter('bias', torch.nn.Parameter(torch.tensor([])))
         self.register_parameter('scale', torch.nn.Parameter(torch.tensor([])))
     
     def prepare_config_obj(self, cf):
-        # 5 control voltages for each vertex, one less for each arc
+        # total number of genes: 5 control voltages for each vertex, one less for each arc
         cf.genes = len(self.graph)*5 - len(self.arcs)
-        # constant 5 equal partitions, see Evolution.py
-        cf.partition = [cf.genes,]*5
+        # 5 equal partitions, see Evolution.py,
+        cf.partition = [cf.genes]*5
         cf.genomes = sum(cf.partition)
 
         def FitnessMSE(x, target):
@@ -105,8 +105,10 @@ class webNNet(torch.nn.Module):
         # dummy verbose call to print assumed order of input data once
         self.set_input_data(input_data, verbose=True)
         
+        # prepare config object with information of web, # of genes, partitions, genomes, etc
         self.prepare_config_obj(cf)
         genepool = Evolution.GenePool(cf)
+        # stores which indices of self.parameters to change during training
         self.set_dict_indices_from_pool(genepool.pool[0])
         
         # np arrays to save genePools, outputs and fitness
@@ -118,7 +120,6 @@ class webNNet(torch.nn.Module):
         fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
         outputAvg = np.zeros((cf.fitnessavg, len(input_data)))
         outputTemp = np.zeros((cf.genomes, len(input_data)))
-#        controlVoltages = np.zeros(cf.genes)
 
         for i in range(cf.generations):
             for j in range(cf.genomes):
@@ -151,7 +152,7 @@ class webNNet(torch.nn.Module):
               batch_size,
               nr_epochs=100,
               verbose=False,
-              beta=0.01,
+              beta=0.1,
               optimizer=None,
               loss_fn=None,
               bias = False,
@@ -182,7 +183,6 @@ class webNNet(torch.nn.Module):
                 indices = permutation[i:i+batch_size]
                 y_pred = self.forward(train_data[indices], bias=bias, scale=scale)
                 error = self.error_fn(y_pred, target_data[indices], beta, loss_fn)
-                error_value = error.item()
                 optimizer.zero_grad()
                 error.backward()
                 optimizer.step()

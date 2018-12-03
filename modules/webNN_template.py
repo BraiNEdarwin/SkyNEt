@@ -62,7 +62,7 @@ web.reset_parameters()
 
 # OPTIONAL: define custom loss function
 targets = torch.ones(N,).long()
-torch_loss_fn = torch.nn.CrossEntropyLoss(reduction='sum')
+torch_loss_fn = torch.nn.CrossEntropyLoss()
 def loss_fn(y_pred, y):
     y_pred = torch.cat((y_pred, -y_pred), dim=1)
     return torch_loss_fn(y_pred, y)
