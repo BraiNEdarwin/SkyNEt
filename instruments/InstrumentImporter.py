@@ -6,6 +6,8 @@
 from SkyNEt.instruments.ADwin import adwinIO
 from SkyNEt.instruments.niDAQ import nidaqIO
 from SkyNEt.instruments.DAC import IVVIrack
+import signal
+import sys
 
 def reset(signum, frame):
         '''
@@ -15,10 +17,9 @@ def reset(signum, frame):
         - Apply zero signal to the ADwin
         '''
         try:
-            global ivvi
-            ivvi.set_dacs_zero()
+            ivviReset = IVVIrack.initInstrument(name='ivviReset')
+            ivviReset.set_dacs_zero()
             print('ivvi DACs set to zero')
-            del ivvi  # Test if this works!
         except:
             print('ivvi was not initialized, so also not reset')
 			
@@ -37,8 +38,7 @@ def reset(signum, frame):
 
         # Finally stop the script execution
         sys.exit()
-
-		
+	
 # Set up reset call at ctrl-C
 signal.signal(signal.SIGINT, reset)
 

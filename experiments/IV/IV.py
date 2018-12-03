@@ -16,10 +16,10 @@ Input = config.Sweepgen( config.v_high, config.v_low, config.n_points, config.di
 
 # Measure using the device specified in the config class.
 if config.device == 'nidaq':
-    Output = nidaqIO.IO(Input, config.fs)
+    Output = InstrumentImporter.nidaqIO.IO(Input, config.fs)
 elif config.device == 'adwin':
-    adwin = adwinIO.InitInstrument()
-    Output = adwinIO.IO(adwin, Input, config.fs)
+    adwin = InstrumentImporter.adwinIO.InitInstrument()
+    Output = InstrumentImporter.adwinIO.IO(adwin, Input, config.fs)
 else:
     print('specify measurement device')
 

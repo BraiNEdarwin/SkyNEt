@@ -30,7 +30,7 @@ data[:,:voltages.shape[1]] = voltages
 saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
 # Initialize instruments
-ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
+ivvi = InstrumentImporter.IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
 
 nr_blocks = len(cf.input1)*len(cf.input2)
 blockSize = int(len(voltages)/nr_blocks)
@@ -39,12 +39,12 @@ assert len(voltages) == blockSize*nr_blocks, 'Nr of gridpoints not divisible by 
 for j in range(nr_blocks):
     print('Getting Data for block '+str(j)+'...')
     start_block = time.time()
-    IVVIrack.setControlVoltages(ivvi, voltages[j * blockSize, :])
+    InstrumentImporter.IVVIrack.setControlVoltages(ivvi, voltages[j * blockSize, :])
     time.sleep(1)  #extra delay to account for changing the input voltages
     for i in range(blockSize):
         IVVIrack.setControlVoltages(ivvi, voltages[j * blockSize + i, :])
         time.sleep(0.01)  #tune this to avoid transients
-        data[j * blockSize + i, -cf.samples:] = nidaqIO.IO(np.zeros(cf.samples), cf.samples/cf.acqTime)
+        data[j * blockSize + i, -cf.samples:] = InstrumentImporter.nidaqIO.IO(np.zeros(cf.samples), cf.samples/cf.acqTime)
     end_block = time.time()
     print('CV-sweep over one input state took '+str(end_block-start_block)+' sec.')
 

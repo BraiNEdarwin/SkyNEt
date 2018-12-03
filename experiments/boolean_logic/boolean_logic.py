@@ -49,7 +49,7 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
 
 # Initialize instruments
-ivvi = IVVIrack.initInstrument()
+ivvi = InstrumentImporter.IVVIrack.initInstrument()
 
 # Initialize genepool
 genePool = Evolution.GenePool(cf)
@@ -62,7 +62,7 @@ for i in range(cf.generations):
         for k in range(cf.genes-1):
             controlVoltages[k] = genePool.MapGenes(
                                     cf.generange[k], genePool.pool[j, k])
-        IVVIrack.setControlVoltages(ivvi, controlVoltages)
+        InstrumentImporter.IVVIrack.setControlVoltages(ivvi, controlVoltages)
         time.sleep(1)  # Wait after setting DACs
 
         # Set the input scaling
@@ -71,11 +71,11 @@ for i in range(cf.generations):
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
             # Feed input to measurement device
-            if(cf.device == 'nidaq')
-                output = nidaqIO.IO_2D(x_scaled, cf.fs)
+            if(cf.device == 'nidaq'):
+                output = InstrumentImporter.nidaqIO.IO_2D(x_scaled, cf.fs)
             elif(cf.device == 'adwin'):
-                adw = adwinIO.initInstrument()
-                output = adwinIO.IO_2D(adw, x_scaled, cf.fs)
+                adw = InstrumentImporter.adwinIO.initInstrument()
+                output = InstrumentImporter.adwinIO.IO_2D(adw, x_scaled, cf.fs)
             else:
                 print('Specify measurement device as either adwin or nidaq')
 
