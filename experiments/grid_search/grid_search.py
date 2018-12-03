@@ -4,8 +4,7 @@ Measurement script to perform an experiment generating data for NN training
 
 # Import packages
 import SkyNEt.modules.SaveLib as SaveLib
-from SkyNEt.instruments.niDAQ import nidaqIO
-from SkyNEt.instruments.DAC import IVVIrack
+from SkyNEt.intruments import InstrumentImporter
 import time
 from SkyNEt.modules.GridConstructor import gridConstructor as grid
 import SkyNEt.experiments.grid_search.config_grid_search as config
@@ -14,42 +13,6 @@ import numpy as np
 import os
 import signal
 import sys
-
-def reset(signum, frame):
-        '''
-        This functions performs the following reset tasks:
-        - Set IVVI rack DACs to zero
-        - Apply zero signal to the NI daq
-        - Apply zero signal to the ADwin
-        '''
-        try:
-            global ivvi
-            ivvi.set_dacs_zero()
-            print('ivvi DACs set to zero')
-            del ivvi  # Test if this works!
-        except:
-            print('ivvi was not initialized, so also not reset')
-			
-        try:
-            nidaqIO.reset_device()
-            print('nidaq has been reset')
-        except:
-            print('nidaq not connected to PC, so also not reset')
-
-        try:
-            global adw
-            reset_signal = np.zeros((2, 40003))
-            adwinIO.IO_2D(adw, reset_signal, 1000)
-        except:
-            print('adwin was not initialized, so also not reset')
-
-        # Finally stop the script execution
-        sys.exit()
-
-		
-#%% Initialization
-signal.signal(signal.SIGINT, reset)
-
 
 # Initialize config object
 cf = config.experiment_config()
@@ -88,4 +51,4 @@ for j in range(nr_blocks):
 #SAVE DATA following conventions for NN training
 SaveLib.saveExperiment(saveDirectory, data=data, filename = 'training_NN_data')
 
-reset(0,0)
+InstrumentImporter.reset(0,0)

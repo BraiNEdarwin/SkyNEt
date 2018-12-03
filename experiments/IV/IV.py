@@ -1,7 +1,6 @@
-import modules.SaveLib as SaveLib
+import SkyNEt.modules.SaveLib as SaveLib
 import matplotlib.pyplot as plt
-from instruments.ADwin import adwinIO
-from instruments.niDAQ import nidaqIO
+from SkyNEt.instruments import InstrumentImporter
 import numpy as np
 import os
 import config_IV as config
@@ -31,3 +30,6 @@ SaveLib.saveExperiment(saveDirectory, input = Input, output = Output)
 plt.figure()
 plt.plot(Input[0:len(Output)], Output)
 plt.show()
+
+# Final reset
+InstrumentImporter.reset(0, 0)
