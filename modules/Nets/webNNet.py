@@ -38,7 +38,7 @@ class webNNet(torch.nn.Module):
         self.graph = {} # vertices of graph
         self.arcs = {} # arcs of graph
         self.output_data = None # output data of graph
-        self.nr_cv = 0
+        self.nr_output_vertices = 0
         
         self.default_param = 0.8
         self.loss = torch.nn.MSELoss()
@@ -54,10 +54,7 @@ class webNNet(torch.nn.Module):
         cf.partition = [cf.genes]*5
         cf.genomes = sum(cf.partition)
 
-        def FitnessMSE(x, target):
-            return -(np.linalg.norm(x - target, 2)) ** 2 * (1 / len(x))
-
-        cf.Fitness = FitnessMSE
+        cf.Fitness = self.loss
     
     def set_dict_indices_from_pool(self, pool):
         """ For each registered parameter in this web object, 
@@ -113,21 +110,21 @@ class webNNet(torch.nn.Module):
         
         # np arrays to save genePools, outputs and fitness
         geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
-        outputArray = np.zeros((cf.generations, cf.genomes, len(input_data)))
+        outputArray = np.zeros((cf.generations, cf.genomes, input_data.shape[0], self.nr_output_vertices))
         fitnessArray = np.zeros((cf.generations, cf.genomes))
         
         # Temporary arrays, overwritten each generation
         fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
-        outputAvg = np.zeros((cf.fitnessavg, len(input_data)))
-        outputTemp = np.zeros((cf.genomes, len(input_data)))
+        outputAvg = torch.zeros(cf.fitnessavg, input_data.shape[0], self.nr_output_vertices)
+        outputTemp = torch.zeros(cf.genomes, input_data.shape[0], self.nr_output_vertices)
 
         for i in range(cf.generations):
             for j in range(cf.genomes):
                 for avgIndex in range(cf.fitnessavg):
                     self.set_parameters_from_pool(genepool.pool[j])
                     self.forward(input_data)
-                    outputAvg[avgIndex] = self.get_output().type(torch.DoubleTensor).numpy().T
-                    fitnessTemp[j, avgIndex] = cf.Fitness(outputAvg[avgIndex], target_data)
+                    outputAvg[avgIndex] = self.get_output()
+                    fitnessTemp[j, avgIndex] = -cf.Fitness(outputAvg[avgIndex], target_data).item()
                     
                 outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
             
@@ -140,7 +137,7 @@ class webNNet(torch.nn.Module):
 
             if verbose:
                 print("Generation nr. " + str(i + 1) + " completed")
-                print("Highest fitness: " + str(max(genepool.fitness)))
+                print("Best fitness: " + str(-max(genepool.fitness)))
             
             genepool.NextGen()
 
@@ -216,6 +213,7 @@ class webNNet(torch.nn.Module):
         if output:
             self.bias = torch.nn.Parameter(torch.cat((self.bias, torch.tensor([0.0]))))
             self.scale = torch.nn.Parameter(torch.cat((self.scale, torch.tensor([0.0]))))
+            self.nr_output_vertices  += 1
     
     def add_arc(self, source_name, sink_name, sink_gate):
         """Adds arc to graph, which connects an output of one vertex to the input of another.
