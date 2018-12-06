@@ -22,6 +22,7 @@ See webNN_template.py for example use.
 """
 
 import torch
+from collections import OrderedDict as odict
 
 # imports for GA
 import numpy as np
@@ -35,8 +36,8 @@ from matplotlib.collections import PatchCollection
 class webNNet(torch.nn.Module):
     def __init__(self):
         super(webNNet, self).__init__()
-        self.graph = {} # vertices of graph
-        self.arcs = {} # arcs of graph
+        self.graph = odict() # vertices of graph
+        self.arcs = odict() # arcs of graph
         self.output_data = None # output data of graph
         self.nr_output_vertices = 0
         
@@ -99,9 +100,6 @@ class webNNet(torch.nn.Module):
         
         self.check_graph()
         
-        # dummy verbose call to print assumed order of input data once
-        self.set_input_data(input_data, verbose=True)
-        
         # prepare config object with information of web, # of genes, partitions, genomes, etc
         self.prepare_config_obj(cf)
         genepool = Evolution.GenePool(cf)
@@ -160,9 +158,6 @@ class webNNet(torch.nn.Module):
         maxiterations: the number of iterations after which training stops
         """
         self.check_graph()
-        
-        # dummy verbose call to print assumed order of input data once
-        self.set_input_data(train_data, verbose=True)
         
         if optimizer is None:
             print("INFO: Using SGD with, ", kwargs)
@@ -239,17 +234,13 @@ class webNNet(torch.nn.Module):
         self.set_input_data(x, verbose = verbose)
         
         tuple_scaled_data = ()
-        order = []
         for key,value in self.graph.items():
             # start at vertex which is defined as output
             if value['isoutput']:
-                order.append(key)
                 # recursively evaluate vertices
                 self.forward_vertex(key)
                 return_value = value['output']
                 tuple_scaled_data += (return_value,)
-        if verbose:
-            print("Assumed order of output is: %s" % order)
         returned_data = torch.cat(tuple_scaled_data, dim=1)
         self.output_data = returned_data.data
         if scale:
@@ -307,13 +298,9 @@ class webNNet(torch.nn.Module):
         # if input data is provided for each network
         if int(dim/2) is len(self.graph):
             i = 0
-            keys = []
             for key,v in self.graph.items():
                 v['train_data'] = x[:,i:i+2]
                 i += 2
-                keys.append(key)
-            if verbose:
-                print("INFO: Got seperate input data for networks, assumed order is %s" % keys)
         # if input data is supposed to be reused for each network
         elif dim==2:
             for v in self.graph.values():
@@ -404,6 +391,11 @@ class webNNet(torch.nn.Module):
             for sink in list(arcs.keys()):
                 if arcs[sink] in independent_vertices:
                     del arcs[sink]
+        
+        input_order = self.graph.keys()
+        print('Assumed order of input data is: ' + ' '.join(input_order))
+        output_order = [key if value['isoutput'] else '' for key,value in self.graph.items()]
+        print('Order of output data is: ' + ' '.join(output_order))
         
         # ------------------- START plot graph ------------------- 
         if print_graph:
