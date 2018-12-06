@@ -17,7 +17,7 @@ import time
 import numpy as np
 
 #%% Function definition
-def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_testing/', hush=True):
+def evolve(inputs, binary_labels, noise = 0, filepath = r'../../test/evolution_test/VCdim_testing/', hush=True):
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
     
@@ -81,8 +81,8 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
 #                except:
 #                    pass
                 # Train output
-                outputAvg[avgIndex] = cf.amplification * np.asarray(output) + 0.005*(0.5+np.abs(np.asarray(output)))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
-                noisy_target = target + 0.01*np.random.standard_normal(output.shape)
+                outputAvg[avgIndex] = cf.amplification * np.asarray(output) + noise*(3/100)*(1 + np.abs(np.asarray(output)))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
+                noisy_target = target + 0.001*np.random.standard_normal(output.shape)
     
                 # Calculate fitness
                 fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],
