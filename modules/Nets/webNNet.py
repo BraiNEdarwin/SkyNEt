@@ -434,9 +434,9 @@ class webNNet(torch.nn.Module):
                     del arcs[sink]
         
         input_order = self.graph.keys()
-        print('Assumed order of input data is: ' + ' '.join(input_order))
+        print('INFO: Assumed order of input data is: ' + ' '.join(input_order))
         output_order = [key if value['isoutput'] else '' for key,value in self.graph.items()]
-        print('Order of output data is: ' + ' '.join(output_order))
+        print('INFO: Order of output data is: ' + ' '.join(output_order))
         
         # ------------------- START plot graph ------------------- 
         if print_graph:
