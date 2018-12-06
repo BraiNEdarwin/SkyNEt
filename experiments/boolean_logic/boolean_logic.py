@@ -13,52 +13,14 @@ This is done withing 3 for loops:
 
 # SkyNEt imports
 import SkyNEt.modules.SaveLib as SaveLib
-from SkyNEt.instruments.niDAQ import nidaqIO
 import SkyNEt.modules.Evolution as Evolution
-from SkyNEt.instruments.DAC import IVVIrack
 import SkyNEt.modules.PlotBuilder as PlotBuilder
 import config_boolean_logic as config
+from SkyNEt.instruments import InstrumentImporter
 
 # Other imports
 import time
 import numpy as np
-import signal
-import sys
-
-def reset(signum, frame):
-        '''
-        This functions performs the following reset tasks:
-        - Set IVVI rack DACs to zero
-        - Apply zero signal to the NI daq
-        - Apply zero signal to the ADwin
-        '''
-        try:
-            global ivvi
-            ivvi.set_dacs_zero()
-            print('ivvi DACs set to zero')
-            del ivvi  # Test if this works!
-        except:
-            print('ivvi was not initialized, so also not reset')
-			
-        try:
-            nidaqIO.reset_device()
-            print('nidaq has been reset')
-        except:
-            print('nidaq not connected to PC, so also not reset')
-
-        try:
-            global adw
-            reset_signal = np.zeros((2, 40003))
-            adwinIO.IO_2D(adw, reset_signal, 1000)
-        except:
-            print('adwin was not initialized, so also not reset')
-
-        # Finally stop the script execution
-        sys.exit()
-
-		
-#%% Initialization
-signal.signal(signal.SIGINT, reset)
 
 # Initialize config object
 cf = config.experiment_config()
@@ -87,7 +49,7 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
 
 # Initialize instruments
-ivvi = IVVIrack.initInstrument()
+ivvi = InstrumentImporter.IVVIrack.initInstrument()
 
 # Initialize genepool
 genePool = Evolution.GenePool(cf)
@@ -100,7 +62,7 @@ for i in range(cf.generations):
         for k in range(cf.genes-1):
             controlVoltages[k] = genePool.MapGenes(
                                     cf.generange[k], genePool.pool[j, k])
-        IVVIrack.setControlVoltages(ivvi, controlVoltages)
+        InstrumentImporter.IVVIrack.setControlVoltages(ivvi, controlVoltages)
         time.sleep(1)  # Wait after setting DACs
 
         # Set the input scaling
@@ -108,8 +70,14 @@ for i in range(cf.generations):
 
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
-            # Feed input to niDAQ
-            output = nidaqIO.IO_2D(x_scaled, cf.fs)
+            # Feed input to measurement device
+            if(cf.device == 'nidaq'):
+                output = InstrumentImporter.nidaqIO.IO_2D(x_scaled, cf.fs)
+            elif(cf.device == 'adwin'):
+                adw = InstrumentImporter.adwinIO.initInstrument()
+                output = InstrumentImporter.adwinIO.IO_2D(adw, x_scaled, cf.fs)
+            else:
+                print('Specify measurement device as either adwin or nidaq')
 
             # Plot genome
             PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
@@ -168,5 +136,5 @@ for i in range(cf.generations):
 
 PlotBuilder.finalMain(mainFig)
 
-reset(0, 0)
+InstrumentImporter.reset(0, 0)
 

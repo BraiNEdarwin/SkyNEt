@@ -1,7 +1,6 @@
-import modules.SaveLib as SaveLib
+import SkyNEt.modules.SaveLib as SaveLib
 import matplotlib.pyplot as plt
-from instruments.ADwin import adwinIO
-from instruments.niDAQ import nidaqIO
+from SkyNEt.instruments import InstrumentImporter
 import numpy as np
 import os
 import config_IV as config
@@ -17,10 +16,10 @@ Input = config.Sweepgen( config.v_high, config.v_low, config.n_points, config.di
 
 # Measure using the device specified in the config class.
 if config.device == 'nidaq':
-    Output = nidaqIO.IO(Input, config.fs)
+    Output = InstrumentImporter.nidaqIO.IO(Input, config.fs)
 elif config.device == 'adwin':
-    adwin = adwinIO.InitInstrument()
-    Output = adwinIO.IO(adwin, Input, config.fs)
+    adwin = InstrumentImporter.adwinIO.InitInstrument()
+    Output = InstrumentImporter.adwinIO.IO(adwin, Input, config.fs)
 else:
     print('specify measurement device')
 
@@ -31,3 +30,6 @@ SaveLib.saveExperiment(saveDirectory, input = Input, output = Output)
 plt.figure()
 plt.plot(Input[0:len(Output)], Output)
 plt.show()
+
+# Final reset
+InstrumentImporter.reset(0, 0)
