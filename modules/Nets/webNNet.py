@@ -4,19 +4,30 @@
 Created on Fri Oct  5 11:46:46 2018
 Class to create a web of connected neural networks.
 The graph consists of vertices (networks) and arcs (connections between vertices).
-Each arc consist of a source and sink, where the data flows from source to sink.
-Structure of graph (dictionary):
+
+Vertices:
+Structure of self.graph (dictionary):
     keys: names of vertex, values: info of vertex
     vertex info (dictionary):
         'network'   : neural network object
         'input'     : input data which is added to control voltages (torch tensor)
-        'isoutput'  : if output vertex (boolean)
-        'output'    : output data calculated by forward (torch tensor)
-Structure of arcs (dictionary):
+        'isoutput'  : wether vertex is output vertex (boolean)
+        'output'    : output data of vertex calculated by forward_vertex (torch tensor)
+
+Arcs:
+Each arc consist of a source and sink, where the data flows from source to sink.
+Structure of self.arcs (dictionary):
     keys: tuple: (sink_name, sink_gate)
     values: source_name
     
 See webNN_template.py for example use.
+
+Shape of input data:
+    (batch size, input_dimension * nr_output_networks)
+Shape of target data:
+    depends on loss function, but for MSEloss, target needs to be same shape as output of web:
+    (batch size, nr_output_networks)
+
 
 @author: ljknoll
 """
@@ -39,94 +50,117 @@ class webNNet(torch.nn.Module):
         self.graph = odict() # vertices of graph
         self.arcs = odict() # arcs of graph
         self.output_data = None # output data of graph
-        self.nr_output_vertices = 0
+        self.nr_output_vertices = 0 # number of networks whose output data is used
         
-        self.default_param = 0.8
-        self.loss = torch.nn.MSELoss()
-        self.optimizer = torch.optim.SGD
+        # setting defaults
+        self.default_param = 0.8 # value to initialize control voltage parameters
+        self.loss = torch.nn.MSELoss() # loss function (besides regularization)
+        self.optimizer = torch.optim.Adam # optimizer function
         
+        # initialize empty bias and scale list, 
+        # these store bias and scale for each output vertex
         self.register_parameter('bias', torch.nn.Parameter(torch.tensor([])))
         self.register_parameter('scale', torch.nn.Parameter(torch.tensor([])))
     
-    def prepare_config_obj(self, cf):
+    ############################################################
+    ### ---------------- Genetic Algorithm ----------------- ###
+    ############################################################
+    def prepare_config_obj(self, cf, loss_fn):
+        """ prepares config object for GA use with the web class """
         # total number of genes: 5 control voltages for each vertex, one less for each arc
         cf.genes = len(self.graph)*5 - len(self.arcs)
-        # 5 equal partitions, see Evolution.py,
-        cf.partition = [cf.genes]*5
+        # number of genomes in each of the 5 partitions
+        cf.partition = [3, cf.genes, 5, 5, cf.genes]
+        # total number of genomes
         cf.genomes = sum(cf.partition)
-
-        cf.Fitness = self.loss
+        
+        # set fitness functino of cf to default loss
+        # loss function must return the error, not the fitness!
+        if loss_fn is None:
+            cf.Fitness = self.loss
+        else:
+            cf.Fitness = loss_fn
     
     def set_dict_indices_from_pool(self, pool):
         """ For each registered parameter in this web object, 
         store the indices of the parameters which are used.
-        For example, when there is an arc from 'A' to 'B' at gate 2, 
-        the GA does not need to update this control voltage as it is overwritten by the arc data.
-        Therefore, these parameters are not included in the pool.
+        
+        Example:
+            when there is an arc from 'A' to 'B' at gate 5, 
+            the GA does not need to update this control voltage as it is overwritten by the arc data.
+            Therefore, these parameters are not included in the pool.
+            The indices for A will then be [2,3,4,6] and gate 5 will not be passed to evolution
         """
         parameters = self.get_parameters()
         indices = {}
         # loop through parameters of network
         for par_name, par_params in parameters.items():
             indices[par_name] = []
-            # check if parameter is from a vertex
-            if 'bias' not in par_name and 'scale' not in par_name:
+            # check if parameter is a vertex or bias/scale
+            if 'bias' in par_name or 'scale' in par_name:
+                # TODO: implement checking for including bias and scale in pool,
+                # for now don't include them
+                indices[par_name] = []
+            else:
                 # loop through control voltages of vertex 'par_name'
                 for j in range(len(par_params)):
                     # check if current control voltage is in use by an arc, thus no value is needed
-                    # TODO: replace +2 by actual number of datainput of network
+                    # TODO: replace +2 by actual number of datainputs of network
                     if (par_name, j+2) not in self.arcs.keys():
                         indices[par_name].append(j)
-            # TODO: implement checking for including bias and scale in pool
-            else:
-                indices[par_name] = []
         
         self.indices = indices
 
     def set_parameters_from_pool(self, pool):
+        """ Uses the indices set by set_dict_indices_from_pool() to 
+        update parameters with values from pool """
         pool_iter = iter(pool)
-        with torch.no_grad():
+        with torch.no_grad(): # do not track gradients
             for par_name, indices in self.indices.items():
                 # replace parameter par_name values with values from pool
                 replacement = [next(pool_iter) for _ in range(len(indices))]
                 getattr(self, par_name)[indices] = torch.FloatTensor(replacement)
-            
+    
     def trainGA(self, 
-                input_data,
+                train_data,
                 target_data,
                 cf,
+                loss_fn = None,
                 verbose = False):
-        """train web with Genetic Algorithm"""
+        """ Train web with Genetic Algorithm """
         
         self.check_graph()
         
         # prepare config object with information of web, # of genes, partitions, genomes, etc
-        self.prepare_config_obj(cf)
+        self.prepare_config_obj(cf, loss_fn)
+        # initialize genepool
         genepool = Evolution.GenePool(cf)
         # stores which indices of self.parameters to change during training
         self.set_dict_indices_from_pool(genepool.pool[0])
         
         # np arrays to save genePools, outputs and fitness
         geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
-        outputArray = np.zeros((cf.generations, cf.genomes, input_data.shape[0], self.nr_output_vertices))
+        outputArray = np.zeros((cf.generations, cf.genomes, train_data.shape[0], self.nr_output_vertices))
         fitnessArray = np.zeros((cf.generations, cf.genomes))
         
         # Temporary arrays, overwritten each generation
         fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
-        outputAvg = torch.zeros(cf.fitnessavg, input_data.shape[0], self.nr_output_vertices)
-        outputTemp = torch.zeros(cf.genomes, input_data.shape[0], self.nr_output_vertices)
+        outputAvg = torch.zeros(cf.fitnessavg, train_data.shape[0], self.nr_output_vertices)
+        outputTemp = torch.zeros(cf.genomes, train_data.shape[0], self.nr_output_vertices)
 
         for i in range(cf.generations):
             for j in range(cf.genomes):
                 for avgIndex in range(cf.fitnessavg):
+                    # update parameters of each network
                     self.set_parameters_from_pool(genepool.pool[j])
-                    self.forward(input_data)
+                    self.forward(train_data)
                     outputAvg[avgIndex] = self.get_output()
+                    # use negative loss as fitness for genepool.NextGen()
                     fitnessTemp[j, avgIndex] = -cf.Fitness(outputAvg[avgIndex], target_data).item()
                     
                 outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
             
-            genepool.fitness = fitnessTemp.min(1)  # Save fitness
+            genepool.fitness = fitnessTemp.min(1)  # Save best fitness
 
             # Save generation data
             geneArray[i, :, :] = genepool.pool
@@ -141,6 +175,10 @@ class webNNet(torch.nn.Module):
 
         return geneArray, outputArray, fitnessArray
     
+    
+    ############################################################
+    ### ----------------- Gradient Descent ----------------- ###
+    ############################################################
     def train(self, 
               train_data,
               target_data,
@@ -160,7 +198,7 @@ class webNNet(torch.nn.Module):
         self.check_graph()
         
         if optimizer is None:
-            print("INFO: Using SGD with, ", kwargs)
+            print("INFO: Using Adam with: ", kwargs)
             optimizer = self.optimizer(self.parameters(), **kwargs)
         else:
             print("INFO: Using custom optimizer with, ", kwargs)
@@ -189,6 +227,9 @@ class webNNet(torch.nn.Module):
                 best_params = self.get_parameters()
         return error_list, best_params
 
+    ##################################################
+    ### ---------------- General ----------------- ###
+    ##################################################
     def add_vertex(self, network, name, output=False):
         """Adds neural network as a vertex to the graph.
         Args:

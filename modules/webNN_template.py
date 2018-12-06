@@ -10,7 +10,7 @@ from Nets.predNNet import predNNet
 from Nets.webNNet import webNNet
 
 # create nn object from which the web is made
-main_dir = r'/home/lennart/Desktop/nnweb/'
+main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
 data_dir = 'lr2e-4_eps400_mb512_20180807CP.pt'
 net1 = predNNet(main_dir+data_dir)
 
@@ -48,15 +48,15 @@ train_data[:,3] = 0.3
 targets = 0.5*torch.ones(N, 1)
 
 # training
-loss, params = web.train(train_data, targets, batch_size, nr_epochs, lr=0.01)
+loss, params = web.train(train_data, targets, batch_size, nr_epochs, lr=0.05)
 
-# reset parameters of web
+# reset parameters of we
 web.reset_parameters()
 
 # OPTIONAL: define custom optimizer,
 # see https://pytorch.org/docs/stable/optim.html#torch.optim.Optimizer
-optimizer = torch.optim.Adam
-loss, params = web.train(train_data, targets, batch_size, nr_epochs, optimizer=optimizer, lr=0.05)
+optimizer = torch.optim.SGD
+loss, params = web.train(train_data, targets, batch_size, nr_epochs, optimizer=optimizer, lr=0.01)
 
 web.reset_parameters()
 
@@ -66,4 +66,4 @@ torch_loss_fn = torch.nn.CrossEntropyLoss()
 def loss_fn(y_pred, y):
     y_pred = torch.cat((y_pred, -y_pred), dim=1)
     return torch_loss_fn(y_pred, y)
-loss, params = web.train(train_data, targets, batch_size, nr_epochs, optimizer=optimizer, loss_fn=loss_fn, lr=0.05)
+loss, params = web.train(train_data, targets, batch_size, nr_epochs, optimizer=optimizer, lr=0.05)
