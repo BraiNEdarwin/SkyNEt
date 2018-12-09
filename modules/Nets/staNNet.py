@@ -76,13 +76,20 @@ class staNNet(object):
             self._BN = False
             
         self.loss_str = state_dic['loss']
+        state_dic.pop('loss') #Remove entrie of OrderedDict
+        
         self.activ = state_dic['activation']
-        self.dim_cv = state_dic['dim_cv']
+        state_dic.pop('activation')  
+        
+        try:
+            self.dim_cv = state_dic['dim_cv']
+            state_dic.pop('dim_cv')
+        except KeyError:
+            self.dim_cv = 5
+            print("Warning: Could not load attribute dim_cv, set at default 2.")
+        
         print('NN loaded with activation ',self.activ,', loss ',self.loss_str, ' and cv dimension ', str(self.dim_cv))
         
-        state_dic.popitem() #Remove the last three entries of OrderedDict
-        state_dic.popitem()  
-        state_dic.popitem()
         itms = list(state_dic.items())  
         layers = list(filter(lambda x: ('weight' in x[0]) and (len(x[1].shape)==2),itms))
         self.depth = len(layers)-2
