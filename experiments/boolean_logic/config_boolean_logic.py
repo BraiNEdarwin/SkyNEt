@@ -67,6 +67,7 @@ class experiment_config(config_class):
         ######### SPECIFY PARAMETERS ###################
         ################################################
         self.comport = 'COM3'  # COM port for the ivvi rack
+        self.device = 'nidaq'  # Either nidaq or adwin
 
         # Define experiment
         self.amplification = 1
