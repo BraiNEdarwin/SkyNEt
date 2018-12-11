@@ -120,7 +120,7 @@ class webNNet(torch.nn.Module):
             for par_name, indices in self.indices.items():
                 # replace parameter par_name values with values from pool
                 replacement = [next(pool_iter) for _ in range(len(indices))]
-                getattr(self, par_name)[indices] = torch.FloatTensor(replacement, device=self.cuda)
+                getattr(self, par_name)[indices] = torch.tensor(replacement, dtype=torch.float32, device=self.cuda)
     
     def trainGA(self, 
                 train_data,
@@ -130,7 +130,7 @@ class webNNet(torch.nn.Module):
                 verbose = False):
         """ Train web with Genetic Algorithm """
         
-        self.check_cuda(train_data, target_data)
+        train_data, target_data = self.check_cuda(train_data, target_data)
         
         self.check_graph()
         
@@ -198,7 +198,7 @@ class webNNet(torch.nn.Module):
         beta: scaling parameter for relu regularization outside [0,1] for cv
         maxiterations: the number of iterations after which training stops
         """
-        self.check_cuda(train_data, target_data)
+        train_data, target_data = self.check_cuda(train_data, target_data)
         
         self.check_graph()
         
@@ -420,10 +420,11 @@ class webNNet(torch.nn.Module):
             # move registered parameters (control voltages)
             self.to(self.cuda)
             
+            buf_lst = []
             # move arguments
             for arg in args:
-                arg.to(self.cuda)
-            
+                buf_lst.append(arg.to(self.cuda))
+        return tuple(buf_lst)
 
     def check_graph(self, print_graph=False):
         """Checks if the build graph is valid, optional plotting of graph"""
