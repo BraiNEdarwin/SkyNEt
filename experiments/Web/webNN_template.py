@@ -6,8 +6,8 @@ This script is an example on how to construct and train a web of multiple neural
 @author: ljknoll
 """
 import torch
-from Nets.predNNet import predNNet
-from Nets.webNNet import webNNet
+from SkyNEt.modules.Nets.predNNet import predNNet
+from SkyNEt.modules.Nets.webNNet import webNNet
 
 # create nn object from which the web is made
 main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
@@ -58,12 +58,12 @@ web.reset_parameters()
 optimizer = torch.optim.SGD
 loss2, params2 = web.train(train_data, targets, batch_size, nr_epochs, optimizer=optimizer, lr=0.01)
 
-web.reset_parameters()
+#web.reset_parameters()
 
 # OPTIONAL: define custom loss function
-targets = torch.ones(N,).long()
-torch_loss_fn = torch.nn.CrossEntropyLoss()
-def loss_fn(y_pred, y):
-    y_pred = torch.cat((y_pred, -y_pred), dim=1)
-    return torch_loss_fn(y_pred, y)
-loss3, params3 = web.train(train_data, targets, batch_size, nr_epochs, loss_fn=loss_fn, lr=0.05)
+#targets = torch.ones(N,).long()
+#torch_loss_fn = torch.nn.CrossEntropyLoss()
+#def loss_fn(y_pred, y):
+#    y_pred = torch.cat((y_pred, -y_pred), dim=1)
+#    return torch_loss_fn(y_pred, y)
+#loss3, params3 = web.train(train_data, targets, batch_size, nr_epochs, loss_fn=loss_fn, lr=0.05)

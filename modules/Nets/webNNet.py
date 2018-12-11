@@ -53,6 +53,7 @@ class webNNet(torch.nn.Module):
         self.nr_output_vertices = 0 # number of networks whose output data is used
         
         # setting defaults
+        self.cuda = 'cpu'
         self.default_param = 0.8 # value to initialize control voltage parameters
         self.loss = torch.nn.MSELoss() # loss function (besides regularization)
         self.optimizer = torch.optim.Adam # optimizer function
@@ -119,7 +120,7 @@ class webNNet(torch.nn.Module):
             for par_name, indices in self.indices.items():
                 # replace parameter par_name values with values from pool
                 replacement = [next(pool_iter) for _ in range(len(indices))]
-                getattr(self, par_name)[indices] = torch.FloatTensor(replacement)
+                getattr(self, par_name)[indices] = torch.FloatTensor(replacement, device=self.cuda)
     
     def trainGA(self, 
                 train_data,
@@ -128,6 +129,8 @@ class webNNet(torch.nn.Module):
                 loss_fn = None,
                 verbose = False):
         """ Train web with Genetic Algorithm """
+        
+        self.check_cuda(train_data, target_data)
         
         self.check_graph()
         
@@ -145,8 +148,8 @@ class webNNet(torch.nn.Module):
         
         # Temporary arrays, overwritten each generation
         fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
-        outputAvg = torch.zeros(cf.fitnessavg, train_data.shape[0], self.nr_output_vertices)
-        outputTemp = torch.zeros(cf.genomes, train_data.shape[0], self.nr_output_vertices)
+        outputAvg = torch.zeros(cf.fitnessavg, train_data.shape[0], self.nr_output_vertices, device=self.cuda)
+        outputTemp = torch.zeros(cf.genomes, train_data.shape[0], self.nr_output_vertices, device=self.cuda)
 
         for i in range(cf.generations):
             for j in range(cf.genomes):
@@ -195,6 +198,8 @@ class webNNet(torch.nn.Module):
         beta: scaling parameter for relu regularization outside [0,1] for cv
         maxiterations: the number of iterations after which training stops
         """
+        self.check_cuda(train_data, target_data)
+        
         self.check_graph()
         
         if optimizer is None:
@@ -355,7 +360,7 @@ class webNNet(torch.nn.Module):
         """Returns a copy of all learnable parameters of object in dictionary"""
         params = {}
         for name, param in self.named_parameters():
-            params[name] = torch.tensor(param.data)
+            params[name] = torch.tensor(param.data, device=self.cuda)
         return params
     
     def reset_parameters(self, value = None):
@@ -372,28 +377,28 @@ class webNNet(torch.nn.Module):
                 # 'rand' => random values except for bias and scale, bias and scale are zeroed
                 if value is 'rand':
                     if 'bias' in name or 'scale' in name:
-                        param.data = torch.zeros(len(param))
+                        param.data = torch.zeros(len(param), device=self.cuda)
                     else:
-                        param.data = torch.rand(len(param))
+                        param.data = torch.rand(len(param), device=self.cuda)
                 # dictionary => dict containing all parameters of web structure
                 elif isinstance(value, dict):
                     param.data = value[name]
                 # single tensor => used for all vertices, bias and scale are zeroed
                 elif isinstance(value, torch.Tensor):
                     if 'bias' in name or 'scale' in name:
-                        param.data = torch.zeros(len(param))
+                        param.data = torch.zeros(len(param), device=self.cuda)
                     else:
                         param.data = value
                 # single value => same number copied and used for all vertices, bias and scale are zeroed
                 else:
                     if 'bias' in name or 'scale' in name:
-                        param.data = torch.zeros(len(param))
+                        param.data = torch.zeros(len(param), device=self.cuda)
                     else:
-                        param.data = value*torch.ones(len(param))
+                        param.data = value*torch.ones(len(param), device=self.cuda)
     
     def get_output(self, scale=True, bias=True):
         """Returns last computed output of web"""
-        d = torch.tensor(self.output_data.data)
+        d = torch.tensor(self.output_data.data, device=self.cuda)
         if scale:
             d *= 1+self.scale.data
         if bias:
@@ -406,6 +411,19 @@ class webNNet(torch.nn.Module):
         for v in self.graph.values():
             # remove output data of vertex, return None if key does not exist
             v.pop('output', None)
+
+    def check_cuda(self, *args):
+        """Converts tensors that are going to be used to cuda"""
+        if torch.cuda.is_available():
+            self.cuda = torch.device('cuda')
+            
+            # move registered parameters (control voltages)
+            self.to(self.cuda)
+            
+            # move arguments
+            for arg in args:
+                arg.to(self.cuda)
+            
 
     def check_graph(self, print_graph=False):
         """Checks if the build graph is valid, optional plotting of graph"""
