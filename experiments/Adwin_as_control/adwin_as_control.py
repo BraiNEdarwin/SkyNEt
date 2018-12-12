@@ -11,8 +11,8 @@ import numpy as np
 import signal
 import sys
 
-controlvoltages = [1, 0.5, 0.2, 0.6, 0.7, 0.8, 0.3, 0.4]
-
+controlvoltages = [1, 0.5, 0.2, 0.6]
 adw = adwinIO.initInstrument()
 
+print('here')
 adwinIO.setControlVoltages(adw, controlvoltages, 1000)

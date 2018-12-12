@@ -24,21 +24,21 @@ class experiment_config(config_class):
 
 
         self.amplification = 1 #makes up for the different IVVI amplifications, 1G = 1 and 1M = 1000 such that the output is in nA
-        self.TargetGen = self.NOR
-        self.generations = 100
+        self.TargetGen = self.NAND#evolution AND, NAND, OR, NOR, XOR, XNOR
+        self.generations = 100# full search make 1
         self.fs = 1000
         self.signallength = 0.45
         self.edgelength = 0.01
-        self.generange = [[-1, 1], [-1, 1], [-1, 1], [-1, 1], [0.1, 0.5]]
-        self.genese = 5
+        self.generange = [[-10, 10], [-10, 10], [-10, 10], [-10, 10], [-10, 10]]
+        self.genes = 5
 
 
         # Specify either partition or genomes
-        self.partition = [5, 5, 5, 5, 5]
-        #self.genomes = 100
+        self.partition = [5, 5, 5, 5, 5] #full search comment out
+        #self.genomes = 10000 #full seach uncomment
 
         # Documentation
-        self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
+        self.genelabels = ['AO1','AO2','AO3','AO4', 'Input scaling']
 
 
         ################################################
@@ -47,9 +47,8 @@ class experiment_config(config_class):
 
         ################# Save settings ################
 
-        self.filepath = r'D:\Tao\test\\'
-        self.name = 'test'
-
+        self.filepath = r'D:\Yuki\Evolution\\'
+        self.name = 'NAND_77%_high'#changeper evlution logic type and humidity 
 
         ############## New Fitness function ############
 

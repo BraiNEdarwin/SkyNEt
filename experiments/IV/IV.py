@@ -1,7 +1,7 @@
-import modules.SaveLib as SaveLib
+import SkyNEt.modules.SaveLib as SaveLib
 import matplotlib.pyplot as plt
-from instruments.ADwin import adwinIO
-from instruments.niDAQ import nidaqIO
+from SkyNEt.instruments.ADwin import adwinIO
+from SkyNEt.instruments.niDAQ import nidaqIO
 import numpy as np
 import os
 import config_IV as config
@@ -19,7 +19,7 @@ Input = config.Sweepgen( config.v_high, config.v_low, config.n_points, config.di
 if config.device == 'nidaq':
     Output = nidaqIO.IO(Input, config.fs)
 elif config.device == 'adwin':
-    adwin = adwinIO.InitInstrument()
+    adwin = adwinIO.initInstrument()
     Output = adwinIO.IO(adwin, Input, config.fs)
 else:
     print('specify measurement device')
