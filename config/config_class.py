@@ -6,6 +6,8 @@ Created on Tue Aug  7 14:29:12 2018
 """
 
 import numpy as np
+import signal
+import sys
 
 class config_class(object):
     '''
@@ -68,6 +70,7 @@ class config_class(object):
         ###### Config params for the experiments #######
         ################################################
         self.fs = 1000
+        self.comport = 'COM3'  # COM port for the ivvi rack
 
         ################################################
         ############### Evolution settings #############
@@ -296,3 +299,4 @@ class config_class(object):
         W[2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength): 2 * round(self.fs * self.signallength / 4) + 2 * round(self.fs * self.edgelength) + 40] = 0
         W[3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength): 3 * round(self.fs * self.signallength / 4) + 3 * round(self.fs * self.edgelength) + 40] = 0
         return t, x, y, W
+
