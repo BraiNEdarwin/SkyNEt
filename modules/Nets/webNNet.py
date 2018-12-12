@@ -424,6 +424,8 @@ class webNNet(torch.nn.Module):
             # move arguments
             for arg in args:
                 buf_lst.append(arg.to(self.cuda))
+        else:
+            buf_lst = args
         return tuple(buf_lst)
 
     def check_graph(self, print_graph=False):
