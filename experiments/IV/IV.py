@@ -1,7 +1,7 @@
-import modules.SaveLib as SaveLib
+import SkyNEt.modules.SaveLib as SaveLib
 import matplotlib.pyplot as plt
-from instruments.ADwin import adwinIO
-from instruments.niDAQ import nidaqIO
+from SkyNEt.instruments.ADwin import adwinIO
+from SkyNEt.instruments.niDAQ import nidaqIO
 import numpy as np
 import os
 import config_IV as config
