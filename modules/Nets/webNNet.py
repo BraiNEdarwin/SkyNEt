@@ -186,13 +186,14 @@ class webNNet(torch.nn.Module):
               train_data,
               target_data,
               batch_size,
-              nr_epochs=100,
+              max_epochs=100,
               verbose=False,
               beta=0.1,
               optimizer=None,
               loss_fn=None,
               bias = False,
               scale=False,
+              stop_func=None,
               **kwargs):
         """verbose: prints error at each iteration
         beta: scaling parameter for relu regularization outside [0,1] for cv
@@ -202,17 +203,25 @@ class webNNet(torch.nn.Module):
         
         self.check_graph()
         
+        if stop_func is None:
+            if verbose:
+                print("INFO: Not using stopping criterium")
+            stop_func = lambda *args: False
+        
         if optimizer is None:
-            print("INFO: Using Adam with: ", kwargs)
+            if verbose:
+                print("INFO: Using Adam with: ", kwargs)
             optimizer = self.optimizer(self.parameters(), **kwargs)
         else:
-            print("INFO: Using custom optimizer with, ", kwargs)
+            if verbose:
+                print("INFO: Using custom optimizer with, ", kwargs)
             optimizer = optimizer(self.parameters(), **kwargs)
         
         error_list = []
-        best_error = 10e5
+        best_error = 1e5
         best_params = self.get_parameters()
-        for epoch in range(nr_epochs):
+        for epoch in range(max_epochs):
+            # train on complete data set in batches
             permutation = torch.randperm(len(train_data))
             for i in range(0,len(permutation), batch_size):
                 indices = permutation[i:i+batch_size]
@@ -222,14 +231,21 @@ class webNNet(torch.nn.Module):
                 error.backward()
                 optimizer.step()
             
+            # after training, calculate error of complete data set
             predictions = self.forward(train_data, bias=bias, scale=scale)
             error_value = self.error_fn(predictions, target_data, beta, loss_fn).item()
             error_list.append(error_value)
-            if verbose:
+            if verbose or epoch%100==0:
                 print("INFO: error at epoch %s: %s" % (epoch, error_value))
+            
+            # if error improved, update best params and error
             if error_value < best_error:
                 best_error = error_value
                 best_params = self.get_parameters()
+            
+            # stopping criterium
+            if stop_func(epoch, error_list, best_error):
+                break
         return error_list, best_params
 
     ##################################################

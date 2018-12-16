@@ -33,7 +33,7 @@ web.add_arc('B', 'A', 2)
 
 N = 10
 batch_size = 2
-nr_epochs = 100
+max_epochs = 100
 
 # explicitly set traindata for each network:
 train_data = torch.zeros(N, 4)
@@ -48,7 +48,7 @@ train_data[:,3] = 0.3
 targets = 0.5*torch.ones(N, 1)
 
 # training
-loss1, params1 = web.train(train_data, targets, batch_size, nr_epochs, lr=0.05)
+loss1, params1 = web.train(train_data, targets, batch_size, max_epochs, lr=0.05)
 
 # reset parameters of we
 web.reset_parameters()
@@ -56,7 +56,7 @@ web.reset_parameters()
 # OPTIONAL: define custom optimizer,
 # see https://pytorch.org/docs/stable/optim.html#torch.optim.Optimizer
 optimizer = torch.optim.SGD
-loss2, params2 = web.train(train_data, targets, batch_size, nr_epochs, optimizer=optimizer, lr=0.01)
+loss2, params2 = web.train(train_data, targets, batch_size, max_epochs, optimizer=optimizer, lr=0.01)
 
 #web.reset_parameters()
 
@@ -66,4 +66,4 @@ loss2, params2 = web.train(train_data, targets, batch_size, nr_epochs, optimizer
 #def loss_fn(y_pred, y):
 #    y_pred = torch.cat((y_pred, -y_pred), dim=1)
 #    return torch_loss_fn(y_pred, y)
-#loss3, params3 = web.train(train_data, targets, batch_size, nr_epochs, loss_fn=loss_fn, lr=0.05)
+#loss3, params3 = web.train(train_data, targets, batch_size, max_epochs, loss_fn=loss_fn, lr=0.05)
