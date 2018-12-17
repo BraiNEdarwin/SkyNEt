@@ -6,7 +6,7 @@ from SkyNEt.qcodes.instrument_drivers.QuTech.IVVI import IVVI
 import numpy as np
 
 
-def initInstrument(dac_step = 500, dac_delay = 0.01, comport = 'COM3'):
+def initInstrument(dac_step = 500, dac_delay = 0.01, comport = 'COM3', name = 'ivvi'):
 	'''
 	Initializes the ivvi rack.
 	List of arguments:
@@ -14,7 +14,7 @@ def initInstrument(dac_step = 500, dac_delay = 0.01, comport = 'COM3'):
 	dac_delay; time in seconds between dac steps
 	comport; COM port to which ivvi rack is connected
 	'''
-	ivvi = IVVI("ivvi", comport, dac_step = 500, dac_delay=.01)
+	ivvi = IVVI(name, comport, dac_step = 500, dac_delay=.01)
 	ivvi.set_dacs_zero()  # Safety
 	return ivvi
 

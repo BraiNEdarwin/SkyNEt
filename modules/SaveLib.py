@@ -21,13 +21,28 @@ def saveArrays(filepath, **kwargs):
 
 def copyFiles(sourcepath, filepath):
     '''
-    This function copies any .py files in the current directory to the directory
+    This function copies any .py files in the script directory to the directory
     specified by filepath.
     '''
+<<<<<<< HEAD
     filenames = os.listdir(sourcepath)
     for filename in filenames:
         if(os.path.isfile(sourcepath + '\\' + filename)):
             copyfile(sourcepath + '\\' + filename, os.path.join(filepath, filename))
+=======
+
+    scriptdir_stripped = sys.argv[0].split('/')[:-1]
+    scriptdir = os.sep.join(scriptdir_stripped)
+    if(scriptdir == ''):
+        filenames = os.listdir()
+    else:
+        filenames = os.listdir(scriptdir)
+    for filename in filenames:
+        full_path = os.path.join(scriptdir, filename)
+        full_path = full_path.encode('unicode_escape')
+        if(os.path.isfile(full_path)):
+            copyfile(full_path, os.path.join(filepath, filename))
+>>>>>>> dev
 
 def saveExperiment(sourcepath, filepath, **kwargs):
     '''

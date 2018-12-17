@@ -26,7 +26,7 @@ import numpy as np
 noisefit = True
 class staNNet(object):
     
-    def __init__(self,*args,loss='MSE',C=1.0,activation='ReLU',BN=False):
+    def __init__(self,*args,loss='MSE',C=1.0,activation='ReLU', dim_cv=5, BN=False):
         
         self.ymax = 3.7 # Maximum value that the output can have (clipping value)
         self.C = torch.FloatTensor([C])
@@ -36,6 +36,9 @@ class staNNet(object):
            self.x_train, self.y_train = data[0]
            self.x_val, self.y_val = data[1]
            self.D_in = self.x_train.size()[1]
+           # how many of the inputs are control voltages
+           self.dim_cv = dim_cv
+           assert dim_cv < self.D_in, 'Total input dimension must be greater than cv dimension'
            self.D_out = self.y_train.size()[1]
            self._BN = BN
            self.depth = depth
@@ -58,12 +61,15 @@ class staNNet(object):
         elif len(args)==1 and type(args[0]) is str:
             self._load_model(args[0])
         else:
-            assert 1==0, 'Arguments must be either 3 (data,depth,width) or a string to load the model!'
+            assert False, 'Arguments must be either 3 (data,depth,width) or a string to load the model!'
             
         
     def _load_model(self,data_dir):
         print('Loading the model from '+data_dir)
-        state_dic = torch.load(data_dir)
+        if torch.cuda.is_available():
+            state_dic = torch.load(data_dir)
+        else:
+            state_dic = torch.load(data_dir, map_location='cpu')
         if list(filter(lambda x: 'running_mean' in x,state_dic.keys())):
             print('BN active in loaded model')
             self._BN = True
@@ -71,11 +77,20 @@ class staNNet(object):
             self._BN = False
             
         self.loss_str = state_dic['loss']
-        self.activ = state_dic['activation']
-        print('NN loaded with activation ',self.activ,', and loss ',self.loss_str)
+        state_dic.pop('loss') #Remove entrie of OrderedDict
         
-        state_dic.popitem() #Remove the last two entries of OrderedDict
-        state_dic.popitem()  
+        self.activ = state_dic['activation']
+        state_dic.pop('activation')  
+        
+        try:
+            self.dim_cv = state_dic['dim_cv']
+            state_dic.pop('dim_cv')
+        except KeyError:
+            self.dim_cv = 5
+            print("Warning: Could not load attribute dim_cv, set at default 2.")
+        
+        print('NN loaded with activation ',self.activ,', loss ',self.loss_str, ' and cv dimension ', str(self.dim_cv))
+        
         itms = list(state_dic.items())  
         layers = list(filter(lambda x: ('weight' in x[0]) and (len(x[1].shape)==2),itms))
         self.depth = len(layers)-2
@@ -87,13 +102,13 @@ class staNNet(object):
         
         self.model.load_state_dict(state_dic)
 
-        if isinstance(layers[-1][1],torch.cuda.FloatTensor): 
+        if isinstance(layers[-1][1],torch.FloatTensor): 
+            self.itype = torch.LongTensor
+        else: 
             self.itype = torch.cuda.LongTensor
             self.C.cuda()
             self.model.cuda()
             self.loss_fn.cuda()    
-        else: 
-            self.itype = torch.LongTensor
         self.model.eval()
             
     def _contruct_model(self):
@@ -122,7 +137,7 @@ class staNNet(object):
         elif self.activ == None:
             activ_func = None
         else:
-            assert 1==0, 'Activation Function Not Recognized!'
+            assert False, 'Activation Function Not Recognized!'
         
         
         if self._BN: 
@@ -231,6 +246,7 @@ class staNNet(object):
         state_dic = self.model.state_dict()
         state_dic['activation'] = self.activ
         state_dic['loss'] = self.loss_str
+        state_dic['dim_cv'] = self.dim_cv
         torch.save(state_dic,path)
 
     def outputs(self,inputs):
