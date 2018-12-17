@@ -28,8 +28,8 @@ class experiment_config(object):
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
         
         #define the IV you want to take in volts.
-        self.v_low = -1.5
-        self.v_high = 1.5
+        self.v_low = -0.2
+        self.v_high = 0.2
         self.n_points = 10000
         self.direction = 'up'
 
@@ -38,7 +38,7 @@ class experiment_config(object):
         self.source_gain = 1
 
         #measurment tool settings.
-        self.device = 'nidaq'
+        self.device = 'adwin'
         self.fs = 1000
 
 
@@ -59,10 +59,11 @@ class experiment_config(object):
             print('Specify the sweep direction')
 
 
-        Input = np.zeros(len(Input1)+len(Input2)+len(Input3))
-        Input[0:len(Input1)] = Input1
-        Input[len(Input1):len(Input1)+len(Input2)] = Input2
-        Input[len(Input1)+len(Input2):len(Input1)+len(Input2)+len(Input3)] = Input3
+        Input = np.zeros((1,len(Input1)+len(Input2)+len(Input3)))
+        Input[0, 0:len(Input1)] = Input1
+        Input[0, len(Input1):len(Input1)+len(Input2)] = Input2
+        Input[0, len(Input1)+len(Input2):len(Input1)+len(Input2)+len(Input3)] = Input3
+
         return Input
 
 
