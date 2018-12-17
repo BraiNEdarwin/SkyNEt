@@ -191,8 +191,9 @@ class webNNet(torch.nn.Module):
               beta=0.1,
               optimizer=None,
               loss_fn=None,
-              bias = False,
+              bias=False,
               scale=False,
+              reg_scale=False,
               stop_func=None,
               **kwargs):
         """verbose: prints error at each iteration
@@ -217,6 +218,9 @@ class webNNet(torch.nn.Module):
                 print("INFO: Using custom optimizer with, ", kwargs)
             optimizer = optimizer(self.parameters(), **kwargs)
         
+        if not scale:
+            reg_scale = False
+        
         error_list = []
         best_error = 1e5
         best_params = self.get_parameters()
@@ -226,16 +230,16 @@ class webNNet(torch.nn.Module):
             for i in range(0,len(permutation), batch_size):
                 indices = permutation[i:i+batch_size]
                 y_pred = self.forward(train_data[indices], bias=bias, scale=scale)
-                error = self.error_fn(y_pred, target_data[indices], beta, loss_fn)
+                error = self.error_fn(y_pred, target_data[indices], beta, loss_fn, reg_scale=reg_scale)
                 optimizer.zero_grad()
                 error.backward()
                 optimizer.step()
             
             # after training, calculate error of complete data set
             predictions = self.forward(train_data, bias=bias, scale=scale)
-            error_value = self.error_fn(predictions, target_data, beta, loss_fn).item()
+            error_value = self.error_fn(predictions, target_data, beta, loss_fn, reg_scale=reg_scale).item()
             error_list.append(error_value)
-            if verbose or epoch%100==0:
+            if verbose:
                 print("INFO: error at epoch %s: %s" % (epoch, error_value))
             
             # if error improved, update best params and error
@@ -246,6 +250,18 @@ class webNNet(torch.nn.Module):
             # stopping criterium
             if stop_func(epoch, error_list, best_error):
                 break
+        return error_list, best_params
+    
+    def session_train(self, *args, nr_sessions=10, **kwargs):
+        best_errors, error_list, best_params = [], [], []
+        for session in range(nr_sessions):
+            self.reset_parameters('rand')
+            temp_error_list, temp_best_params = self.train(*args, **kwargs)
+            best_error = min(temp_error_list)
+            best_errors.append(best_error)
+            error_list.append(temp_error_list)
+            best_params.append(temp_best_params)
+            print("Best error of session %i/%i: %f" % (session, nr_sessions, best_error))
         return error_list, best_params
 
     ##################################################
@@ -336,7 +352,7 @@ class webNNet(torch.nn.Module):
             # feed through network
             v['output'] = v['network'].model(data)
     
-    def error_fn(self, y_pred, y, beta, loss=None):
+    def error_fn(self, y_pred, y, beta, loss=None, reg_scale = False):
         """Error function: loss function with added regularization"""
         # default loss function: MSE
         if loss is None:
@@ -348,8 +364,8 @@ class webNNet(torch.nn.Module):
             if 'bias' in name:
                 pass
             elif 'scale' in name:
-#                reg_loss += torch.sum(torch.abs(x))                
-                pass
+                if reg_scale:
+                    reg_loss += torch.sum(torch.abs(x))
             else:
                 reg_loss += torch.sum(torch.relu(-x) + torch.relu(x-1.0))
         return loss(y_pred, y) + beta*reg_loss
@@ -509,7 +525,7 @@ class webNNet(torch.nn.Module):
                 for i, vertex in enumerate(layer):
                     x = (i+offset)/width
                     y = j/height
-                    patches.append(mpatches.Rectangle((x,y), boxw, boxh, ec="none"))
+                    patches.append(mpatches.Polygon(np.array(((x,y), (x+boxw,y), (x+boxw/2.,y+boxh))), ec="none"))
                     plt.text(x+boxw/2, y+boxh/2, vertex, ha="center", family='sans-serif', size=14)
             collection = PatchCollection(patches, cmap=plt.cm.hsv, alpha=0.4)
             ax.add_collection(collection)
