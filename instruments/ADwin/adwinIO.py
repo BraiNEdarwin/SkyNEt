@@ -30,39 +30,85 @@ def LongToFloat(x, Vmax):
     return x
 
 
-def IO(adw, x, Fs):
-    InputSize = len(x)
-    x = FloatToLong(list(x))
+def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
+    '''
+    Write FIFO: 1 - 4
+    Read FIFO: 5 - 12
+    '''
+    InputSize = inputs.shape[1]
+    for i in range(inputs.shape[0]):
+        inputs[i, :] = FloatToLong(list(inputs[i, :]))
+    
+
+    x = np.zeros((8, InputSize), dtype = int)
+    x[:inputs.shape[0], :] = inputs
+    outputs = [[], [], [], [], [], [], [], []]  # Eight empty output lists
 
     try:
         if os.name == 'posix':
             adw.Boot(str('adwin' + PROCESSORTYPE + '.btl'))
         else:
             adw.Boot('C:\\ADwin\\ADwin' + PROCESSORTYPE + '.btl')
-        adw.Load_Process('C:\\Users\\PNPNteam\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_1Read_1WriteFloat.TB1')
+        adw.Load_Process('C:\\Users\\PNPNteam\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8Read_4Write.TB1')
         adw.Set_Processdelay(1, int(300e6 / Fs))  # delay in clock cycles
 
-        adw.Fifo_Clear(1)
-        adw.Fifo_Clear(2)
-        
-        adw.SetFifo_Long(2, x[:FifoSize], FifoSize)
-
-        time.sleep(1)
 
         adw.Start_Process(1)
 
-        time.sleep(10)
+        for i in range(1, 13):
+            adw.Fifo_Clear(i)
+        
+        if(FifoSize <= InputSize):
+            for i in range(1, 5):
+                fillSize = adw.Fifo_Empty(i)
+                adw.SetFifo_Long(i, list(x[i-1,:fillSize]), fillSize)
+                written = fillSize
+        else:
+            for i in range(1, 5):
+                adw.SetFifo_Long(i, list(x[i-1, :]), InputSize)
+                written = InputSize
+
+        # Start reading/writing FIFO's when Par80 == 1
+        adw.Set_Par(80, 1)
+        read = -1
+
+        while(read < InputSize):
+            empty = adw.Fifo_Empty(1)
+            full = adw.Fifo_Full(5)
+
+            if(full > 2000):
+                for i in range(5, 13):          # Read ports are 5 to 12
+                    y = adw.GetFifo_Long(i, 2000) 
+                    outputs[i-5] += LongToFloat(list(y), 5)
+                read += 2000
+
+            if(written < InputSize):
+                if(empty > 2000 and written+2000 <= InputSize):
+                    for i in range(1, 5):
+                        adw.SetFifo_Long(i, list(x[i-1, written:written + 2000]), 2000)
+                    written += 2000
+                elif(empty > 2000):
+                    for i in range(1, 5):
+                        adw.SetFifo_Long(i, list(x[i-1, written:]), InputSize-written)
+                    written = InputSize
 
 
         adw.Stop_Process(1)
-        y = adw.GetFifo_Long(1, FifoSize)        
-
         adw.Clear_Process(1)
 
     except ADwinError as e:
         print('***', e)
 
-    return LongToFloat(list(y), 5)
+    outputArray = np.zeros((sum(inputPorts), InputSize))
+    outputs = np.array(outputs)
+    i = 0
+    for index, val in enumerate(inputPorts):
+        if(val):
+            outputArray[i] = outputs[index, 1:InputSize + 1]
+            i += 1
+
+    return outputArray
+
 
 def IO_2D(adw, x, Fs):
     ''' x must be a numpy array with shape (2, n)'''
