@@ -74,7 +74,7 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 # Initialize instruments
 ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
 
-nr_blocks = len(cf.input1)*len(cf.input2)
+nr_blocks = len(cf.input1)*len(cf.input2)*len(cf.input3)*len(cf.input4)
 blockSize = int(len(voltages)/nr_blocks)
 assert len(voltages) == blockSize*nr_blocks, 'Nr of gridpoints not divisible by nr_blocks!!'
 #main acquisition loop
@@ -86,11 +86,11 @@ for j in range(nr_blocks):
     for i in range(blockSize):
         IVVIrack.setControlVoltages(ivvi, voltages[j * blockSize + i, :])
         time.sleep(0.175)  #tune this to avoid transients
-        data[j * blockSize + i, -cf.samples:] = nidaqIO.IO(np.zeros(cf.samples), cf.fs)
+        data[j * blockSize + i, -cf.samples:] = cf.amplification / cf.postgain * np.array(nidaqIO.IO(np.zeros(cf.samples), cf.fs))
     end_block = time.time()
     print('CV-sweep over one input state took '+str(end_block-start_block)+' sec.')
 
 #SAVE DATA following conventions for NN training
-SaveLib.saveExperiment(cf.configSrc, saveDirectory, data=data, filename = 'training_NN_data')
+SaveLib.saveExperiment(cf.configSrc, saveDirectory, data= data, filename = 'training_NN_data')
 
 reset(0,0)

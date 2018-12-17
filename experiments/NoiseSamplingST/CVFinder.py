@@ -72,7 +72,7 @@ def CVFinder(config, outputTarget, instrumentInit):
                 PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
     
                 # Train output
-                outputAvg[avgIndex] = config.amplification * np.asarray(output)  # empty for now, as we have only one output node
+                outputAvg[avgIndex] = config.amplification * np.asarray(output) / config.postgain  # empty for now, as we have only one output node
     
                 # Calculate fitness
                 fitnessTemp[j, avgIndex]= config.Fitness(outputAvg[avgIndex],
@@ -82,7 +82,7 @@ def CVFinder(config, outputTarget, instrumentInit):
                 PlotBuilder.currentOutputEvolution(mainFig,
                                                    t,
                                                    target,
-                                                   output,
+                                                   config.amplification/config.postgain*np.array(output),
                                                    j + 1, i + 1,
                                                    fitnessTemp[j, avgIndex])
     
@@ -106,8 +106,8 @@ def CVFinder(config, outputTarget, instrumentInit):
                                            outputArray,
                                            i + 1,
                                            t,
-                                           config.amplification*target,
-                                           output,
+                                           target,
+                                           config.amplification/config.postgain*np.array(output),
                                            w)
     
         # Save generation
@@ -117,7 +117,7 @@ def CVFinder(config, outputTarget, instrumentInit):
                      fitnessArray = fitnessArray,
                      t = t,
                      x = x,
-                     amplified_target = config.amplification*target)
+                     amplified_target = config.amplification/config.postgain*target)
         
         
         if max(genePool.fitness) > config.fitThres:

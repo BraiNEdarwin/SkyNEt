@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 class experiment_config(object):
     '''This is the configuration file used for IV measurements. 
@@ -22,12 +23,13 @@ class experiment_config(object):
 
 
         #define where you want to save the data.
-        self.filepath = r'D:\Bram\test'
-        self.name = 'test'
+        self.filepath = r'D:\data\Mark\IVtest\\'
+        self.name = 'IV_17_1'
+        self.configSrc = os.path.dirname(os.path.abspath(__file__))
         
         #define the IV you want to take in volts.
-        self.v_low = -0.9
-        self.v_high = 0.9
+        self.v_low = -1.5
+        self.v_high = 1.5
         self.n_points = 10000
         self.direction = 'up'
 

@@ -32,23 +32,26 @@ class experiment_config(config_class):
         #self.input2 = [-900, -600, -300, 0, 300, 600, 900]
         #self.input1 = [-900,0,900]
 
-        self.controlVoltages =  [[-850, -200, 0, 200, 850]]*5
-        self.input2 = [-900, -600, -300, 0, 300, 600, 900]
-        self.input1 = [-900, 0, 900]
-        self.voltageGrid = [*self.controlVoltages,self.input2,self.input1]
+        self.controlVoltages =  [list(np.linspace(-900, 900, 37))]*3
+        self.input4 = [-900, 900]
+        self.input3 = [-900, 900]
+        self.input2 = [-900, 900]
+        self.input1 = [-900, 900]
+        self.voltageGrid = [*self.controlVoltages,self.input4,self.input3,self.input2,self.input1]
         self.electrodes = len(self.voltageGrid)
         self.acqTime = 0.01
         self.samples = 50
-        self.fs = 5000
-        self.amplification = 1
+        self.fs = 1000
+        self.amplification = 1000
+        self.postgain = 100
 
         self.keithley_address = 'GPIB0::17::INSTR'
 
 
-        self.electrodeSetup = [[3,4,5,1,2,6,7,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
+        self.electrodeSetup = [[5,1,2,3,4,6,7,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
         # Save settings
         self.filepath = r'D:\\data\\Mark\\NN_grid\\'
-        self.name = '5CV_grid_3'
+        self.name = '4inp_3CV'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
 
     #####################################################
