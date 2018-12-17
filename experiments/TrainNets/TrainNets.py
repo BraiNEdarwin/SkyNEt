@@ -18,7 +18,7 @@ from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 ###############################################################################
 random.seed(22)
 Seed = True
-main_dir = 'C:\\Users\\User\\APH\\Thesis\\Data\\NN_grid\\data4nn\\2018_11_21_cust_loss_noisefit\\'
+main_dir = 'C:\\Users\\User\\APH\\Thesis\\Data\\NN_grid\\data4nn\\2018_12_10_div_target\\'
 file_name = 'data_for_training.npz'
 data, baseline_var = dl(main_dir, file_name, test_set=False)
 

@@ -28,6 +28,7 @@ class staNNet(object):
     
     def __init__(self,*args,loss='MSE',C=1.0,activation='ReLU',BN=False):
         
+        self.ymax = 3.7 # Maximum value that the output can have (clipping value)
         self.C = torch.FloatTensor([C])
         
         if len(args) == 3: #data,depth,width
@@ -149,9 +150,17 @@ class staNNet(object):
     def loss_fn(self, pred, targets):
         a = torch.tensor([-2.7856394298768052, 1.678204974771226])
         b = torch.tensor([2.7269189780848916, 1.7542828847811897])
-        sign = torch.sign(pred)
-        w = (20 - (sign-1)/2*(a[0]*pred + b[0]) + (sign+1)/2*(a[1]*pred + b[1]))
-        r = torch.mean(((pred - targets) ** 2) * w ) #/ torch.sum(w)
+        sign = torch.sign(targets)
+        # added weight of the form w = (c - (ay + b))/c
+        #w = ((sign-1)/2 * (-1.5 * self.ymax * a[0] + b[0]) +
+        #     (sign+1)/2 * (1.5 * self.ymax * a[1] + b[1]) - 
+        #     (sign-1)/2 * (a[0] * targets + b[0]) - 
+        #     (sign+1)/2 * (a[1] * targets + b[1])) \
+        #    /((sign-1)/2 * (-1.5 * self.ymax * a[0] + b[0]) +
+        #     (sign+1)/2 * (1.5 * self.ymax * a[1] + b[1]))
+        sigma = (sign-1)/2 * (a[0] * targets + b[0]) + (sign+1)/2 * (a[1] * targets + b[1])
+              
+        r = torch.mean(((pred - targets) ** 2) / sigma ** 2 ) 
         return r
    
     def train_nn(self,learning_rate,nr_epochs,batch_size,betas=(0.9, 0.999),seed=False):   
