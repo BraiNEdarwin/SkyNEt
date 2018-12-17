@@ -40,7 +40,7 @@ def LongToFloat(x, Vmax):
     return x
 
 
-def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
+def IO(adw, input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     '''
     This function will write each row of array inputs on a separate
     analog output of the ADwin at the specified sample frequency Fs.
@@ -56,6 +56,7 @@ def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     Read FIFOs: 5 - 12
     '''
     # Input preparation
+    inputs = input.copy()
     InputSize = inputs.shape[1]
     for i in range(inputs.shape[0]):
         inputs[i, :] = FloatToLong(list(inputs[i, :]))
