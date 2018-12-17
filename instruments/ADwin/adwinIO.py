@@ -1,7 +1,9 @@
 '''
 This module provides an input/output function for communicating with the
 ADwin.
-It is broken right now and maybe it is best to rewrite.
+There is also a separate function that allows you to use the ADwin
+output ports as 'static' control voltages. This function may need
+some refinement in the future.
 '''
 from SkyNEt.instruments.ADwin.adwin import ADwin, ADwinError
 import sys
@@ -20,11 +22,19 @@ def initInstrument():
     return adw
 
 def FloatToLong(x):
+    '''
+    Converts float values to integers,
+    more specifically this function maps [-10, 10] -> [0, 65536]
+    '''
     for i in range(len(x)):
         x[i] = int((x[i] + 10) / 20 * 65536)
     return x
 
 def LongToFloat(x, Vmax):
+    '''
+    Converts integer values to floats,
+    more specifically this function maps [0, 65536] -> [-Vmax, Vmax]
+    '''
     for i in range(len(x)):
         x[i] = 2*Vmax/65536 * x[i] - Vmax
     return x
@@ -32,14 +42,23 @@ def LongToFloat(x, Vmax):
 
 def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     '''
-    Write FIFO: 1 - 4
-    Read FIFO: 5 - 12
+    This function will write each row of array inputs on a separate
+    analog output of the ADwin at the specified sample frequency Fs.
+    inputs must be a numpy array, where each row (!) corresponds to
+    data presented on one output port.
+    inputPorts in an optional argument that allows you to specify which
+    analog input ports you wish to measure. Note that this function
+    only reads on the EVEN ADCs (so 2, 4, ...).
+
+    Useful information if you want to understand this function:
+    Please look at the ADbasic file while reading this file. 
+    Write FIFOs: 1 - 4
+    Read FIFOs: 5 - 12
     '''
+    # Input preparation
     InputSize = inputs.shape[1]
     for i in range(inputs.shape[0]):
         inputs[i, :] = FloatToLong(list(inputs[i, :]))
-    
-
     x = np.zeros((8, InputSize), dtype = int)
     x[:inputs.shape[0], :] = inputs
     outputs = [[], [], [], [], [], [], [], []]  # Eight empty output lists
@@ -52,12 +71,13 @@ def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
         adw.Load_Process('C:\\Users\\PNPNteam\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8Read_4Write.TB1')
         adw.Set_Processdelay(1, int(300e6 / Fs))  # delay in clock cycles
 
-
         adw.Start_Process(1)
 
+        # Clear all FIFOs
         for i in range(1, 13):
             adw.Fifo_Clear(i)
         
+        # Fill write FIFOs before start of reading/writing
         if(FifoSize <= InputSize):
             for i in range(1, 5):
                 fillSize = adw.Fifo_Empty(i)
@@ -70,18 +90,20 @@ def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
 
         # Start reading/writing FIFO's when Par80 == 1
         adw.Set_Par(80, 1)
-        read = -1
+        read = -1  # Read additional datapoint, because write lags behind
 
         while(read < InputSize):
             empty = adw.Fifo_Empty(1)
             full = adw.Fifo_Full(5)
 
+            # Read values if read FIFOs are full enough
             if(full > 2000):
                 for i in range(5, 13):          # Read ports are 5 to 12
                     y = adw.GetFifo_Long(i, 2000) 
                     outputs[i-5] += LongToFloat(list(y), 5)
                 read += 2000
 
+            # Write values if write FIFOs are empty enough
             if(written < InputSize):
                 if(empty > 2000 and written+2000 <= InputSize):
                     for i in range(1, 5):
@@ -92,13 +114,13 @@ def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
                         adw.SetFifo_Long(i, list(x[i-1, written:]), InputSize-written)
                     written = InputSize
 
-
         adw.Stop_Process(1)
         adw.Clear_Process(1)
 
     except ADwinError as e:
         print('***', e)
 
+    # Prepare outputArray
     outputArray = np.zeros((sum(inputPorts), InputSize))
     outputs = np.array(outputs)
     i = 0
@@ -108,120 +130,6 @@ def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
             i += 1
 
     return outputArray
-
-
-def IO_2D(adw, x, Fs):
-    ''' x must be a numpy array with shape (2, n)'''
-    x = (x + 10) / 20 * 65536
-    x = x.astype(int)
-    ArrayFloat = []
-    InputBin = x.copy()
-    InputSize = len(x[0])
-    try:
-        #adw = ADwin(DEVICENUMBER, RAISE_EXCEPTIONS)
-        if os.name == 'posix':
-            adw.Boot(str('adwin' + PROCESSORTYPE + '.btl'))
-        else:
-            adw.Boot('C:\\ADwin\\ADwin' + PROCESSORTYPE + '.btl')
-        #proc = os.path.abspath(os.path.dirname(sys.argv[0])) + os.sep + 'intstruments' + os.sep + 'ADwin' + os.sep + PROCESS
-        adw.Load_Process('C:\\Users\\ursaminor\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_1Read_2Write.TB1')
-        adw.Set_Processdelay(1, int(300e6 / Fs))  # delay in clock cycles
-
-        # fill the write FIFO2
-        adw.Fifo_Clear(2)
-        empty = adw.Fifo_Empty(2)
-        if (InputSize < empty):
-            adw.SetFifo_Long(2, list(InputBin[0]), len(InputBin[0]))
-        else:
-            adw.SetFifo_Long(2, list(InputBin[0, :empty]), empty)
-
-        # fill the write FIFO3
-        adw.Fifo_Clear(3)
-        empty = adw.Fifo_Empty(3)
-        if (InputSize < empty):
-            adw.SetFifo_Long(3, list(InputBin[1]), len(InputBin[1]))
-        else:
-            adw.SetFifo_Long(3, list(InputBin[1, :empty]), empty)
-
-
-        adw.Start_Process(1)
-        # time.sleep(0.3)  # Give init time
-
-        if (InputSize < FifoSize):
-            j = 0  # counts amount of read values
-            while(j < InputSize):
-                full = adw.Fifo_Full(1)
-
-                # check if read FIFO is empty enough
-                if (adw.Fifo_Empty(1) < 5000):
-                    print("Houston we've got a read problem." +
-                          str(j) + " " + str(empty))
-                    paniek = 1
-
-                # read from FIFO
-                if (full > 2000):
-                    ArrayCFloat = adw.GetFifo_Long(1, full)
-                    ArrayFloat.extend(list(ArrayCFloat))
-                    j += full
-
-        else:
-            k2 = 0  # counts no. of written datapoints to fifo2
-            k3 = 0  # counts no. of written datapoints to fifo2
-            writeFinished1 = False
-            writeFinished2 = False
-            j = 0  # counts no. of read datapoints
-            k2 += empty
-            k3 += empty
-            while j < InputSize:
-                empty2 = adw.Fifo_Empty(2)
-                empty3 = adw.Fifo_Empty(3)
-                full = adw.Fifo_Full(1)
-
-                # check if read FIFO is empty enough
-                if (adw.Fifo_Empty(1) < 5000):
-                    print("Houston we've got a read problem." +
-                          str(k2) + " " + str(empty))
-                    paniek = 1
-
-                # check if write FIFO is full enough
-                if (adw.Fifo_Full(2) < 5000 and not writeFinished):
-                    print("Houston we've got a write problem." +
-                          str(k2) + " " + str(empty))
-                    paniek = 1
-
-                # read from FIFO
-                if (full > 2000):
-                    ArrayCFloat = adw.GetFifo_Long(1, full)
-                    ArrayFloat.extend(list(ArrayCFloat))
-                    j += full
-
-                # write to FIFO2
-                if (empty2 > 2000 and k2 + empty2 <= InputSize):
-                    adw.SetFifo_Long(2, list(InputBin[0, k2:k2 + empty2]), empty2)
-                    k2 = k2 + empty2
-                elif (k2 + empty2 > InputSize and not writeFinished1):
-                    adw.SetFifo_Long(2, list(InputBin[0, k2:InputSize]), InputSize - k2)
-                    k2 = InputSize
-                    writeFinished1 = True #write fifo is now filled with last of InputBin
-
-                # write to FIFO2
-                if (empty3 > 2000 and k3 + empty3 <= InputSize):
-                    adw.SetFifo_Long(3, list(InputBin[1, k3:k3 + empty3]), empty3)
-                    k3 = k3 + empty3
-                elif (k3 + empt3 > InputSize and not writeFinished2):
-                    adw.SetFifo_Long(3, list(InputBin[1, k3:InputSize]), InputSize - k3)
-                    k3 = InputSize
-                    writeFinished2 = True #write fifo is now filled with last of InputBin
-
-        adw.Stop_Process(1)
-        adw.Clear_Process(1)
-
-    except ADwinError as e:
-        print('***', e)
-    # convert int to float
-    ArrayFloat = [20 * (a - (65536 / 2)) / 65536 for a in ArrayFloat]
-
-    return ArrayFloat[:InputSize] # trim off excess datapoints
 
 def setControlVoltages(adw, x, Fs):
     '''
