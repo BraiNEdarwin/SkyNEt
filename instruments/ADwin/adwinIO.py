@@ -89,20 +89,28 @@ def IO(adw, input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
                 adw.SetFifo_Long(i, list(x[i-1, :]), InputSize)
                 written = InputSize
 
+        # Notices the ADbasic how much datapoints to
+        adw.Set_Par(79, InputSize)
         # Start reading/writing FIFO's when Par80 == 1
         adw.Set_Par(80, 1)
         read = -1  # Read additional datapoint, because write lags behind
+        lastWrite = False
 
         while(read < InputSize):
             empty = adw.Fifo_Empty(1)
             full = adw.Fifo_Full(5)
 
             # Read values if read FIFOs are full enough
-            if(full > 2000):
+            if(full > 2000 and not lastWrite):
                 for i in range(5, 13):          # Read ports are 5 to 12
                     y = adw.GetFifo_Long(i, 2000) 
                     outputs[i-5] += LongToFloat(list(y), 5)
                 read += 2000
+            elif(lastWrite):
+                for i in range(5, 13):          # Read ports are 5 to 12
+                    y = adw.GetFifo_Long(i, full) 
+                    outputs[i-5] += LongToFloat(list(y), 5)
+                read += full
 
             # Write values if write FIFOs are empty enough
             if(written < InputSize):
@@ -114,6 +122,8 @@ def IO(adw, input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
                     for i in range(1, 5):
                         adw.SetFifo_Long(i, list(x[i-1, written:]), InputSize-written)
                     written = InputSize
+                    lastWrite = True
+                    time.sleep((InputSize-read)/Fs)
 
         adw.Stop_Process(1)
         adw.Clear_Process(1)
@@ -127,7 +137,7 @@ def IO(adw, input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     i = 0
     for index, val in enumerate(inputPorts):
         if(val):
-            outputArray[i] = outputs[index, 1:InputSize + 1]
+            outputArray[i] = outputs[index, 1:InputSize+1]
             i += 1
 
     return outputArray
