@@ -31,7 +31,7 @@ class experiment_config(object):
         self.fs = 1000
 
 
-        self.SineWave = self.SineWave
+        self.SineWave = self.Sinewave
         
     def SineWave(self, Amplitude, frequency, n_points):
         counter = 0

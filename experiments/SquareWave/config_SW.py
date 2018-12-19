@@ -6,7 +6,7 @@ class experiment_config(object):
 
         #define where you want to save the data.
         self.filepath = r'D:\Aernout\test'
-        self.name = test
+        self.name = 'test'
 
         #define the constants
         self.v_low = 0
@@ -22,7 +22,7 @@ class experiment_config(object):
         self.device = 'nidaq'
         self.fs = 8000
 
-        def SquareWave(self, v_high, v_low, n_points)
+    def SquareWave(self, v_high, v_low, n_points):
             i = 0
             if position == 'high':
                 for i in range(0, int((n_points/2)-1)):
@@ -33,3 +33,5 @@ class experiment_config(object):
                     i = i+1
             else:
                 input = 'v_low'
+
+        return Input
