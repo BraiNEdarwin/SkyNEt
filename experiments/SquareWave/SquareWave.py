@@ -28,6 +28,8 @@ else:
 SaveLib.saveExperiment(saveDirectory, input = Input, output = Output)
 
 # Plot the Square wave
+n_points =10000
+NPoints=np.linspace(0, n_points-1,n_points)
 plt.figure()
-plt.plot(n_points[0:len(Output)], Output)
+plt.plot(NPoints, Output)
 plt.show()
