@@ -19,8 +19,8 @@ class experiment_config(object):
         
         #define the Parameters.
         self.Amplitude = 0.1
-        self.n_points = 10000
-        self.frequency = 100
+        self.n_points = 100
+        self.frequency = 10000
 
         #define the input and output amplifications.
         self.amplification = 1
@@ -28,13 +28,17 @@ class experiment_config(object):
 
         #measurment tool settings.
         self.device = 'nidaq'
-        self.fs = 1000
+        self.fs = int(self.frequency*self.n_points)
 
 
         self.SineWave = self.SineWave
         
-    def SineWave(self, Amplitude, frequency, n_points):
+    def SineWave(self, Amplitude, frequency, n_points, fs):
         counter = 0
+        Input= [0]*n_points
+        ln_points = np.linspace(0, n_points-1, n_points)
         for i in range (0, n_points):
-            Input[counter] = np.sin(2*np.pi*frequency*n_points/fs)
+            Input[counter] = Amplitude*np.sin(2*np.pi*frequency*ln_points[counter]/fs)
             counter = counter + 1
+
+        return Input

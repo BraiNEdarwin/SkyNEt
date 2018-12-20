@@ -29,5 +29,5 @@ SaveLib.saveExperiment(saveDirectory, input = Input, output = Output)
 
 # Plot the IV curve.
 plt.figure()
-plt.plot(Input[0:len(Output)], Output)
+plt.plot(, Output)
 plt.show()
