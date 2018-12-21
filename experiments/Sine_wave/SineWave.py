@@ -20,6 +20,7 @@ config = config.experiment_config()
 saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.name)
 
 # Define the device input using the function in the config class.
+
 Input = config.SineWave( config.Amplitude, config.frequency, config.n_points, config.fs)
 
 #Measure using the device specified in the config class
@@ -35,8 +36,8 @@ else:
 SaveLib.saveExperiment(saveDirectory, input = Input, output = Output)
 
 # Plot the Square wave
-n_points = 100
-NPoints = np.linspace(0, n_points-1, n_points)
+NPoints = np.linspace(0, config.n_points-1, config.n_points)
+print(np.shape(Output))
 plt.figure()
 plt.plot(NPoints, Output)
 plt.show()

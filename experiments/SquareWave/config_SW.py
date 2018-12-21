@@ -5,12 +5,13 @@ class experiment_config(object):
     def __init__(self):
 
         #define where you want to save the data.
-        self.filepath = r'D:\Aernout\test'
+        self.filepath = r'F:\test'
         self.name = 'test'
 
         #define the constants
         self.v_low = 0
-        self.v_high = 0.1
+        self.v_high = 1 
+        self.frequency = 25
         self.n_points = 10000
         self.position = 'high'
 
@@ -20,16 +21,18 @@ class experiment_config(object):
 
         #measurement tool settings.
         self.device = 'nidaq'
-        self.fs = 8000
+        self.fs = self.frequency * self.n_points
 
     def SquareWave(self, v_high, v_low, n_points):
-        counter = 0
-        Input =[0]*n_points
-        for i in range(0, int((n_points/2)-1)):
-            Input[counter] = v_high
-            counter = counter + 1
-        for i in range (int(n_points/2), int(n_points-1)):
-            Input[counter] = v_low
-            counter = counter + 1
+        Input = [0]*n_points
+        n_points = int(n_points/4)
+
+        Input_L = np.linspace(v_low, v_low, n_points)
+        Input_H = np.linspace(v_high, v_high, n_points)
+
+        Input[0:n_points] = Input_L
+        Input[n_points:2*n_points] = Input_H
+        Input[2*n_points:3*n_points] = Input_L
+        Input[3*n_points:4*n_points] = Input_H
 
         return Input

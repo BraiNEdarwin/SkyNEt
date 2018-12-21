@@ -4,7 +4,7 @@ from SkyNEt.instruments.ADwin import adwinIO
 from SkyNEt.instruments.niDAQ import nidaqIO
 import numpy as np 
 import os
-import config_Saw as config
+import config_SW as config
 
 # Load the information from the config class.
 config = config.experiment_config()
@@ -28,8 +28,7 @@ else:
 SaveLib.saveExperiment(saveDirectory, input = Input, output = Output)
 
 # Plot the Square wave
-n_points =10000
-NPoints=np.linspace(0, n_points-1,n_points)
+NPoints=np.linspace(0, len(Output)-1,len(Output))
 plt.figure()
 plt.plot(NPoints, Output)
 plt.show()

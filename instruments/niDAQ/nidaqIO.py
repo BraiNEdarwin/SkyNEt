@@ -138,3 +138,102 @@ def IO_2D2I(x, Fs):
         output_task.stop()
 
     return data
+
+def IO_8I(y, Fs):
+    '''
+    Input/output function for communicating with the NI USB 6216 when measuring
+    with one input and one output.
+    Input argument:
+    y; 1D numpy array with data you wish to send on port ao0
+    Fs; sample frequency at which data will be sent
+    Returns:
+    data; 1D numpy array with data measured on ai0
+    '''
+    N = y.shape[1]
+    np.append(y, 0)  # Finish by setting dacs to 0
+    with nidaqmx.Task() as output_task, nidaqmx.Task() as input_task:
+        # Define ao/ai channels
+        output_task.ao_channels.add_ao_voltage_chan('Dev1/ao0', 'ao0', -10, 10)
+        output_task.ao_channels.add_ao_voltage_chan('Dev1/ao1', 'ao1', -10, 10)
+        input_task.ai_channels.add_ai_voltage_chan('Dev1/ai0') 
+        input_task.ai_channels.add_ai_voltage_chan('Dev1/ai1')
+        input_task.ai_channels.add_ai_voltage_chan('Dev1/ai2')
+        input_task.ai_channels.add_ai_voltage_chan('Dev1/ai3')
+        input_task.ai_channels.add_ai_voltage_chan('Dev1/ai4')
+        input_task.ai_channels.add_ai_voltage_chan('Dev1/ai5')
+        input_task.ai_channels.add_ai_voltage_chan('Dev1/ai6')
+        input_task.ai_channels.add_ai_voltage_chan('Dev1/ai7')
+
+
+        
+        # Configure sample rate and set acquisition mode to finite
+        output_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan = N+1)
+        input_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan = N+1)
+
+        # Output triggers on the read operation
+        output_task.triggers.start_trigger.cfg_dig_edge_start_trig('/Dev1/ai/StartTrigger')
+
+        # Fill the output buffer
+        output_task.write(y, auto_start=False)
+
+        # Start tasks
+        output_task.start()
+        input_task.start()
+        
+        #read data
+        read_data = input_task.read(N + 1, math.ceil(N/Fs))
+        data = np.delete(read_data,(0), axis=1) #trim off the first datapoint, read lags one sample behind write
+
+        # Stop and close the tasks
+        input_task.stop()
+        output_task.stop()
+
+    return data
+
+def IO_all(y, Fs, n_ao, n_ai):
+    '''
+    Input/output function for communicating with the NI USB 6216 when measuring
+    with one input and one output.
+    Input argument:
+    y; 1D numpy array with data you wish to send on port ao0
+    Fs; sample frequency at which data will be sent
+    Returns:
+    data; 1D numpy array with data measured on ai0
+    '''
+    if n_ao == 1:
+        N = len(y)
+    if n_ao == 2:
+        N = y.shape[1]
+    np.append(y, 0)  # Finish by setting dacs to 0
+    with nidaqmx.Task() as output_task, nidaqmx.Task() as input_task:
+      # Define ao/ai channels
+        for i in range(n_ao):
+            output_task.ao_channels.add_ao_voltage_chan('Dev1/ao'+str(i)+'', 'ao'+str(i)+'', -10, 10)
+        for i in range(n_ai):
+            input_task.ai_channels.add_ai_voltage_chan('Dev1/ai'+str(i)+'') 
+
+
+        
+        # Configure sample rate and set acquisition mode to finite
+        output_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan = N+1)
+        input_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan = N+1)
+
+        # Output triggers on the read operation
+        output_task.triggers.start_trigger.cfg_dig_edge_start_trig('/Dev1/ai/StartTrigger')
+
+        # Fill the output buffer
+        output_task.write(y, auto_start=False)
+
+        # Start tasks
+        output_task.start()
+        input_task.start()
+        
+        #read data
+        read_data = input_task.read(N + 1, math.ceil(N/Fs))
+        data = np.delete(read_data,(0), axis=1) #trim off the first datapoint, read lags one sample behind write
+
+        # Stop and close the tasks
+        input_task.stop()
+        output_task.stop()
+
+    return data
