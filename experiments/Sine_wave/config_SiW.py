@@ -19,8 +19,8 @@ class experiment_config(object):
         
         #define the Parameters.
         self.Amplitude = 0.1
-        self.n_points = 100
-        self.frequency = 10000
+        self.n_points = 1000
+        self.frequency = 25
 
         #define the input and output amplifications.
         self.amplification = 1
