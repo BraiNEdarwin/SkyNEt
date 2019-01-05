@@ -237,7 +237,12 @@ class webNNet(torch.nn.Module):
             
             # after training, calculate error of complete data set
             predictions = self.forward(train_data, bias=bias, scale=scale)
-            error_value = self.error_fn(predictions, target_data, beta, loss_fn, reg_scale=reg_scale).item()
+            error_value = self.error_fn(predictions, target_data, beta, loss_fn, reg_scale=reg_scale)
+            if torch.isnan(error_value):
+                print("WARN: Error is nan, stopping training.")
+                return [0], best_params
+
+            error_value = error_value.item()
             error_list.append(error_value)
             if verbose:
                 print("INFO: error at epoch %s: %s" % (epoch, error_value))
