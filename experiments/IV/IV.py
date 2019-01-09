@@ -33,3 +33,6 @@ plt.show()
 
 # Final reset
 InstrumentImporter.reset(0, 0)
+# Since InstrumentImporter is not working properly, use adwin reset directly:
+if config.device == 'adwin':
+	adwinIO.reset(adwin)
