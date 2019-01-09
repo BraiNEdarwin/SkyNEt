@@ -10,6 +10,7 @@ import sys
 import os
 import numpy as np
 import time
+import matplotlib.pyplot as plt
 
 DEVICENUMBER = 1
 RAISE_EXCEPTIONS = 1
@@ -21,26 +22,29 @@ def initInstrument():
     adw = ADwin(DEVICENUMBER, RAISE_EXCEPTIONS)
     return adw
 
-def FloatToLong(x):
+def FloatToLong(x, Vmax):
     '''
     Converts float values to integers,
-    more specifically this function maps [-10, 10] -> [0, 65536]
+    more specifically this function maps [-10, 10) -> [0, 65536)
     '''
     for i in range(len(x)):
-        x[i] = int((x[i] + 10) / 20 * 65536)
+        x[i] = int(np.round((x[i] + Vmax) / (2*Vmax / 65535)))
     return x
 
 def LongToFloat(x, Vmax):
     '''
     Converts integer values to floats,
-    more specifically this function maps [0, 65536] -> [-Vmax, Vmax]
+    more specifically this function maps [0, 65536) -> [-Vmax, Vmax)
     '''
-    for i in range(len(x)):
-        x[i] = 2*Vmax/65536 * x[i] - Vmax
+    if isinstance(x, int):
+        x = 2*Vmax/65536 * x - Vmax
+    else:
+        for i in range(len(x)):
+            x[i] = 2*Vmax/65536 * x[i] - Vmax
     return x
 
 
-def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
+def IO(adw, input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     '''
     This function will write each row of array inputs on a separate
     analog output of the ADwin at the specified sample frequency Fs.
@@ -56,12 +60,14 @@ def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     Read FIFOs: 5 - 12
     '''
     # Input preparation
+    inputs = input.copy()
     InputSize = inputs.shape[1]
     for i in range(inputs.shape[0]):
-        inputs[i, :] = FloatToLong(list(inputs[i, :]))
+        inputs[i, :] = FloatToLong(list(inputs[i, :]), 10)
     x = np.zeros((8, InputSize), dtype = int)
     x[:inputs.shape[0], :] = inputs
     outputs = [[], [], [], [], [], [], [], []]  # Eight empty output lists
+    lastWrite = False
 
     try:
         if os.name == 'posix':
@@ -70,7 +76,6 @@ def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
             adw.Boot('C:\\ADwin\\ADwin' + PROCESSORTYPE + '.btl')
         adw.Load_Process('C:\\Users\\PNPNteam\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8Read_4Write.TB1')
         adw.Set_Processdelay(1, int(300e6 / Fs))  # delay in clock cycles
-
         adw.Start_Process(1)
 
         # Clear all FIFOs
@@ -87,21 +92,35 @@ def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
             for i in range(1, 5):
                 adw.SetFifo_Long(i, list(x[i-1, :]), InputSize)
                 written = InputSize
+                lastWrite = True
 
+
+
+        # Notices the ADbasic how much datapoints to
+        adw.Set_Par(79, InputSize)
         # Start reading/writing FIFO's when Par80 == 1
         adw.Set_Par(80, 1)
         read = -1  # Read additional datapoint, because write lags behind
+
+        if (lastWrite):
+            time.sleep((InputSize - read)/Fs) # If the last values are put in the write memory, wait a bit until they are written
 
         while(read < InputSize):
             empty = adw.Fifo_Empty(1)
             full = adw.Fifo_Full(5)
 
             # Read values if read FIFOs are full enough
-            if(full > 2000):
+            if(full > 2000 and not lastWrite):
                 for i in range(5, 13):          # Read ports are 5 to 12
                     y = adw.GetFifo_Long(i, 2000) 
-                    outputs[i-5] += LongToFloat(list(y), 5)
+                    outputs[i-5] += LongToFloat(list(y), 10) 
                 read += 2000
+
+            elif(lastWrite):
+                for i in range(5, 13):          # Read ports are 5 to 12
+                    y = adw.GetFifo_Long(i, full) 
+                    outputs[i-5] += LongToFloat(list(y), 10) 
+                read += full
 
             # Write values if write FIFOs are empty enough
             if(written < InputSize):
@@ -113,6 +132,8 @@ def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
                     for i in range(1, 5):
                         adw.SetFifo_Long(i, list(x[i-1, written:]), InputSize-written)
                     written = InputSize
+                    lastWrite = True
+                    time.sleep((InputSize - read)/Fs) # If the last values are put in the write memory, wait a bit until they are written
 
         adw.Stop_Process(1)
         adw.Clear_Process(1)
@@ -126,7 +147,7 @@ def IO(adw, inputs, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     i = 0
     for index, val in enumerate(inputPorts):
         if(val):
-            outputArray[i] = outputs[index, 1:InputSize + 1]
+            outputArray[i] = outputs[index, 1:InputSize+1]
             i += 1
 
     return outputArray
@@ -164,4 +185,26 @@ def setControlVoltages(adw, x, Fs):
 
     except ADwinError as e:
         print('***', e)
+
+
+def reset(adw):
+    '''
+    Resets the 4 DACs to 0V at a speed of 1V/s
+    '''
+    Fs = 1000
+    stepsize = 0.001 # in units of V
+    DAC_values = []
+    DAC_diff = []
+    no_steps = []
+    
+    for i in range(1,5):
+        DAC_values += [LongToFloat(adw.Get_Par(i), 10)] 
+        no_steps += [int(abs(DAC_values[i-1]/stepsize))]
+
+    reset_inputs = np.zeros((4, max(no_steps)))
+    for i in range(reset_inputs.shape[0]):
+        reset_inputs[i,:no_steps[i]] = np.linspace(DAC_values[i], 0, no_steps[i], endpoint = True)
+
+    resetData = IO(adw, reset_inputs, Fs)
+
 
