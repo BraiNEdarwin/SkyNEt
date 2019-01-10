@@ -44,7 +44,7 @@ def LongToFloat(x, Vmax):
     return x
 
 
-def IO(adw, input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
+def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     '''
     This function will write each row of array inputs on a separate
     analog output of the ADwin at the specified sample frequency Fs.
@@ -58,9 +58,23 @@ def IO(adw, input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     Please look at the ADbasic file while reading this file. 
     Write FIFOs: 1 - 4
     Read FIFOs: 5 - 12
+
+    Inputs arguments
+    ----------------
+    adw: adwin
+    Input: N x M array, N output ports, M datapoints
+    Fs: sample frequency
+    inputPorts**: binary list containing ones for the used input ports
+
+    Returns
+    -------
+    P x M output array, P input ports, M datapoints
     '''
     # Input preparation
-    inputs = input.copy()
+    if len(Input.shape) == 1:
+        Input = Input[np.newaxis,:]
+
+    inputs = Input.copy()
     InputSize = inputs.shape[1]
     for i in range(inputs.shape[0]):
         inputs[i, :] = FloatToLong(list(inputs[i, :]), 10)
@@ -157,6 +171,7 @@ def setControlVoltages(adw, x, Fs):
     '''
     x is a list of 4 values with desired control voltages in V.
     '''
+
     x = np.asarray(x)  #convert x to numpy array
     x = (x + 10) / 20 * 65536
     x = x.astype(int)
@@ -189,10 +204,10 @@ def setControlVoltages(adw, x, Fs):
 
 def reset(adw):
     '''
-    Resets the 4 DACs to 0V at a speed of 1V/s
+    Resets the 4 DACs to 0V at a speed of 0.5V/s
     '''
     Fs = 1000
-    stepsize = 0.001 # in units of V
+    stepsize = 0.0005 # in units of V
     DAC_values = []
     DAC_diff = []
     no_steps = []
