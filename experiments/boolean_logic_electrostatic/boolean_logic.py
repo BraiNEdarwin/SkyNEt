@@ -66,7 +66,7 @@ for i in range(cf.generations):
         time.sleep(1)  # Wait after setting DACs
 
         # Set the input scaling
-        x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
+        x_scaled = x* genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
 
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
@@ -75,7 +75,7 @@ for i in range(cf.generations):
                 output = InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)
             elif(cf.device == 'adwin'):
                 adw = InstrumentImporter.adwinIO.initInstrument()
-                output = InstrumentImporter.adwinIO.IO_2D(adw, x_scaled, cf.fs)
+                output = InstrumentImporter.adwinIO.IO(adw, x_scaled, cf.fs)
             else:
                 print('Specify measurement device as either adwin or nidaq')
 
@@ -94,7 +94,7 @@ for i in range(cf.generations):
             PlotBuilder.currentOutputEvolution(mainFig,
                                                t,
                                                target,
-                                               output,
+                                               output[0],
                                                j + 1, i + 1,
                                                fitnessTemp[j, avgIndex])
 
@@ -119,7 +119,7 @@ for i in range(cf.generations):
                                        i + 1,
                                        t,
                                        cf.amplification*target,
-                                       output,
+                                       output[0],
                                        w)
 
     # Save generation
