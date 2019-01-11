@@ -71,8 +71,9 @@ class experiment_config(config_class):
         self.device = 'nidaq'  # Either nidaq or adwin
 
         # Define experiment
-        self.amplification = 10
-        self.TargetGen = self.NAND
+        self.postgain = 100
+        self.amplification = 1
+        self.TargetGen = self.AND
         self.generations = 50
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [0.1, 0.8]]
 
@@ -91,8 +92,10 @@ class experiment_config(config_class):
         ################# Save settings ################
         self.filepath = r'D:\data\Mark\Evolutioncheck\\'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
-        self.electrodeSetup = [[1,2,3,'ao0','ao1',4,5,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
-        self.name = 'NAND_100M_neg_0'
+
+        #                       Summing module S2d              Matrix module       on chip
+        self.electrodeSetup = [[1,2,'ao0',3,'ao1',4,5,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
+        self.name = 'AND_10M_100dc'
 
         ################################################
         ################# OFF-LIMITS ###################

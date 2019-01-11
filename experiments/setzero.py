@@ -21,6 +21,6 @@ controlVoltages = np.zeros(16)
 IVVIrack.setControlVoltages(ivvi, controlVoltages)
 
     # feed 0 to nidaq
-nidaqIO.IO_2D(inp, 1000)
+nidaqIO.IO(inp, 1000)
 # print (list(iter.product(a, repeat=6)))
 
