@@ -40,7 +40,8 @@ class experiment_config(config_class):
         self.freq = np.sqrt(self.freq2[:self.waveElectrodes])
         self.sampleTime = 10 # Sample time of the sine waves for one grid point (in seconds)
         self.fs = 100
-        
+        self.transientTest = True
+        self.n = 10
 
         self.amplification = 1000
         self.postgain = 100

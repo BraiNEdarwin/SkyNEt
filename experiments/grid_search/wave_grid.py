@@ -14,6 +14,7 @@ from SkyNEt.instruments.ADwin import adwinIO
 from SkyNEt.instruments import InstrumentImporter
 import time
 from SkyNEt.modules.GridConstructor import gridConstructor as grid
+from SkyNEt.experiments.grid_search import transient_test
 import SkyNEt.experiments.grid_search.config_wave_grid as config
 # temporary imports
 import numpy as np
@@ -46,7 +47,7 @@ waves = np.sin(cf.freq[:,np.newaxis] * t[np.newaxis]) *cf.Vmax  #\\ Note that it
 
 
 #main acquisition loop
-#TODO: ramp slowly up to the first data point to avoid high transient at the start
+#TODO: ramp slowly up to the first data point to avoid transient at the start
 for i in range(voltages.shape[0]):
     start_wave = time.time()
     InstrumentImporter.IVVIrack.setControlVoltages(ivvi, voltages[i, :])
@@ -60,26 +61,13 @@ for i in range(voltages.shape[0]):
     end_wave = time.time()
     print('CV-sweep over grid point ' + str(i) + ' of ' +  str(voltages.shape[0]) + ' took '+str(end_wave-start_wave)+' sec.')
 
-########################################
-# Test part for testing for transients #
-########################################
-print('Transient test')
-n = 10 	# Amount of datapoints to be tested
-testdata = np.zeros((n, 2*cf.fs))
-test_cases = np.random.randint(voltages.shape[0], size=n)
-difference = np.zeros((n,1))
-for i in range(n):     
-    InstrumentImporter.IVVIrack.setControlVoltages(ivvi, voltages[test_cases[i], :])    
-    time.sleep(1)
-    if cf.device == 'nidaq':
-        testdata[i,:] = InstrumentImporter.nidaqIO.IO(np.ones((waves.shape[0], 2*cf.fs)) * waves[:, cf.fs * test_cases[i],np.newaxis], cf.fs) # sample for 2s
-    elif cf.device == 'adwin':
-    	testdata[i,:] = InstrumentImporter.adwinIO.IO(adwin, np.ones((waves.shape[0], 2*cf.fs)) * waves[:, cf.fs * test_cases[i],np.newaxis], cf.fs)
-    difference[i,0] = np.mean(testdata[i,:]) - data[0,cf.fs * test_cases[i]]
-  		
-
-SaveLib.saveExperiment(cf.configSrc, saveDirectory, testdata = testdata*cf.amplification/cf.postgain, diff = difference*cf.amplification/cf.postgain, \
-	grid = voltages, waves = waves, output = data*cf.amplification/cf.postgain, filename = 'training_NN_data')
+if cf.transientTest:
+    ytestdata, difference, xtestdata = transient_test(ivvi, voltages, waves, cf.fs, cf.n, cf.device)
+    SaveLib.saveExperiment(cf.configSrc, saveDirectory, xtestdata = xtestdata, ytestdata = ytestdata*cf.postgain/cf.amplification, diff = difference*cf.postgain/cf.amplification, \
+        grid = voltages, waves = waves, output = data*cf.amplification/cf.postgain, filename = 'training_NN_data')
+else:
+    SaveLib.saveExperiment(cf.configSrc, saveDirectory, grid = voltages, waves = waves, output = data*cf.postgain/cf.amplification, filename = 'training_NN_data')
+    
 
 InstrumentImporter.reset(0,0)
 adwinIO.reset(adwin)
