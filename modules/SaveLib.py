@@ -24,7 +24,6 @@ def copyFiles(sourcepath, filepath):
     This function copies any .py files in the script directory to the directory
     specified by filepath.
     '''
-
     scriptdir_stripped = sys.argv[0].split('/')[:-1]
     scriptdir = os.sep.join(scriptdir_stripped)
     if(scriptdir == ''):
