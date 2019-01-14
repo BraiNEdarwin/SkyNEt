@@ -26,10 +26,14 @@ else:
 # Save the Input and Output
 SaveLib.saveExperiment(config.configSrc, saveDirectory, input = Input, output = Output)
 
+
 # Plot the IV curve.
 plt.figure()
-plt.plot(Input[0,0:Output.shape[1]], Output[0,:])
+plt.plot(Input[0], Output[0])
 plt.show()
 
 # Final reset
 InstrumentImporter.reset(0, 0)
+# Since InstrumentImporter is not working properly, use adwin reset directly:
+if config.device == 'adwin':
+	adwinIO.reset(adwin)

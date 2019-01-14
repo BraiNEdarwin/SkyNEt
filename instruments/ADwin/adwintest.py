@@ -7,7 +7,7 @@ import os
 import matplotlib.pyplot as plt
 
 filepath = r'D:\data\Mark\NoiseSystem\\'
-name = 'NoiseFloor_A1=100M_A2=1_R=1M_float'
+name = 'NoiseFloor_A1=10M_A2=100dc_device_grnd'
 #name = 'ADwin_test_I1_O2'
 
 plotFlag = 1
@@ -32,8 +32,15 @@ inputSignal5 = 1*np.ones((1, 1000))
 inputSignal6 = 2*np.ones((1, 1000))
 inputSignal7 = 3*np.ones((1, 1000))
 
-Input = np.concatenate((inputSignal, inputSignal2, inputSignal3, inputSignal4, inputSignal5, inputSignal6, inputSignal7), axis = 1)
-Input = np.zeros((1,10*Fs))
+#Input = np.concatenate((inputSignal, inputSignal2, inputSignal3, inputSignal4, inputSignal5, inputSignal6, inputSignal7), axis = 1)
+
+Input = np.zeros((1,5*Fs))
+#Input1 = -0.5*np.ones((1,5*Fs))
+#Input2 = -1*np.ones((1,5*Fs))
+#Input3 = -1.5*np.ones((1,5*Fs))
+#Input4 = -2*np.ones((1,5*Fs))
+
+#Input = np.concatenate((Input0,Input1,Input2,Input3,Input4), axis=1)
 
 adwin = InstrumentImporter.adwinIO.initInstrument()
 
