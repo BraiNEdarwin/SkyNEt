@@ -5,7 +5,7 @@ Measurement script to perform an experiment generating data for NN training
 # Import packages
 import SkyNEt.modules.SaveLib as SaveLib
 from SkyNEt.instruments.niDAQ import nidaqIO
-from SkyNEt.intruments import InstrumentImporter
+from SkyNEt.instruments import InstrumentImporter
 import time
 from SkyNEt.modules.GridConstructor import gridConstructor as grid
 import SkyNEt.experiments.grid_search.config_grid_search as config

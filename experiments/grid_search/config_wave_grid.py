@@ -32,25 +32,27 @@ class experiment_config(config_class):
         #self.input2 = [-900, -600, -300, 0, 300, 600, 900]
         #self.input1 = [-900,0,900]
 
-        self.controlVoltages =  [list(np.linspace(-900, 900, 7))]*3
+        self.controlVoltages = [[900], [900], [900], [900], [900]]         #[list(np.linspace(-900, 900, 7))]*3
         self.gridElectrodes = len(self.controlVoltages)
-        self.waveElectrodes = 4
-        self.freq2 = np.array([2,1+np.pi,5,7,13,17,19])
+        self.waveElectrodes = 2
+        self.factor = 2
+        self.freq2 = np.array([5,7,13,17,19])*self.factor # 2,np.pi,
         self.freq = np.sqrt(self.freq2[:self.waveElectrodes])
-        self.sampleTime = 100 # Sample time of the sine waves for one grid point (in seconds)
-        self.fs = 1000
+        self.sampleTime = 10 # Sample time of the sine waves for one grid point (in seconds)
+        self.fs = 100
         
+
         self.amplification = 1000
         self.postgain = 100
         self.Vmax = 0.9 # Maximum amount of voltage for the inputs
 
         self.keithley_address = 'GPIB0::17::INSTR'
-
-
-        self.electrodeSetup = [[5,1,2,3,4,6,7,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
+        self.device = 'nidaq'
+        #                               Summing module S2d      Matrix module           device
+        self.electrodeSetup = [['ao0',1,2,3,4,5,'ao1','out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
         # Save settings
         self.filepath = r'D:\\data\\Mark\\wave_grid\\'
-        self.name = 'test_sines'
+        self.name = 'sine_freq_test_factor_'+str(self.factor)
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
         
         
