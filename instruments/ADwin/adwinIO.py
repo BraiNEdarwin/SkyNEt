@@ -189,10 +189,10 @@ def setControlVoltages(adw, x, Fs):
 
 def reset(adw):
     '''
-    Resets the 4 DACs to 0V at a speed of 1V/s
+    Resets the 4 DACs to 0V at a speed of 0.5V/s
     '''
     Fs = 1000
-    stepsize = 0.001 # in units of V
+    stepsize = 0.0005 # in units of V
     DAC_values = []
     DAC_diff = []
     no_steps = []

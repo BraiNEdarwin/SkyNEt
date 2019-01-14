@@ -42,6 +42,7 @@ class experiment_config(config_class):
         
         self.amplification = 1000
         self.postgain = 100
+        self.Vmax = 0.9 # Maximum amount of voltage for the inputs
 
         self.keithley_address = 'GPIB0::17::INSTR'
 

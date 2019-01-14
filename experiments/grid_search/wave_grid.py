@@ -51,13 +51,13 @@ for i in range(voltages.shape[0]):
 for i in range(voltages.shape[0]):
     start_wave = time.time()
     InstrumentImporter.IVVIrack.setControlVoltages(ivvi, voltages[i, :])
-    time.sleep(0.3)
+    time.sleep(0.3) # Pause to avoid transients
     data[i,:] = adwinIO.IO(adwin, waves[i*cf.waveElectrodes: (i+1)*cf.waveElectrodes], cf.fs)
     end_wave = time.time()
     print('CV-sweep over grid point ' + str(i) + ' of ' +  str(voltages.shape[0]) + ' took '+str(end_wave-start_wave)+' sec.')
     
     
-SaveLib.saveExperiment(cf.configSrc, saveDirectory, data= data, filename = 'training_NN_data')
+SaveLib.saveExperiment(cf.configSrc, saveDirectory, grid = voltages, waves = waves, output = data, filename = 'training_NN_data')
 
 InstrumentImporter.reset(0,0)
-adwinIO.reset()
+adwinIO.reset(adwin)
