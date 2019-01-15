@@ -71,14 +71,15 @@ class experiment_config(config_class):
         self.InputGen = self.input_waveform(inputs)
         self.amplification = 1
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 2
+        self.generations = 1
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]
         self.input_scaling = 0.6
         self.Fitness = self.corr_fit
 #        self.fitnessparameters = [1, 0, 0, 1]
 
         # Specify either partition or genomes
-        self.partition = [2, 6, 6, 6, 5]
+        self.genomes = 1
+#        self.partition = [2, 6, 6, 6, 5]
 
         # Documentation
         self.genelabels = ['CV1','CV2','CV3','CV4','CV5']

@@ -180,7 +180,6 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
     except:
         pass
     
-    reset(0, 0)
     #Get best results
     max_fitness = np.max(fitnessArray)
     a = fitnessArray

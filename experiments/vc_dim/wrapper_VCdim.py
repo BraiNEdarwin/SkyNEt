@@ -8,7 +8,8 @@ If successful (measured by a threshold on the correlation and by the perceptron 
 @author: hruiz
 """
 from create_binary import bintarget
-import evolve_VCdim as vcd
+#import evolve_VCdim as vcd
+import measure_VCdim as vcd
 import numpy as np
 from matplotlib import pyplot as plt
 import time
@@ -17,17 +18,17 @@ import os
 inputs = [[-0.9,0.9,-0.9,0.9],[-0.9,-0.9,0.9,0.9]]#[[-0.9,0.9,-0.9,0.9,0,0],[-0.9,-0.9,0.9,0.9,-0.6,0.6]]
 N=len(inputs[0])
 #Create save directory
-filepath0 = r'../../results/VC_dim'
-date = time.strftime('%Y_%m_%d')
-filepath1 = filepath0+'/'+date
-dirname = filepath1+'/Capacity_N'+str(N)+'/'
+filepath0 = r'../../test/evolution_test/VCdim_testing'# r'../../results/VC_dim'
+filepath1 = filepath0+'/Capacity_N'+str(N)
+date = time.strftime('%Y_%m_%d_%H-%M')
+dirname = filepath1+'/'+date+'/'
 if os.path.exists(filepath0):
     os.makedirs(dirname)
 else:
     assert 1==0, 'No directory created. Parent target directory '+filepath0+' does not exist'
     
 # Create binary labels for N samples
-binary_labels = bintarget(N)  
+binary_labels = bintarget(N).tolist()  
 threshold = 1-(0.65/N)*(1+1.0/N)
 #Initialize container variables
 fitness_classifier = []
@@ -43,7 +44,8 @@ for bl in binary_labels:
         genes, output, fitness, accuracy = np.nan, np.nan, np.nan, np.nan
         found_classifier.append(1)
     else:
-        genes, output, fitness, accuracy = vcd.evolve(inputs,bl, filepath=filepath1)
+        print('Finding classifier ',bl)
+        genes, output, fitness, accuracy = vcd.evolve(inputs,bl, filepath=dirname)
         if accuracy>threshold:
             found_classifier.append(1)
         else:
@@ -85,8 +87,7 @@ try:
 except:
     pass
 
-tstmp = time.strftime('%H-%M')
-np.savez(dirname+tstmp+'-VCdim_'+str(N)+'-inputs',
+np.savez(dirname+'Summary_Results',
          inputs = inputs,
          binary_labels = binary_labels,
          capacity = capacity,
@@ -95,3 +96,8 @@ np.savez(dirname+tstmp+'-VCdim_'+str(N)+'-inputs',
          accuracy_classifier = accuracy_classifier,
          output_classifier = output_classifier,
          genes_classifier = genes_classifier)
+
+try:
+    vcd.reset(0, 0)
+except:
+    print('Nothing was reset')
