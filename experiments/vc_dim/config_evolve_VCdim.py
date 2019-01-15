@@ -71,7 +71,7 @@ class experiment_config(config_class):
         self.InputGen = self.input_waveform(inputs)
         self.amplification = 1
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 50
+        self.generations = 2
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]
         self.input_scaling = 0.6
         self.Fitness = self.corr_fit
@@ -86,7 +86,7 @@ class experiment_config(config_class):
         # Save settings
         self.filepath = filepath
         buf_str = str(labels)
-        self.name = 'VCdim-'+''.join(buf_str.lstrip('[').strip(']').split())
+        self.name = 'VCdim-'+''.join(buf_str.lstrip('[').strip(']').split(', '))
 
         ################################################
         ################# OFF-LIMITS ###################

@@ -77,7 +77,7 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
     controlVoltages = np.zeros(cf.genes)
     
     # Initialize save directory
-    #saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
+    saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
     
     # Initialize main figure
     if not hush:
@@ -200,4 +200,4 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
 if __name__=='__main__':
     inputs = [[-1,1,-1,1],[-1,-1,1,1]]
     binary_labels = [0,1,1,0]
-    _,_,_,_ = evolve(inputs,binary_labels, hush=False)
+    _,_,_,_ = evolve(inputs,binary_labels, hush=True)
