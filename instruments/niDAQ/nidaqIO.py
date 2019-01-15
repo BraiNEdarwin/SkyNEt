@@ -67,7 +67,7 @@ def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
         input_task.start()
         
         #read data
-        read_data = input_task.read(N + 1, math.ceil(N/Fs))
+        read_data = input_task.read(N + 1, math.ceil(N/Fs)+1)
 
         read_data = np.asarray(read_data)
         if len(read_data.shape) == 1:
