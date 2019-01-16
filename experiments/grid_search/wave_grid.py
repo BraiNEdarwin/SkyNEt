@@ -43,7 +43,7 @@ data = np.zeros((1, voltages.shape[0] * cf.sampleTime * cf.fs))
 # Construct sine waves for all grid points
 waves = np.zeros((cf.waveElectrodes, voltages.shape[0] * cf.fs * cf.sampleTime))
 t = np.arange(0, voltages.shape[0] * cf.sampleTime, 1 / cf.fs)
-waves = np.sin(cf.freq[:,np.newaxis] * t[np.newaxis]) *cf.Vmax  #\\ Note that it starts at phase 0
+waves = np.sin(2* np.pi * cf.freq[:,np.newaxis] * t[np.newaxis]) *cf.Vmax  #\\ Note that it starts at phase 0
 
 
 #main acquisition loop

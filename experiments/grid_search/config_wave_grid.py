@@ -36,12 +36,12 @@ class experiment_config(config_class):
         self.gridElectrodes = len(self.controlVoltages)
         self.waveElectrodes = 2
         self.factor = 2
-        self.freq2 = np.array([5,7,13,17,19])*self.factor # 2,np.pi,
-        self.freq = np.sqrt(self.freq2[:self.waveElectrodes])
-        self.sampleTime = 10 # Sample time of the sine waves for one grid point (in seconds)
-        self.fs = 100
+        self.freq2 = np.array([5,7,13,17,19]) # 2,np.pi,
+        self.freq = np.sqrt(self.freq2[:self.waveElectrodes])*self.factor
+        self.sampleTime = 5 # Sample time of the sine waves for one grid point (in seconds)
+        self.fs = 1000
         self.transientTest = True
-        self.n = 10
+        self.n = 50
 
         self.amplification = 1000
         self.postgain = 100
