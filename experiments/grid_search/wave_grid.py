@@ -62,7 +62,8 @@ for i in range(voltages.shape[0]):
     print('CV-sweep over grid point ' + str(i) + ' of ' +  str(voltages.shape[0]) + ' took '+str(end_wave-start_wave)+' sec.')
 
 if cf.transientTest:
-    ytestdata, difference, xtestdata = transient_test(ivvi, voltages, waves, cf.fs, cf.n, cf.device)
+    print("Testing for transients...")
+    ytestdata, difference, xtestdata = transient_test.transient_test(ivvi, voltages, waves, data, cf.fs, cf.sampleTime, cf.n, cf.device)
     SaveLib.saveExperiment(cf.configSrc, saveDirectory, xtestdata = xtestdata, ytestdata = ytestdata*cf.postgain/cf.amplification, diff = difference*cf.postgain/cf.amplification, \
         grid = voltages, waves = waves, output = data*cf.amplification/cf.postgain, filename = 'training_NN_data')
 else:
@@ -71,3 +72,4 @@ else:
 
 InstrumentImporter.reset(0,0)
 adwinIO.reset(adwin)
+
