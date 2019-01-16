@@ -5,7 +5,7 @@ class experiment_config(object):
     def __init__(self):
 
         #define where you want to save the data.
-        self.filepath = r'F:\test'
+        self.filepath = r'C:\test'
         self.name = 'test'
 
         #define the constants
