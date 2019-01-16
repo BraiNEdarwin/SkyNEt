@@ -44,7 +44,7 @@ def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     with nidaqmx.Task() as output_task, nidaqmx.Task() as input_task:
       # Define ao/ai channels
         for i in range(n_ao):
-            output_task.ao_channels.add_ao_voltage_chan('Dev1/ao'+str(i)+'', 'ao'+str(i)+'', -5, 5)
+            output_task.ao_channels.add_ao_voltage_chan('Dev1/ao'+str(i)+'', 'ao'+str(i)+'', -10, 10)
         for i in range(len(inputPorts)):
             if(inputPorts[i] == 1):
                 input_task.ai_channels.add_ai_voltage_chan('Dev1/ai'+str(i)+'') 

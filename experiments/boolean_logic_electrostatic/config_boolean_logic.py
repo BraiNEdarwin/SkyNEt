@@ -69,13 +69,21 @@ class experiment_config(config_class):
         ################################################
         self.comport = 'COM3'  # COM port for the ivvi rack
         self.device = 'nidaq'  # Either nidaq or adwin
+		
+        self.Fitness = self.FitnessCorr
 
         # Define experiment
         self.postgain = 100
         self.amplification = 1
-        self.TargetGen = self.AND
-        self.generations = 50
-        self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [1, 1.5]]
+        self.TargetGen = self.XOR
+        self.generations = 500
+        baseVoltage = 10
+        self.generange = [[-1000, 1000], 
+						   [-baseVoltage*1000/5, baseVoltage*1000/5],
+						   [-baseVoltage*1000/5, baseVoltage*1000/5],
+						   [-baseVoltage*1000/5, baseVoltage*1000/5],
+						   [-baseVoltage*1000/5, baseVoltage*1000/5],						  
+						   [0, baseVoltage]]
 
 
         # Specify either partition or genomes
@@ -95,7 +103,7 @@ class experiment_config(config_class):
 
         #                       Summing module S2d              Matrix module       on chip
         self.electrodeSetup = [[1,2,'ao0',3,'ao1',4,5,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
-        self.name = 'controls_electrostatic_AND'
+        self.name = 'controls_electrostatic_XOR'
 
         ################################################
         ################# OFF-LIMITS ###################
@@ -119,3 +127,32 @@ class experiment_config(config_class):
     #####################################################
     # Optionally define new methods here that you wish to use in your experiment.
     # These can be e.g. new fitness functions or input/output generators.
+	
+    def FitnessCorr(self, x, target, W):
+        '''
+        This implements the fitness function
+        F = self.fitnessparameters[0] * m / (sqrt(r) + self.fitnessparameters[3] * abs(c)) + self.fitnessparameters[1] / r + self.fitnessparameters[2] * Q
+        where m,c,r follow from fitting x = m*target + c to minimize r
+        and Q is the fitness quality as defined by Celestine in his thesis
+        appendix 9
+        W is a weight array consisting of 0s and 1s with equal length to x and
+        target. Points where W = 0 are not included in fitting.
+        '''
+
+        #extract fit data with weights W
+        indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)
+
+        x_weighed = np.empty(len(indices))
+        target_weighed = np.empty(len(indices))
+        for i in range(len(indices)):
+        	x_weighed[i] = x[indices[i]]
+        	target_weighed[i] = target[indices[i]]
+
+        F = np.corrcoef(x_weighed, target_weighed)[0, 1]
+        clipcounter = 0
+        for i in range(len(x_weighed)):
+            if(abs(x_weighed[i]) > 3.1*10):
+                clipcounter = clipcounter + 1
+                F = -100
+        return F
+
