@@ -70,12 +70,12 @@ class experiment_config(config_class):
         self.comport = 'COM3'  # COM port for the ivvi rack
         self.device = 'nidaq'  # Either nidaq or adwin
 		
-        self.Fitness = self.FitnessCorr
+        self.Fitness = self.FitnessCorrPower
 
         # Define experiment
         self.postgain = 100
-        self.amplification = 10
-        self.TargetGen = self.XNOR
+        self.amplification = 10  # V/nA
+        self.TargetGen = self.XOR
         self.generations = 200
         baseVoltage = 10
         self.generange = [[-1000, 1000], 
@@ -86,12 +86,13 @@ class experiment_config(config_class):
 						   [0, baseVoltage]]
 
         # Calculate power upperbound
-        self.P_max = self.generange[0][1]*31  # [mV * nA] = pW
+        self.P_max = self.generange[0][1]*3.1*self.amplification  # [mV * nA] = pW
 
 
         # Specify either partition or genomes
         #self.partition = [5, 5, 5, 5, 5]
         self.genomes = 25
+        self.fitnessavg = 2
 
         # Documentation
         self.genelabels = ['CV1/T1','CV2/T3','CV3/T11','CV4/T13','CV5/T15', 'Input scaling']
@@ -101,12 +102,12 @@ class experiment_config(config_class):
         ################################################
 
         ################# Save settings ################
-        self.filepath = r'D:\data\BramdW\electrostatic_fullboolean\\'
+        self.filepath = r'D:\data\BramdW\electrostatic_power\\'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
 
         #                       Summing module S2d              Matrix module       on chip
         self.electrodeSetup = [[1,2,'ao0',3,'ao1',4,5,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
-        self.name = 'controls_electrostatic_XNOR'
+        self.name = 'controls_electrostatic_XOR'
 
         ################################################
         ################# OFF-LIMITS ###################
@@ -177,7 +178,7 @@ class experiment_config(config_class):
         F = (1 - mean_power/P_max) * np.corrcoef(x_weighed, target_weighed)[0, 1]
         
         for i in range(len(x_weighed)):
-            if(abs(x_weighed[i]) > 3.1):
+            if(abs(x_weighed[i]) > 3.1 * self.amplification):
                 F = -100
 
         return F
