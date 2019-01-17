@@ -40,7 +40,6 @@ def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     if n_ao == 2:
         N = y.shape[1]
 
-    np.append(y, 0)  # Finish by setting dacs to 0
     with nidaqmx.Task() as output_task, nidaqmx.Task() as input_task:
       # Define ao/ai channels
         for i in range(n_ao):
