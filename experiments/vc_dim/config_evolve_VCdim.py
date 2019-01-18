@@ -78,8 +78,8 @@ class experiment_config(config_class):
 #        self.fitnessparameters = [1, 0, 0, 1]
 
         # Specify either partition or genomes
-#        self.genomes = 1
-        self.partition = [2, 6, 6, 6, 5]
+        self.genomes = 25
+        #self.partition = [2, 6, 6, 6, 5]
 
         # Documentation
         self.genelabels = ['CV1','CV2','CV3','CV4','CV5']

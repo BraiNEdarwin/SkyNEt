@@ -30,6 +30,7 @@ else:
 # Create binary labels for N samples
 binary_labels = bintarget(N).tolist()  
 threshold = 1-(0.65/N)*(1+1.0/N)
+print('Threshold for acceptance is set at: ',threshold)
 #Initialize container variables
 fitness_classifier = []
 genes_classifier = []
