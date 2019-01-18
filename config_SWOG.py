@@ -7,8 +7,8 @@ class experiment_config(object):
 
 
         #define the constants
-        self.v_low = -25
-        self.v_high = 45 
+        self.v_low = -20.25
+        self.v_high = 18.75 
         self.frequency = 5
         self.n_points = 1000
         self.position = 'high' 
