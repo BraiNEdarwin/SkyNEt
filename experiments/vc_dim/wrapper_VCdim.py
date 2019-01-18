@@ -100,4 +100,4 @@ np.savez(dirname+'Summary_Results',
 try:
     vcd.reset(0, 0)
 except:
-    print('Nothing was reset')
+    pass
