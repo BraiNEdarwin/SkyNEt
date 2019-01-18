@@ -21,7 +21,7 @@ from SkyNEt.instruments import InstrumentImporter
 import time
 from SkyNEt.modules.GridConstructor import gridConstructor as grid
 from SkyNEt.experiments.grid_search import transient_test
-import SkyNEt.experiments.grid_search.config_wave_grid as config
+import SkyNEt.experiments.electrostatic_stability.config_electrostatic_stability as config
 # temporary imports
 import numpy as np
 import os
@@ -38,10 +38,6 @@ cf = config.experiment_config()
 # initialize save directory
 saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
-# Initialize instruments
-ivvi = InstrumentImporter.IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
-adwin = InstrumentImporter.adwinIO.initInstrument()
-
 # Construct configuration array
 data = np.zeros((cf.voltages.shape[0], cf.sampleTime * cf.fs))
 
@@ -50,6 +46,12 @@ waves = np.zeros((cf.waveElectrodes, cf.fs * cf.sampleTime))
 t = np.arange(0, cf.sampleTime, 1 / cf.fs)
 waves[0] = np.sin(2*np.pi*cf.freq[0]*t) * cf.Vmax
 waves[1] = np.sin(2*np.pi*cf.freq[1]*t) * cf.Vmax
+
+# Initialize instruments
+ivvi = InstrumentImporter.IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
+adwin = InstrumentImporter.adwinIO.initInstrument()
+
+
 
 ## Data acquition loop
 
@@ -62,9 +64,14 @@ InstrumentImporter.IVVIrack.setControlVoltages(ivvi, [0, 0] + cf.controlVoltages
 # 3. apply zero volts to C1, C2
 # 4. wait cf.fieldWait seconds
 # 5. apply sines on in1, in2 and measure output
-for i in range(voltages.shape[0]):
+for i in range(cf.voltages.shape[0]):
+    if(i == 0):
+        starttime = time.time()
+    if(i == 1):
+        print(f'Estimated total time: {(time.time() - starttime)*cf.voltages.shape[0]} s')
+
     # Apply voltages to C1, C2
-    InstrumentImporter.IVVIrack.setControlVoltages(ivvi, voltages[i])
+    InstrumentImporter.IVVIrack.setControlVoltages(ivvi, cf.voltages[i])
 
     # Wait for field to have some effect
     time.sleep(cf.fieldWait) 
@@ -77,7 +84,7 @@ for i in range(voltages.shape[0]):
 
     # Apply sines and measure
     if cf.device == 'nidaq':
-    	data[i] = InstrumentImporter.nidaqIO.IO(waves, cf.fs)
+        data[i] = InstrumentImporter.nidaqIO.IO(waves, cf.fs)
 
         # Reset to 0
         InstrumentImporter.nidaqIO.reset_device()
@@ -96,4 +103,5 @@ SaveLib.saveExperiment(saveDirectory,
 
 InstrumentImporter.reset(0,0)
 adwinIO.reset(adwin)
+	
 
