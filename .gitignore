@@ -102,3 +102,5 @@ qcodes.bat
 test/evolution_test/NN_testing/
 Release.key
 VCdim_testing/
+results
+experiments.db 
