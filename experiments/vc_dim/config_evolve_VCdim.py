@@ -73,7 +73,8 @@ class experiment_config(config_class):
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
         self.generations = 100
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]
-        self.input_scaling = 0.6
+        self.input_scaling = 1.0
+        print('INPUT will be SCALED with',self.input_scaling)  
         self.Fitness = self.corr_fit
 #        self.fitnessparameters = [1, 0, 0, 1]
 

@@ -8,16 +8,22 @@ import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
 import SkyNEt.modules.PlotBuilder as PlotBuilder
 import config_evolve_VCdim as config
+
 from SkyNEt.modules.Nets.staNNet import staNNet 
+
+
+
 from SkyNEt.modules.Classifiers import perceptron
 # Other imports
 import torch
 from torch.autograd import Variable
 import time
 import numpy as np
+import pdb
 
 #%% Function definition
 def evolve(inputs, binary_labels, noise = 0, filepath = r'../../test/evolution_test/VCdim_testing/', hush=True):
+    
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
     
@@ -39,7 +45,7 @@ def evolve(inputs, binary_labels, noise = 0, filepath = r'../../test/evolution_t
     controlVoltages = np.zeros(cf.genes)
     
     # Initialize save directory
-    #saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
+    saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
     
     # Initialize main figure
     if not hush:
@@ -48,7 +54,7 @@ def evolve(inputs, binary_labels, noise = 0, filepath = r'../../test/evolution_t
     # Initialize NN
     main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/2018_08_07_164652_CP_FullSwipe/'
     dtype = torch.cuda.FloatTensor
-    net = staNNet(main_dir+'lr2e-4_eps400_mb512_20180807CP.pt')
+    net = staNNet(main_dir+'lr2e-4_eps400_mb512_20180807CP.pt')   
     
     # Initialize genepool
     genePool = Evolution.GenePool(cf)
@@ -75,11 +81,12 @@ def evolve(inputs, binary_labels, noise = 0, filepath = r'../../test/evolution_t
                 inputs = Variable(inputs)
                 output = net.outputs(inputs)
     
-#                # Plot genome
-#                try:
-#                    PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
-#                except:
-#                    pass
+                # Plot genome
+                try:
+                    PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
+                except:
+                    pass
+                
                 # Train output
                 outputAvg[avgIndex] = cf.amplification * np.asarray(output) + noise*(3/100)*(1 + np.abs(np.asarray(output)))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
                 noisy_target = target + 0.001*np.random.standard_normal(output.shape)
@@ -89,16 +96,16 @@ def evolve(inputs, binary_labels, noise = 0, filepath = r'../../test/evolution_t
                                                          noisy_target,
                                                          w)
     
-#                # Plot output
-#                try:
-#                    PlotBuilder.currentOutputEvolution(mainFig,
-#                                                       t,
-#                                                       target,
-#                                                       output,
-#                                                       j + 1, i + 1,
-#                                                       fitnessTemp[j, avgIndex])
-#                except:
-#                    pass
+                # Plot output
+                try:
+                    PlotBuilder.currentOutputEvolution(mainFig,
+                                                       t,
+                                                       target,
+                                                       output,
+                                                       j + 1, i + 1,
+                                                       fitnessTemp[j, avgIndex])
+                except:
+                    pass
                 
             outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
     
@@ -127,10 +134,10 @@ def evolve(inputs, binary_labels, noise = 0, filepath = r'../../test/evolution_t
         except:
             pass    
         # Save generation
-    #    SaveLib.saveExperiment(saveDirectory,
-    #                           genes = geneArray,
-    #                           output = outputArray,
-    #                           fitness = fitnessArray)
+        SaveLib.saveExperiment(saveDirectory,
+                               genes = geneArray,
+                               output = outputArray,
+                               fitness = fitnessArray)
     
         # Evolve to the next generation
         genePool.NextGen()
@@ -157,6 +164,6 @@ def evolve(inputs, binary_labels, noise = 0, filepath = r'../../test/evolution_t
 #%% Initialization
 if __name__=='__main__':
 
-    inputs = [[-1,1],[1,-1]]
-    binary_labels = [1,0]
+    inputs = [[-0.9,0.9,-0.9,0.9],[-0.9,-0.9,0.9,0.9]]
+    binary_labels = [0,1,1,0]
     _,_,_,_ = evolve(inputs,binary_labels)
