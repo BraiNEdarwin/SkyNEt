@@ -53,10 +53,10 @@ print('Data collection took '+str(end_wave-start_wave)+' sec.')
 if cf.transientTest:
     print("Testing for transients...")
     ytestdata, difference, xtestdata = transient_test.transient_test(waves, data, cf.fs, cf.sampleTime, cf.n)
-    SaveLib.saveExperiment(cf.configSrc, saveDirectory, xtestdata = xtestdata, ytestdata = ytestdata*cf.postgain/cf.amplification, diff = difference*cf.amplification/cf.postgain, \
+    SaveLib.saveExperiment(cf.configSrc, saveDirectory, xtestdata = xtestdata, ytestdata = ytestdata*cf.amplification/cf.postgain, diff = difference*cf.amplification/cf.postgain, \
         waves = waves, output = data*cf.amplification/cf.postgain, filename = 'training_NN_data')
 else:
-    SaveLib.saveExperiment(cf.configSrc, saveDirectory, grid = voltages, waves = waves, output = data*cf.amplification/cf.postgain, filename = 'training_NN_data')
+    SaveLib.saveExperiment(cf.configSrc, saveDirectory, waves = waves, output = data*cf.amplification/cf.postgain, filename = 'training_NN_data')
     
 
 InstrumentImporter.reset(0,0)
