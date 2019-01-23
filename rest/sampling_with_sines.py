@@ -12,19 +12,21 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
 dims = 7
-Fs = 100
-factor = 1
+Fs = 200
+factor = 4
 
 freq2 = np.array([2,np.pi,5,7,13,17,19])
 freq = factor*np.sqrt(freq2[:dims])
-c_update = 100000
-cycles = 100000
+c_update = 500000
+cycles = 500000
 inputs = np.zeros((dims,1))
-t = np.arange(0, freq[0]*c_update, 1/Fs)
+Vmax = 0.8
+
+t = np.arange(0, c_update/freq[0], 1/Fs)
 for i in range(int(cycles/c_update)):
     input_part = freq[:,np.newaxis]*t[np.newaxis]
     phase = np.zeros((dims,1))
-    input_part = np.sin(2*np.pi*input_part+phase)
+    input_part = np.sin(2*np.pi*input_part+phase)*Vmax
     inputs = np.concatenate((inputs, input_part),axis=1)
 inputs = inputs[:,1:]
 
@@ -97,7 +99,7 @@ plt.ylabel('dim 1')
 # Determine the smallest distance to the sampled area w.r.t. a uniform grid
 radius = 0.2
 grid_step = 0.05
-grid_range = 0.9 - grid_step
+grid_range = Vmax - grid_step
 grid = np.mgrid[-grid_range:grid_range:grid_step,
                 -grid_range:grid_range:grid_step,
                 -grid_range:grid_range:grid_step]
@@ -168,7 +170,7 @@ def distance_test(grid, inputs, radius):
     print("time elapsed: " + str(end_block - start_block))
     return min_dist, empty_counter
 
-def distanceRandomGrid(gridpoints, inputs, radius, grid_range = 0.85):
+def distanceRandomGrid(gridpoints, inputs, radius, grid_range = Vmax - 0.05):
     start_block = time.time()
     grid = np.random.uniform(-grid_range, grid_range, (inputs.shape[0], gridpoints))
     min_dist = np.zeros((1, gridpoints))
@@ -203,9 +205,9 @@ def distanceRandomGridBrute(gridpoints, inputs, grid_range = 0.85):
     return min_dist, empty_counter
 
 
-gridpoints = 10000
+gridpoints = 5000
 #min_dist_brute, empty_counter_brute = distance5D_brute(grid, inputs)
-min_dist, empty_counter = distanceRandomGrid(gridpoints, inputs, radius = 0.25)
+min_dist, empty_counter = distanceRandomGrid(gridpoints, inputs, radius = 0.2)
 
 plt.figure()
 #plt.hist(np.reshape(min_dist_brute, (min_dist_brute.size,1)),bins=50, normed = True,label = "Full grid search")

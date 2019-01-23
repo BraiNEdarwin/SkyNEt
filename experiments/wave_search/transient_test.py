@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 
 def transient_test(waves, data, fs, sampleTime, n):
 
-    adwin = InstrumentImporter.adwinIO.initInstrument()
     testdata = np.zeros((n, 2*fs))
     test_cases = np.random.randint(waves.shape[1], size=(1,n)) # Index for the wave
     difference = np.zeros((n,1))

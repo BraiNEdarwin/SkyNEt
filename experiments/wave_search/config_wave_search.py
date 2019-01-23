@@ -35,14 +35,19 @@ class experiment_config(config_class):
         self.waveElectrodes = 7
 
         self.factor = 4
-        self.freq2 = np.array([2,np.pi,5,7,13,17,19]) # 
+        self.freq2 = np.array([2,np.pi,5,7,13,17,19]) 
         self.freq = np.sqrt(self.freq2[:self.waveElectrodes])*self.factor
         self.sampleTime = 10 # Sample time of the sine waves for one grid point (in seconds)
 
         self.fs = 1000
         self.transientTest = True
         self.n = 20
-
+        
+        # If the input data is too large for RAM, load the data in small parts
+        self.loadData = True
+        self.loadPoints = 1000000
+        self.loadString = ''
+        
         self.amplification = 1000
         self.postgain = 100
         self.Vmax = 0.9 # Maximum amount of voltage for the inputs
