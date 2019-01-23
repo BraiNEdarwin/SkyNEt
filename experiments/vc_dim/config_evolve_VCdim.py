@@ -76,7 +76,7 @@ class experiment_config(config_class):
         self.input_scaling = 1.0
         print('INPUT will be SCALED with',self.input_scaling)  
 
-        self.Fitness = self.corr_fit
+#        self.Fitness = self.corr_fit
 #        self.fitnessparameters = [1, 0, 0, 1]
 
         # Specify either partition or genomes
