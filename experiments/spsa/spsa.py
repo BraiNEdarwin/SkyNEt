@@ -28,7 +28,7 @@ target = cf.gainFactor * cf.targetGen()[1]  # Target signal
 
 # Initialize at arrays
 yplus = np.zeros(cf.n)
-yminus = np.zdros(cf.n)
+yminus = np.zeros(cf.n)
 theta = np.zeros(cf.controls)   # Control voltages
 delta = np.zeros(cf.controls)   # Direction of optimization step
 for i in range(cf.controls):
@@ -60,7 +60,7 @@ for k in range(0, cf.n):
         thetaminus[i] = max(cf.CVrange[0], thetaminus[i])
     
     # Measure for both CVs
-    x_scaled = 2 * (x - 0.5) * cf.range[1] #TODO: change to optimizable parameter
+    x_scaled = 2 * (x - 0.5) * cf.CVrange[1]/1000 #TODO: change to optimizable parameter
     
     
     IVVIrack.setControlVoltages(ivvi, thetaplus)
@@ -87,19 +87,19 @@ for k in range(0, cf.n):
     PlotBuilder.currentOutputEvolution(mainFig,
                                                t,
                                                target,
-                                               outputminus,
+                                               outputminus[0],
                                                1, k + 1,
                                                1/yminus[k])
     
-    PlotBuilder.updateMainFigEvolution(mainFig,
-                                       theta,
-                                       outputminus,
-                                       outputminus,
-                                       k + 1,
-                                       t,
-                                       target,
-                                       outputminus,
-                                       w)
+   # PlotBuilder.updateMainFigEvolution(mainFig,
+    #                                   theta,
+     #                                  outputminus[0],
+      #                                 outputminus[0],
+       #                                k + 1,
+        #                               t,
+         #                              target,
+          #                             outputminus[0],
+           #                            w)
     
 SaveLib.saveExperiment(cf.configSrc, saveDirectory,
                      CV = theta,

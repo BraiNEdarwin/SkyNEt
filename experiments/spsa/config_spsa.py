@@ -35,5 +35,12 @@ class experiment_config(config_class):
         self.gamma = 0.101 # Decay factor of stepsize CVs
         self.n = 100
         
-        self.loss = config_class.FitnessNMSE
+        self.electrodeSetup = [[1,2,'ai0',3,'ai1',4,5,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
+        self.loss = self.FitnessNMSE
         self.CVlabels = ['CV1/T1','CV2/T3','CV3/T11','CV4/T13','CV5/T15', 'Input scaling']
+
+        def FitnessNMSE(self, x, target):
+            '''
+            This function returns the normalized mean squared error of x w.r.t. target.
+            '''
+            return 1 / ((np.linalg.norm(x - target, 2)) ** 2 * (1 / len(x)))

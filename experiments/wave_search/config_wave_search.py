@@ -37,28 +37,28 @@ class experiment_config(config_class):
         self.factor = 4
         self.freq2 = np.array([2,np.pi,5,7,13,17,19]) 
         self.freq = np.sqrt(self.freq2[:self.waveElectrodes])*self.factor
-        self.sampleTime = 10 # Sample time of the sine waves for one grid point (in seconds)
+        self.sampleTime = 53999 # Sample time of the sine waves for one grid point (in seconds)
 
         self.fs = 1000
         self.transientTest = True
-        self.n = 20
+        self.n = 200
         
         # If the input data is too large for RAM, load the data in small parts
         self.loadData = True
-        self.loadPoints = 1000000
-        self.loadString = ''
+        self.loadPoints = 10000
+        self.loadString = r'D:\data\Mark\wave_search\inputData.npz'
         
         self.amplification = 1000
         self.postgain = 100
-        self.Vmax = 0.9 # Maximum amount of voltage for the inputs
+        self.Vmax = 0.8 # Maximum amount of voltage for the inputs
 
         self.keithley_address = 'GPIB0::17::INSTR'
 
         #                               Summing module S2d      Matrix module           device
         self.electrodeSetup = [['ao0','ao2','ao4''ao6','a05','ao3','ao1','out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
         # Save settings
-        self.filepath = r'D:\\data\\Mark\\wave_grid\\'
-        self.name = 'test_7_waves_factor_'+str(self.factor) + 'sampleTime_' + str(self.sampleTime)
+        self.filepath = r'D:\\data\\Mark\\wave_search\\'
+        self.name = 'test_7_waves_factor_'+str(self.factor) + 'sampleTime_' + str(self.sampleTime) + 's_loaded'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
         
         
@@ -70,3 +70,4 @@ class experiment_config(config_class):
     #####################################################
     # Optionally define new methods here that you wish to use in your experiment.
     # These can be e.g. new fitness functions or input/output generators.
+

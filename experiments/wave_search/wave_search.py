@@ -41,24 +41,25 @@ if cf.loadData:
         wavesRamped = np.zeros((waves.shape[0], waves.shape[1] + cf.fs)) 
         dataRamped = np.zeros((1,wavesRamped.shape[1]))
         for j in range(wavesRamped.shape[0]):
-            wavesRamped[j,0:cf.fs] = np.arange(0,waves[i,0], 1/cf.cf)
+            wavesRamped[j,0:cf.fs] = np.linspace(0,waves[j,0], cf.fs)
             wavesRamped[j,cf.fs:] = waves[j,:]
             
-        dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(waves, cf.fs)      
+        dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, cf.fs)      
         data[0, i*cf.loadPoints: (i+1)*cf.loadPoints] = dataRamped[:, cf.fs:]
         end_wave = time.time()
         print('Data collection for part ' + str(i+1) + ' of ' + str(n_loads) + ' took '+str(end_wave-start_wave)+' sec.')
         
     # The last batch size is variable to the sample time and the amount of loadPoints used
-    print('Last batch size: ' + str(cf.fs * cf.sampleTime - n_loads * cf.loadPoints))
-    waves = np.load(cf.loadString)['waves'][:,n_loads*cf.loadPoints:]
-    wavesRamped = np.zeros((waves.shape[0], waves.shape[1] + cf.fs)) 
-    dataRamped = np.zeros((1,wavesRamped.shape[1]))
-    for j in range(wavesRamped.shape[0]):
-        wavesRamped[j,cf.fs:] = waves[j,:]
-        wavesRamped[j,0:cf.fs] = np.arange(0,waves[j,0], 1/cf.cf)
-    dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(waves, cf.fs)      
-    data[0, n_loads*cf.loadPoints:] = dataRamped[:, cf.fs:]  
+    if (cf.fs * cf.sampleTime - n_loads * cf.loadPoints) > 0:
+	    print('Last batch size: ' + str(cf.fs * cf.sampleTime - n_loads * cf.loadPoints))
+	    waves = np.load(cf.loadString)['waves'][:,n_loads*cf.loadPoints:]
+	    wavesRamped = np.zeros((waves.shape[0], waves.shape[1] + cf.fs)) 
+	    dataRamped = np.zeros((1,wavesRamped.shape[1]))
+	    for j in range(wavesRamped.shape[0]):
+	        wavesRamped[j,0:cf.fs] = np.linspace(0,waves[j,0], cf.fs)
+	        wavesRamped[j,cf.fs:] = waves[j,:]
+	    dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, cf.fs)      
+	    data[0, n_loads*cf.loadPoints:] = dataRamped[:, cf.fs:]  
     
 else:
     # Construct sine waves for all grid points
