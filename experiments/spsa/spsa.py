@@ -24,7 +24,7 @@ cf = config.experiment_config()
 t = cf.InputGen()[0]  # Time array
 x = np.asarray(cf.InputGen()[1:3])  # Array with P and Q signal
 w = cf.InputGen()[3]  # Weight array
-target = cf.targetGen()[1]  # Target signal
+target = cf.gainFactor * cf.targetGen()[1]  # Target signal
 
 # Initialize at arrays
 yplus = np.zeros(cf.n)
@@ -65,15 +65,15 @@ for k in range(0, cf.n):
     
     IVVIrack.setControlVoltages(ivvi, thetaplus)
     time.sleep(0.3)
-    outputplus = InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs) 
+    outputplus = cf.gainFactor * InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs) 
     time.sleep(0.1)
     IVVIrack.setControlVoltages(ivvi, thetaminus)
-    time.sleep(0.3)
-    outputminus = InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)
+    time.sleep(0.1)
+    outputminus = cf.gainFactor * InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)
     
     # Calculate loss function
-    yplus[k] = cf.loss(outputplus)
-    yminus[k] = cf.loss(outputminus)
+    yplus[k] = cf.loss(outputplus, target)
+    yminus[k] = cf.loss(outputminus, target)
     
     # Calculate gradient and update CV
     ghat = (yplus[k] - yminus[k]) / (2 * ck * delta)
@@ -97,7 +97,7 @@ for k in range(0, cf.n):
                                        outputminus,
                                        k + 1,
                                        t,
-                                       cf.amplification*target,
+                                       target,
                                        outputminus,
                                        w)
     
@@ -108,6 +108,6 @@ SaveLib.saveExperiment(cf.configSrc, saveDirectory,
                      lossplus = yplus,
                      t = t,
                      x = x,
-                     amplified_target = cf.amplification*target)
+                     target = target)
 
 InstrumentImporter.reset(0,0)

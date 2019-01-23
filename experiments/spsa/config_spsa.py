@@ -19,7 +19,9 @@ class experiment_config(config_class):
         self.filepath = r'D:\Data\Mark\spsa\\'
 
         # Define experiment
-        self.amplification = 10
+        self.postgain = 100
+        self.amplification = 1000
+        self.gainFactor = self.amplification/self.postgain # gainFactor scales the output such that it is always in order of nA
         self.CVrange = [-900, 900]
         self.targetGen = self.AND
         self.name = "AND"
