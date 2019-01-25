@@ -142,9 +142,15 @@ def IO_cDAQ(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
             y_corr = np.concatenate((y_corr, np.zeros((1,y_corr.shape[1]))))   # Set the trigger
         y_corr[-1,int(Fs*0.05):int(Fs*0.05+5)] = np.ones(5) # Start input data
 
+        # Synchronize the sample clocks by exporting the cDAQ clock to the NI 6216
+        # TODO: find out where the clock constant is and create ao8 connection
+        output_tast.export_signals.export_signal(signal_id= ..., output_terminal = 'cDAQ1Mod1/ao8') 
+
+        # TODO: check whether the source of cf_samp_clk_timing can be ai6 or should be a PFI line
+
         # Configure sample rate and set acquisition mode to finite
         output_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan =y_corr.shape[1])
-        input_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan = y_corr.shape[1])
+        input_task.timing.cfg_samp_clk_timing(Fs, source='Dev/ai6', sample_mode=constants.AcquisitionType.FINITE, samps_per_chan = y_corr.shape[1])
 
         output_task.write(y_corr)
 
