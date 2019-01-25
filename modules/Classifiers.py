@@ -16,7 +16,7 @@ def perceptron(wvfrm,target,tolerance=0.01,max_iter=200):
     inp = np.concatenate([np.ones_like(wvfrm),wvfrm],axis=1)
     shuffle = np.random.permutation(len(inp))
     
-    n_test = int(0.5*n_total)
+    n_test = int(0.25*n_total)
     x_test = inp[shuffle[:n_test]]
     y_test = target[shuffle[:n_test]]
     
