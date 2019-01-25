@@ -21,11 +21,11 @@ def transient_test(waves, data, fs, sampleTime, n):
         start_wave = time.time()
         testdata[i,:] = InstrumentImporter.nidaqIO.IO_cDAQ(np.ones((waves.shape[0], 2*fs)) * waves[:, test_cases[0,i],np.newaxis], fs) # sample for 2s
 
-        difference[i,0] = np.mean(testdata[i,int(0.5*fs):2*fs]) - data[0, test_cases[0,i]] # use only last 1.5 seconds of test data (to avoid transients)
+        difference[i,0] = np.mean(testdata[i,int(0.5*fs):2*fs]) - data[test_cases[0,i]] # use only last 1.5 seconds of test data (to avoid transients)
         end_wave = time.time()
         print('Transient test data point ' + str(i+1) + ' of ' + str(n) + ' took ' + str(end_wave-start_wave)+' sec.')
 
-    plt.plot(data[0])
+    plt.plot(data)
     plt.plot(test_cases[0,:], np.mean(testdata, axis=1), '.')
     plt.show()
 

@@ -27,7 +27,7 @@ cf = config.experiment_config()
 saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
 # Initialize output data set
-data = np.zeros((1, cf.sampleTime * cf.fs))
+data = np.zeros((1, int(cf.sampleTime * cf.fs)))
 
 # Option to load the input data in small parts
 if cf.loadData:
@@ -51,15 +51,16 @@ if cf.loadData:
         
     # The last batch size is variable to the sample time and the amount of loadPoints used
     if (cf.fs * cf.sampleTime - n_loads * cf.loadPoints) > 0:
-	    print('Last batch size: ' + str(cf.fs * cf.sampleTime - n_loads * cf.loadPoints))
 	    waves = np.load(cf.loadString)['waves'][:,n_loads*cf.loadPoints:]
+	    lastPoints = waves.shape[1]
+	    print('Last batch size: ' + str(lastPoints))
 	    wavesRamped = np.zeros((waves.shape[0], waves.shape[1] + cf.fs)) 
 	    dataRamped = np.zeros((1,wavesRamped.shape[1]))
 	    for j in range(wavesRamped.shape[0]):
 	        wavesRamped[j,0:cf.fs] = np.linspace(0,waves[j,0], cf.fs)
 	        wavesRamped[j,cf.fs:] = waves[j,:]
 	    dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, cf.fs)      
-	    data[0, n_loads*cf.loadPoints:] = dataRamped[:, cf.fs:]  
+	    data[0, (n_loads-1)*cf.loadPoints:(n_loads-1)*cf.loadPoints + lastPoints] = dataRamped[:, cf.fs:]  
     
 else:
     # Construct sine waves for all grid points
@@ -81,7 +82,7 @@ if cf.transientTest:
                                diff = difference*cf.amplification/cf.postgain, \
                                output = data*cf.amplification/cf.postgain, filename = 'training_NN_data')
     else:   
-        ytestdata, difference, xtestdata = transient_test.transient_test(waves, data, cf.fs, cf.sampleTime, cf.n)
+        ytestdata, difference, xtestdata = transient_test.transient_test(waves, data[0,:], cf.fs, cf.sampleTime, cf.n)
     SaveLib.saveExperiment(cf.configSrc, saveDirectory, xtestdata = xtestdata, ytestdata = ytestdata*cf.amplification/cf.postgain, \
                            diff = difference*cf.amplification/cf.postgain, \
                            waves = waves, output = data*cf.amplification/cf.postgain, filename = 'training_NN_data')
