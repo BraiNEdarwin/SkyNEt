@@ -70,30 +70,32 @@ class experiment_config(config_class):
         self.comport = 'COM3'  # COM port for the ivvi rack
         self.device = 'nidaq'  # Either nidaq or adwin
 
-        cv_amplification = 5
-        controlVoltages = [473,
-                           707,
-                           4184,
-                           -787,
-                           -9203]  # mV
-        controlVoltages = [cv/cv_amplification for cv in controlVoltages]
-        inputScaling = 5.65
+        self.cv_amplification = 5
+        self.controlVoltages = [706,
+                                -6391,
+                                -334,
+                                4146,
+                                -8039]  # mV
+        self.controlVoltages = [cv/self.cv_amplification for cv in self.controlVoltages]
+        self.inputScaling = 0.79
 
         # Define experiment
         self.postgain = 100
         self.amplification = 1  # nA/V
+        #self.edgelength = 1
+        #self.signallength = 4    
 
         ################################################
         ######### USER-SPECIFIC PARAMETERS #############
         ################################################
 
         ################# Save settings ################
-        self.filepath = r'D:\data\BramdW\electrostatic_fullboolean\\'
+        self.filepath = r'D:\data\BramdW\electrostatic_singleruns\\'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
 
         #                       Summing module S2d              Matrix module       on chip
         self.electrodeSetup = [[1,2,'ao0',3,'ao1',4,5,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
-        self.name = 'controls_electrostatic_XNOR'
+        self.name = 'NOR_01_16_fast'
 
         ################################################
         ################# OFF-LIMITS ###################

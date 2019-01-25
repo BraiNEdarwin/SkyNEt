@@ -21,6 +21,7 @@ from SkyNEt.instruments import InstrumentImporter
 # Other imports
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Initialize config object
 cf = config.experiment_config()
@@ -33,8 +34,11 @@ x = np.asarray(cf.InputGen()[1:3])  # Array with P and Q signal
 saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
 # Initialize instruments
-ivvi = InstrumentImporter.IVVIrack.initInstrument()
-
+try:
+    ivvi = InstrumentImporter.IVVIrack.initInstrument()
+except:
+    pass
+	
 #%% Measurement loop
 
 # Set the DAC voltages
@@ -61,7 +65,9 @@ SaveLib.saveExperiment(saveDirectory,
 
 # Plot output
 plt.figure()
-plt.plot(t, output)
+plt.plot(t, output[0]*cf.amplification)
+plt.show()
 
 InstrumentImporter.reset(0, 0)
+
 
