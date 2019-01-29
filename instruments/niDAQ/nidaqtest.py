@@ -12,6 +12,10 @@ fs = 1000
 
 #Input[0,0] = 1
 #Input[0,-1] = 0
+sampleTime = 100
+freq = 20
+t = np.linspace(0,sampleTime,fs*sampleTime)
+
 
 
 Input = 0.1*np.ones((1,1000))

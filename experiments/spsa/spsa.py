@@ -28,11 +28,15 @@ target = cf.gainFactor * cf.targetGen()[1]  # Target signal
 
 # Initialize at arrays
 yplus = np.zeros(cf.n)
-yminus = np.zdros(cf.n)
-theta = np.zeros(cf.controls)   # Control voltages
-delta = np.zeros(cf.controls)   # Direction of optimization step
+yminus = np.zeros(cf.n)
+theta = np.zeros((cf.n + 1, cf.controls))   # Control voltages
+delta = np.zeros((cf.n, cf.controls))       # Direction of optimization step
+ghat = np.zeros((cf.n, cf.controls))        # Changes in the controls
+outputminus = np.zeros((cf.n, x.shape[1]))  # output of thetaplus as control
+outputplus = np.zeros((cf.n, x.shape[1]))   # output of thetaminus as control
+# Initialize controls at a random point
 for i in range(cf.controls):
-    theta[i] = random.uniform(cf.CVrange[0], cf.CVrange[1])
+    theta[0, i] = random.uniform(cf.CVrange[0], cf.CVrange[1])
 
 # Initialize save directory
 saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
@@ -42,7 +46,7 @@ mainFig = PlotBuilder.initMainFigEvolution(cf.controls, cf.n, cf.CVlabels, [cf.C
 
 # Initialize instruments and set first random controls to avoid transients in main acquisition script
 ivvi = IVVIrack.initInstrument()
-IVVIrack.setControlVoltages(ivvi, theta)
+IVVIrack.setControlVoltages(ivvi, theta[0, :])
 
 # Main acquisition loop
 for k in range(0, cf.n): 
@@ -50,9 +54,9 @@ for k in range(0, cf.n):
     ak = cf.a / (k + 1 + cf.A) ** cf.alpha
     ck = cf.c / (k + 1) ** cf.gamma
     for i in range(cf.controls):
-        delta[i] = 2 * round(random.uniform(0, 1)) - 1
-    thetaplus = theta + ck * delta
-    thetaminus = theta - ck * delta
+        delta[k, i] = 2 * round(random.uniform(0, 1)) - 1
+    thetaplus = theta[k,:] + ck * delta[k, :]
+    thetaminus = theta[k,:] - ck * delta[k, :]
     
     # Check constraints on the range of theta
     for i in range(cf.controls):    
@@ -65,49 +69,48 @@ for k in range(0, cf.n):
     
     IVVIrack.setControlVoltages(ivvi, thetaplus)
     time.sleep(0.3)
-    outputplus = cf.gainFactor * InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs) 
+    outputplus[k, :] = cf.gainFactor * InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs) 
     time.sleep(0.1)
     IVVIrack.setControlVoltages(ivvi, thetaminus)
     time.sleep(0.1)
-    outputminus = cf.gainFactor * InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)
+    outputminus[k, :] = cf.gainFactor * InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)
     
     # Calculate loss function
-    yplus[k] = cf.loss(outputplus, target)
-    yminus[k] = cf.loss(outputminus, target)
+    yplus[k] = cf.loss(outputplus[k, :], target)
+    yminus[k] = cf.loss(outputminus[k, :], target)
     
-    # Calculate gradient and update CV
-    ghat = (yplus[k] - yminus[k]) / (2 * ck * delta)
-    theta = theta - ak * ghat
-    # Check constraints on the range of theta
-    for i in range(cf.controls):    
-        theta[i] = min(cf.CVrange[1], theta[i])
-        theta[i] = max(cf.CVrange[0], theta[i])
+    # Plot current controls (thetaminus)
+    PlotBuilder.currentGenomeEvolution(mainFig, thetaminus)
     
-    # Plot progress (on yminus)
+    # Plot progress output (on minus)
     PlotBuilder.currentOutputEvolution(mainFig,
                                                t,
                                                target,
-                                               outputminus,
-                                               1, k + 1,
-                                               1/yminus[k])
+                                               outputminus[k, :],
+                                               k + 1, 1,
+                                               yminus[k]) # Loss is used here instead of fitness, so lower is better
     
-    PlotBuilder.updateMainFigEvolution(mainFig,
-                                       theta,
-                                       outputminus,
-                                       outputminus,
-                                       k + 1,
-                                       t,
-                                       target,
-                                       outputminus,
-                                       w)
+    # Plot the loss of this iteration (of yminus)
+    PlotBuilder.lossMainSPSA(mainFig, yminus)
+    # Calculate gradient and update CV
+    ghat[i,:] = (yplus[k] - yminus[k]) / (2 * ck * delta[k, :])
+    theta[k+1,:] = theta[k,:] - ak * ghat[i,:]
+    # Check constraints on the range of theta
+    for i in range(cf.controls):    
+        theta[k+1,i] = min(cf.CVrange[1], theta[k+1,i])
+        theta[k+1,i] = max(cf.CVrange[0], theta[k+1,i])
+        
     
 SaveLib.saveExperiment(cf.configSrc, saveDirectory,
-                     CV = theta,
+                     controls = theta,
                      outputminus = outputminus,
-                     lossminus = yminus,
-                     lossplus = yplus,
+                     outputplus = outputplus,
+                     yminus = yminus,
+                     yplus = yplus,
                      t = t,
                      x = x,
-                     target = target)
+                     target = target,
+                     ghat = ghat,
+                     delta = delta)
 
 InstrumentImporter.reset(0,0)

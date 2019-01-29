@@ -74,6 +74,12 @@ def fitnessMainEvolution(mainFig, fitnessArray, currentGeneration):
     plt.autoscale()
     plt.pause(0.01)
 
+# TODO: change this function from fitness to loss output
+def lossMainSPSA(mainFig, loss): #, fitnessArray, currentGeneration):
+    mainFig.axes[-3].plot(range(1, loss.size + 1), loss,'r-x')
+    plt.autoscale()
+    plt.pause(0.01)
+
 
 def outputMain(mainFig, t, target, outputArray, fitnessArray, currentGeneration):
     mainFig.axes[-1].lines.clear()
@@ -103,6 +109,7 @@ def outputMainEvolution(mainFig, t, target, outputArray, fitnessArray, currentGe
     mainFig.axes[-2].legend(['Best output', 'Target'], loc = 1)
     mainFig.axes[-2].set_title('Best output of last generation / fitness ' + str(np.max(fitnessArray[currentGeneration - 1])) )
     plt.pause(0.01)
+    
 
 def outputMainClassification(mainFig, outputArray, win, fitnessArray, currentGeneration, marker):
     out = outputArray[currentGeneration - 1,np.argmax(fitnessArray[currentGeneration - 1]),:,:]

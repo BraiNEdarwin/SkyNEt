@@ -12,13 +12,13 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
 dims = 7
-Fs = 200
-factor = 4
+Fs = 500
+factor = 2
 
 freq2 = np.array([2,np.pi,5,7,13,17,19])
 freq = factor*np.sqrt(freq2[:dims])
-c_update = 500000
-cycles = 500000
+c_update = 200
+cycles = 200
 inputs = np.zeros((dims,1))
 Vmax = 0.8
 
@@ -29,6 +29,13 @@ for i in range(int(cycles/c_update)):
     input_part = np.sin(2*np.pi*input_part+phase)*Vmax
     inputs = np.concatenate((inputs, input_part),axis=1)
 inputs = inputs[:,1:]
+
+def generateInputData(freq, t, Vmax, phase, fs):
+    '''
+    Generates the sine value 
+    '''
+    return np.sin(2 * np.pi * freq[:,np.newaxis] * t / fs) * Vmax
+    
 
 """
 plt.figure()
@@ -204,17 +211,17 @@ def distanceRandomGridBrute(gridpoints, inputs, grid_range = 0.85):
     print("time elapsed brute force random grid: " + str(end_block - start_block))
     return min_dist, empty_counter
 
-
+"""
 gridpoints = 5000
 #min_dist_brute, empty_counter_brute = distance5D_brute(grid, inputs)
-min_dist, empty_counter = distanceRandomGrid(gridpoints, inputs, radius = 0.2)
+min_dist, empty_counter = distanceRandomGrid(gridpoints, inputs, radius = 0.24)
 
 plt.figure()
 #plt.hist(np.reshape(min_dist_brute, (min_dist_brute.size,1)),bins=50, normed = True,label = "Full grid search")
 plt.hist(min_dist[0,:],bins=50, normed=True, label = "Random grid, n = " + str(gridpoints))
 #plt.legend()
 plt.title(str(dims) +"D, " + str(cycles) + " cycles")
-
+"""
 # Computation test: 5D, 10 cycles, radius = 0.2
 # Brute force: 1875s
 # optimized test: 2728s

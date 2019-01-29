@@ -35,5 +35,5 @@ class experiment_config(config_class):
         self.gamma = 0.101 # Decay factor of stepsize CVs
         self.n = 100
         
-        self.loss = config_class.FitnessNMSE
+        self.loss = 1/config_class.FitnessNMSE
         self.CVlabels = ['CV1/T1','CV2/T3','CV3/T11','CV4/T13','CV5/T15', 'Input scaling']

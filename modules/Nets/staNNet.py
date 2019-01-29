@@ -23,12 +23,12 @@ import torch
 import torch.nn as nn
 import numpy as np 
 #from matplotlib import pyplot as plt
-noisefit = True
+noisefit = False
 class staNNet(object):
     
     def __init__(self,*args,loss='MSE',C=1.0,activation='ReLU', dim_cv=5, BN=False):
         
-        self.ymax = 3.7 # Maximum value that the output can have (clipping value)
+        self.ymax = 36 # Maximum value that the output can have (clipping value)
         self.C = torch.FloatTensor([C])
         
         if len(args) == 3: #data,depth,width

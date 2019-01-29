@@ -49,7 +49,7 @@ def DataLoader(data_dir, file_name,
     shuffler = np.random.permutation(len(data['outputs']))
     inputs = data['inputs'][shuffler]
     # Nx(#electrodes): the first two are the inputs to the system, the rest are control voltages
-    assert np.max(np.abs(inputs[:,2:]))<=1.0 and np.min(inputs[:,2:])>=0, 'Voltages are not scaled properly!!'
+    #\\assert np.max(np.abs(inputs[:,2:]))<=1.0 and np.min(inputs[:,2:])>=0, 'Voltages are not scaled properly!!'
     ## DEFINE OUTPUTS ##
     outputs = data['outputs'][shuffler,np.newaxis] #Outputs need dim Nx1
     assert len(outputs)==len(inputs), 'Inputs and Outpus have NOT the same length'
