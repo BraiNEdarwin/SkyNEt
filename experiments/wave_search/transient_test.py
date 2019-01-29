@@ -26,7 +26,8 @@ def transient_test(waves, data, fs, sampleTime, n):
         print('Transient test data point ' + str(i+1) + ' of ' + str(n) + ' took ' + str(end_wave-start_wave)+' sec.')
 
     plt.plot(data)
-    plt.plot(test_cases[0,:], np.mean(testdata, axis=1), '.')
+    plt.errorbar(test_cases[0,:], np.mean(testdata, axis=1), yerr=np.amax(testdata[:,fs:2*fs],axis=1) - np.amin(testdata[:,fs:2*fs],axis=1),ls='',marker='o',color='r',linewidth=2) 
+    #plt.plot(test_cases[0,:], np.mean(testdata, axis=1), '.')
     plt.show()
 
     return testdata, difference, test_cases
