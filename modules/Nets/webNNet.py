@@ -259,6 +259,7 @@ class webNNet(torch.nn.Module):
         return error_list, best_params
     
     def session_train(self, *args, nr_sessions=10, **kwargs):
+        # executes multiple training sessions and returns the best results
         best_errors, error_list, best_params = [], [], []
         for session in range(nr_sessions):
             self.reset_parameters('rand')
@@ -267,8 +268,9 @@ class webNNet(torch.nn.Module):
             best_errors.append(best_error)
             error_list.append(temp_error_list)
             best_params.append(temp_best_params)
-            print("Best error of session %i/%i: %f" % (session, nr_sessions, best_error))
-        return error_list, best_params
+            print("INFO: Best error of session %i/%i: %f" % (session+1, nr_sessions, best_error))
+        index_best = np.argmin(best_errors)
+        return error_list[index_best], best_params[index_best]
 
     ##################################################
     ### ---------------- General ----------------- ###

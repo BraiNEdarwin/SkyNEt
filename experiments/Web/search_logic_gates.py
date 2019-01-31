@@ -45,9 +45,9 @@ beta = 0.1
 cv_reset = 'rand' #0.4*torch.ones(5)# None, 'rand', tensor(5)
 
 # None, mse, l1, bin, softmargin, binmse, cor, cormse
-training_type = 'bin'
+training_type = 'cormse'
 
-add_noise = False # automatically set to false when using bin/softmargin
+add_noise = True # automatically set to false when using bin/softmargin
 sigma = 0.01 # standard deviation of added noise in target
 
 # wether to train scale output and bias before returning
@@ -156,7 +156,7 @@ elif training_type=='cor':
     def loss_fn(x, y):
         return cor_loss_fn(x[:,0], y[:,0])
 elif training_type=='cormse':
-    alpha = 0.4
+    alpha = 0.6
     def loss_fn(x_in, y_in):
         x = x_in[:,0]
         y = y_in[:,0]
@@ -179,8 +179,8 @@ for (i,gate) in enumerate(gates):
     web.reset_parameters(cv_reset)
     if training_type == 'bin':
         cross_fn = torch.nn.CrossEntropyLoss(weight = w[i])
-    loss_l, best_cv = web.train(input_data, target_data[i].view(-1,1), 
-                     beta=beta, 
+    loss_l, best_cv = web.session_train(input_data, target_data[i].view(-1,1), 
+                     beta=beta,
                      batch_size=batch_size,
                      max_epochs=max_epochs,
                      optimizer=optimizer,
@@ -189,7 +189,6 @@ for (i,gate) in enumerate(gates):
                      scale=scale,
                      stop_func = stop_func,
                      lr = lr)
-#                     amsgrad=True)
     losslist.append(loss_l)
     trained_cv.append(best_cv)
 
