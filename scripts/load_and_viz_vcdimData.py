@@ -8,8 +8,8 @@ Visualize the data obtained from the VCdim search
 import numpy as np
 from matplotlib import pyplot as plt
 import pprint as pp
-
-dir_file = r'../results/VC_dim/Device/Capacity_N4/2019_01_22_18-14/'
+import os
+dir_file = r'../results/VC_dim/Device/Capacity_N4/2019_01_21_17-04/' #2019_01_22_18-14/'
 #r'../results/VC_dim/Device/Capacity_N4/2019_01_21_17-04/'
 #with np.load(dir_file+'Summary_Results.npz') as data:
 #    for var,arr in data.items():
@@ -18,7 +18,7 @@ dir_file = r'../results/VC_dim/Device/Capacity_N4/2019_01_22_18-14/'
 
 data = np.load(dir_file+'Summary_Results.npz')
 
-def get_badcases(data, threshold_fit = 1.0, threshold_acc = 0.8):
+def get_badcases(data, threshold_fit = 0.9, threshold_acc = 0.8):
     binary_labels = data['binary_labels']
     fitness_classifier =  data['fitness_classifier']
     accuracy_classifier = data['accuracy_classifier']
@@ -55,9 +55,16 @@ fitcl = data['fitness_classifier']
 
 plt.figure()
 ax1 = plt.subplot2grid((4,2),(0,0),colspan=2)
+plt.title('Final Output')
 ax2 = plt.subplot2grid((4,2),(1,0),rowspan=2)
+plt.ylabel('Gene value')
+plt.xticks([0,1,2,3,4],['#1','#2','#3','#4','#5'],rotation=90)
+plt.xlabel('Control Voltages')
 ax3 = plt.subplot2grid((4,2),(1,1))
+plt.xlabel('Fitness')
+plt.ylabel('Accuracy')
 ax4 = plt.subplot2grid((4,2),(2,1))
+plt.title('Low accuracy examples')
 for i,gene in enumerate(gcl[1:-1]):
     a = accl[i+1]
     c = tuple(gene)[:3]+(1,)
@@ -65,12 +72,15 @@ for i,gene in enumerate(gcl[1:-1]):
     ax1.plot(outcl[i+1].T, color=c)
     if i+1 in bad_dict['low acc index']:
         ax2.plot(gene,'o', color=c)
-        ax3.plot(fitcl[i+1],accl[i+1],'o', color=c)
+        labels = np.asarray(bad_dict['low acc'])[i+1==bad_dict['low acc index']][0][0]
+        ax3.plot(fitcl[i+1],accl[i+1],'o', color=c,label=str(labels))
         ax4.plot(outcl[i+1],color=c)
     else:
         ax2.plot(gene,'d', color=c)
         ax3.plot(fitcl[i+1],accl[i+1],'d', color=c)
 #ax5.plot(ex2_bestgenes)
+ax3.legend(fontsize='xx-small')
+plt.tight_layout()
 plt.show()
 
 from SkyNEt.modules.GenWaveform import GenWaveform
@@ -91,19 +101,40 @@ for i,l in enumerate(bad_dict['lfha index']):
     plt.text(265,0.5,'weights[0]=%.1f' % weights[0],ha='center',va='center')
 plt.subplot(2,4,8)
 plt.plot(w_arr,fitcl[bad_dict['lfha index']],'o')
+plt.xlabel('weight[0] value')
+plt.ylabel('Fitness')
 plt.show()
 
 
-data = np.load(dir_file+'2019_01_22_211159_VCdim-0110/data.npz')
-output_arr = data['output']
-fitness_arr = data['fitness']
+def get_profile(dir_file):
+    var_genes = []
+    max_fitness = []
+    var_output = []
+    top_genes = []
+    for dirpath, dirnames, filenames in os.walk(dir_file):
+        for file in filenames:
+            if file in ['data.npz']:
+                path = os.path.join(dirpath, file)
+                data = np.load(path)
+                max_fitness.append(np.max(data['fitness'],axis=1))
+                indices = [np.argsort(x) for x in data['fitness']]
+                top5 = [x[-5:] for x in indices]
+                var_genes.append(np.var(data['genes'][:,top5],axis=1))
+                varo = np.var(data['output'][:,top5],axis=1)
+                var_output.append(np.sum(varo,axis=-1))
+                
+                data.close()
+    learning_profile['top5var_genes'] = np.asarray(var_genes).T]
+    learning_profile['mex fitness'] = np.asarray(max_fitness).T
+    learning_profile['top5var_output'] = np.asarrays(var_output).T
+    return 
+
+var_top5g, maxfit = get_profile(dir_file)
+
 plt.figure()
 plt.subplot(2,1,1)
-for i in range(7):
-    n = np.random.randint(0,100)
-    plt.plot(outout[n,::5,:].T)
+plt.plot(maxfit,'o-')
+plt.title('Fitness of fittest')
 plt.subplot(2,1,2)
-plt.plot(fitness_arr)
-plt.show()
-data.close()
-
+#plt.plot(np.sum(var_top5g,axis=0))
+plt.plot(var_top5g[0,:,:])
