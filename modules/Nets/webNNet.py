@@ -57,6 +57,7 @@ class webNNet(torch.nn.Module):
         self.default_param = 0.8 # value to initialize control voltage parameters
         self.loss = torch.nn.MSELoss() # loss function (besides regularization)
         self.optimizer = torch.optim.Adam # optimizer function
+        self.transfer = torch.sigmoid # function which maps output to input [0,1]
         
         # initialize empty bias and scale list, 
         # these store bias and scale for each output vertex
@@ -71,7 +72,7 @@ class webNNet(torch.nn.Module):
         # total number of genes: 5 control voltages for each vertex, one less for each arc
         cf.genes = len(self.graph)*5 - len(self.arcs)
         # number of genomes in each of the 5 partitions
-        cf.partition = [3, cf.genes, 5, 5, cf.genes]
+        cf.partition = [5, cf.genes, 5, 5, cf.genes]
         # total number of genomes
         cf.genomes = sum(cf.partition)
         
@@ -272,18 +273,19 @@ class webNNet(torch.nn.Module):
     ##################################################
     ### ---------------- General ----------------- ###
     ##################################################
-    def add_vertex(self, network, name, output=False):
+    def add_vertex(self, network, name, output=False, number_cv = 5):
         """Adds neural network as a vertex to the graph.
         Args:
             network: vertex (object with attribute D_in and method output())
             name: key of graph dictionary in which vertex is created (str)
-            cv: control voltages, the parameters which are trained
+            output: wheter of not this vertex' output is output of complete graph (boolean)
+            number_cv: nr of control voltages, the parameters which are trained (can be unused when connected to arc)
         """
         
         assert not hasattr(self, name), "Name %s already in use, choose other name for vertex!" % name
         assert 'bias' not in name, "Name should not contain 'bias'"
         assert 'scale' not in name, "Name should not contain 'scale'"
-        cv = self.default_param*torch.ones(5)
+        cv = self.default_param*torch.ones(number_cv)
         self.register_parameter(name, torch.nn.Parameter(cv))
         
         self.graph[name] = {  'network':network,
@@ -352,12 +354,12 @@ class webNNet(torch.nn.Module):
                     # first evaluate vertices on which this input depends
                     self.forward_vertex(source_name)
                     # insert data from arc into control voltage parameters
-                    data[:, sink_gate] = torch.sigmoid(self.graph[source_name]['output'])[0]
+                    data[:, sink_gate] = self.transfer(self.graph[source_name]['output'][:,0])
             
             # feed through network
             v['output'] = v['network'].model(data)
     
-    def error_fn(self, y_pred, y, beta, loss=None, reg_scale = False):
+    def error_fn(self, y_pred, y, beta, loss=None, reg_scale = 0.0):
         """Error function: loss function with added regularization"""
         # default loss function: MSE
         if loss is None:
@@ -369,29 +371,31 @@ class webNNet(torch.nn.Module):
             if 'bias' in name:
                 pass
             elif 'scale' in name:
-                if reg_scale:
-                    reg_loss += torch.sum(torch.abs(x))
+                reg_loss += torch.sum(torch.abs(x))*reg_scale
             else:
                 reg_loss += torch.sum(torch.relu(-x) + torch.relu(x-1.0))
         return loss(y_pred, y) + beta*reg_loss
     
     def set_input_data(self, x, verbose=False):
         """Store training data for each network, assumes the torch tensor has the same ordering as in the dictionary"""
+        # assumes each vertex has same number of parameters (could change in future)
         dim = x.shape[1]
+        # count number of parameters excluding biases and scales (which are first to parameters)
+        nr_of_params = sum([len(i) for i in self.get_parameters().values()][2:])        
         # if input data is provided for each network
-        if int(dim/2) is len(self.graph):
+        if dim+nr_of_params is 7*len(self.graph):
             i = 0
             for key,v in self.graph.items():
-                v['train_data'] = x[:,i:i+2]
-                i += 2
+                v['train_data'] = x[:,i:i+dim]
+                i += dim
         # if input data is supposed to be reused for each network
-        elif dim==2:
+        elif dim + int(nr_of_params/len(self.graph)) is 7:
             for v in self.graph.values():
                 v['train_data'] = x
             if verbose:
                 print("INFO: reusing input data for all networks")
         else:
-            assert False, "Number of input columns/2 (%s) should match number of vertices in graph (%s)" % (dim/2, len(self.graph))
+            assert False, "Size of input data is incorrect, expected %i " % (7*len(self.graph) - nr_of_params)
 
     def get_parameters(self):
         """Returns a copy of all learnable parameters of object in dictionary"""
