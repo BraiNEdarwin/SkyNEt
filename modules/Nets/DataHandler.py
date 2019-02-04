@@ -103,8 +103,9 @@ def DataLoader(data_dir, file_name,
         print('Train with CPU')
         dtype = torch.FloatTensor
         itype = torch.LongTensor
-        
-    x = torch.from_numpy(inputs_train).type(dtype)
+       
+    
+    x = torch.from_numpy(inputs_train).type(dtype) # TODO: make sure this goes alright for the generateInput case
     y = torch.from_numpy(outputs_train).type(dtype)
     
     x = Variable(x)
@@ -204,6 +205,7 @@ def PrepData(main_dir, list_dirs, threshold = 1000, scale_volts = 900, nr_electr
     print('Cleaned data saved to \n',save_to)
     np.savez(save_to, inputs = inputs, cv_trafo = cv_trafo,
          outputs = outputs, var_output = var_output, list_dirs = list_dirs)
+    
 
 #%%
 ####################################################################################################

@@ -17,8 +17,14 @@ freq = 20
 t = np.linspace(0,sampleTime,fs*sampleTime)
 
 
+sampleTime = 100
+freq = 20
+t = np.linspace(0, sampleTime, fs*sampleTime)
 
-Input = 0.1*np.ones((1,1000))
+Input = np.zeros((1,fs*sampleTime))
+Input[0,:] = np.sin(2*np.pi*freq*t)
+Input[0,0] = 2
+Input[0,-1] = 2
 
 # Measure using the device specified in the config class.
 Output = InstrumentImporter.nidaqIO.IO_cDAQ(Input, fs)
@@ -26,7 +32,7 @@ Output = InstrumentImporter.nidaqIO.IO_cDAQ(Input, fs)
 # Plot the IV curve.
 plt.figure()
 plt.plot(Output[0])
-#plt.plot(Output[1])
+plt.plot(Input[0])
 plt.show()
 
 # Final reset

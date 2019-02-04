@@ -134,13 +134,13 @@ def IO_cDAQ(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
 
         # Append some zeros to the initial signal such that no input data is lost
         # This should be handled with proper synchronization
-        y_corr = np.zeros((y.shape[0], y.shape[1] + int(Fs*0.05))) # Add 50ms of reaction in terms of zeros
-        y_corr[:,int(Fs*0.05):] = y[:]
+        y_corr = np.zeros((y.shape[0], y.shape[1] + int(Fs*0.25))) # Add 250ms of reaction in terms of zeros
+        y_corr[:,int(Fs*0.25):] = y[:]
         if len(y_corr.shape) == 1:
             y_corr = np.concatenate((y_corr[np.newaxis], np.zeros((1,y_corr.shape[1]))))   # Set the trigger
         else:
             y_corr = np.concatenate((y_corr, np.zeros((1,y_corr.shape[1]))))   # Set the trigger
-        y_corr[-1,int(Fs*0.05):int(Fs*0.05+5)] = np.ones(5) # Start input data
+        y_corr[-1,int(Fs*0.25)] = 1 # Start input data
 
         # Configure sample rate and set acquisition mode to finite
         output_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan =y_corr.shape[1])
@@ -150,21 +150,23 @@ def IO_cDAQ(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
 
         # Start tasks
         output_task.start()
-        #
-        read_data = input_task.read(y_corr.shape[1], math.ceil(y_corr.shape[1]/Fs)+1) #, math.ceil(y_corr.shape[1]/Fs)+1)
+
+        read_data = input_task.read(y_corr.shape[1], math.ceil(y_corr.shape[1]/Fs)+1) 
 
         read_data = np.asarray(read_data)
         cut_value = 0
         if len(read_data.shape) == 1:
             read_data = read_data[np.newaxis,:]
-        for i in range(0,int(Fs*0.05)+1):
+        for i in range(0,int(Fs*0.25)+1):
             if read_data[-1,i] >= 0.5:
                 cut_value = i
                 break
-
+        if cut_value == 0:
+            print('Warning: initialize spike not recognized')
         #trim off the first datapoints, read lags some samples behind write
         data = read_data[:-1,cut_value:N+cut_value] 
-
+        if data.shape[1] != y.shape[1]:
+            print('Warning: output data not same size as input data. Output: ' + str(data.shape[1]) + ' points, input: ' + str(y.shape[1]) + ' points.')
         # Stop and close the tasks
         input_task.stop()     
         output_task.stop()

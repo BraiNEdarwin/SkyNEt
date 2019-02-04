@@ -29,6 +29,7 @@ target = cf.gainFactor * cf.targetGen()[1]  # Target signal
 # Initialize at arrays
 yplus = np.zeros(cf.n)
 yminus = np.zeros(cf.n)
+
 theta = np.zeros((cf.n + 1, cf.controls))   # Control voltages
 delta = np.zeros((cf.n, cf.controls))       # Direction of optimization step
 ghat = np.zeros((cf.n, cf.controls))        # Changes in the controls
@@ -64,7 +65,7 @@ for k in range(0, cf.n):
         thetaminus[i] = max(cf.CVrange[0], thetaminus[i])
     
     # Measure for both CVs
-    x_scaled = 2 * (x - 0.5) * cf.range[1] #TODO: change to optimizable parameter
+    x_scaled = 2 * (x - 0.5) * cf.CVrange[1]/1000 #TODO: change to optimizable parameter
     
     
     IVVIrack.setControlVoltages(ivvi, thetaplus)
@@ -99,7 +100,7 @@ for k in range(0, cf.n):
     for i in range(cf.controls):    
         theta[k+1,i] = min(cf.CVrange[1], theta[k+1,i])
         theta[k+1,i] = max(cf.CVrange[0], theta[k+1,i])
-        
+
     
 SaveLib.saveExperiment(cf.configSrc, saveDirectory,
                      controls = theta,

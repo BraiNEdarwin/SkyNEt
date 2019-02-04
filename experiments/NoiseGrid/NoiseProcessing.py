@@ -30,7 +30,7 @@ def removeClipping(currents, CV = 0):
     '''
     
     Imean = np.mean(currents, axis = 1)
-    cleanCurrents = currents[abs(Imean) < 3.6] # TODO: find exact clipping value
+    cleanCurrents = currents[abs(Imean) < 36] # TODO: find exact clipping value
     cleanCV = 0
     if CV != 0:     # CV data is optional
         cleanCV = CV[abs(Imean) < 3.1]
