@@ -104,3 +104,5 @@ Release.key
 VCdim_testing/
 results
 experiments.db 
+test/
+Nets.zip

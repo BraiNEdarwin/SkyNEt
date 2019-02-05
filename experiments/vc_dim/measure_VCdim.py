@@ -138,7 +138,8 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
         SaveLib.saveExperiment(saveDirectory,
                                genes = geneArray,
                                output = outputArray,
-                               fitness = fitnessArray)
+                               fitness = fitnessArray,
+                               target = target[w][:,np.newaxis])
     
         # Evolve to the next generation
         genePool.NextGen()
