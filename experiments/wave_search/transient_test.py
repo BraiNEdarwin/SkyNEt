@@ -19,14 +19,24 @@ def transient_test(waves, data, fs, sampleTime, n):
     
     for i in range(n):     
         start_wave = time.time()
-        testdata[i,:] = InstrumentImporter.nidaqIO.IO_cDAQ(np.ones((waves.shape[0], 2*fs)) * waves[:, test_cases[0,i],np.newaxis], fs) # sample for 2s
 
-        difference[i,0] = np.mean(testdata[i,int(0.5*fs):2*fs]) - data[test_cases[0,i]] # use only last 1.5 seconds of test data (to avoid transients)
+        wavesRamped = np.zeros((waves.shape[0], 3*fs)) # .5 second to ramp up to desired input, 2 seconds measuring, 0.5 second to ramp input down to zero
+        dataRamped = np.zeros((1,wavesRamped.shape[1]))
+        for j in range(wavesRamped.shape[0]):
+            wavesRamped[j,0:int(fs/2)] = np.linspace(0,waves[j,test_cases[0,i]], int(fs/2))
+            wavesRamped[j,int(fs/2): int(fs/2) + 2*fs] = np.ones(2*fs) * waves[j, test_cases[0,i],np.newaxis]
+            wavesRamped[j,int(fs/2) + 2*fs:] = np.linspace(waves[j,test_cases[0,i]], 0, int(fs/2))
+
+        dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, fs)
+        testdata[i,:] = dataRamped[0, int(fs/2): int(fs/2) + 2*fs]
+        #testdata[i,:] = InstrumentImporter.nidaqIO.IO_cDAQ(np.ones((waves.shape[0], 2*fs)) * waves[:, test_cases[0,i],np.newaxis], fs) # sample for 2s
+
+        difference[i,0] = np.mean(testdata[i,:]) - data[test_cases[0,i]] 
         end_wave = time.time()
         print('Transient test data point ' + str(i+1) + ' of ' + str(n) + ' took ' + str(end_wave-start_wave)+' sec.')
 
     plt.plot(data)
-    plt.errorbar(test_cases[0,:], np.mean(testdata, axis=1), yerr=np.amax(testdata[:,fs:2*fs],axis=1) - np.amin(testdata[:,fs:2*fs],axis=1),ls='',marker='o',color='r',linewidth=2) 
+    plt.errorbar(test_cases[0,:], np.mean(testdata, axis=1), yerr=np.amax(testdata,axis=1) - np.amin(testdata,axis=1),ls='',marker='o',color='r',linewidth=2) 
     #plt.plot(test_cases[0,:], np.mean(testdata, axis=1), '.')
     plt.show()
 

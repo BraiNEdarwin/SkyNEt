@@ -19,6 +19,7 @@ from instruments.niDAQ import nidaqIO
 from SkyNEt.modules.GridConstructor import gridConstructor
 from CVFinder import CVFinder
 import experiments.NoiseSamplingST.config_NoiseSamplingST as config
+from SkyNEt.instruments import InstrumentImporter
 
 # Other imports
 import numpy as np
@@ -49,11 +50,13 @@ if config.findCV:
         controlVoltages[i,:] = CVFinder(config, target, ivvi)
 elif config.gridSearch:
     controlVoltages = gridConstructor(config.controls, config.steps)
+elif config.device == 'nidaqFull':
+    controlVoltages = config.t
+    print('Wave electrodes are used')
 else:
-    controlVoltages = config.CVs
-    
-print('Control voltages used:')
-print(str(controlVoltages))
+    controlVoltages = config.CVs    
+    print('Control voltages used:')
+    print(str(controlVoltages))
 
 # Initialize data container and save directory
 if config.T_test:
@@ -64,16 +67,28 @@ if config.S_test:
     Scurrents = np.zeros((samples * controlVoltages.shape[0], fs * T))
 
 # Main acquisition loop
-
 if config.T_test:
     print('Testing accuracy of sample time ...')
     for i in range(0, controlVoltages.shape[0]):
         print('Getting Data for control voltage ' + str(i + 1) + ', ' + str(controlVoltages.shape[0] - i - 1) + ' control voltages remaining.')
         for j in range(samples):
             print('Sampling ' + str(j + 1) + '/' + str(samples) +'...')
-            IVVIrack.setControlVoltages(ivvi, controlVoltages[i,:]) 
-            time.sleep(0.5)  # Pause in between two samples
-            Tcurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T), fs)
+
+            if config.device == 'nidaqFull':
+                waves = config.generateSineWave(config.freq, config.t[i], config.Vmax, config.fs_wave) \
+                    * np.ones((config.freq.shape[0], config.sampleTime * config.fs))
+                wavesRamped = np.zeros((waves.shape[0], waves.shape[1] + config.fs))
+                for l in range(config.waveElectrodes):
+                    wavesRamped[l,0:int(config.fs/2)] = np.linspace(0,waves[l,0], int(config.fs/2))
+                    wavesRamped[l,int(config.fs/2):int(config.fs/2)+waves.shape[1]] = waves[l,:]
+                    wavesRamped[l,int(config.fs/2)+waves.shape[1]:] = np.linspace(waves[l,-1],0, int(config.fs/2))
+                dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, config.fs)      
+                Tcurrents[i * samples + j, :] = dataRamped[:, int(config.fs/2):int(config.fs/2)+waves.shape[1]]
+
+            else:
+                IVVIrack.setControlVoltages(ivvi, controlVoltages[i,:]) 
+                time.sleep(0.5)  # Pause in between two samples
+                Tcurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T), fs)
 
 if config.S_test:
     print('Testing accuracy of switching CV config ...')
@@ -99,5 +114,5 @@ if config.S_test:
     np.savez(os.path.join(saveDirectoryS, 'nparrays'), CV = controlVoltages, output = config.amplification*Scurrents/config.postgain)
     copyfile(configSrc, saveDirectoryS + '\\config_NoiseSamplingST.py')
 
-
+InstrumentImporter.reset(0,0)
 
