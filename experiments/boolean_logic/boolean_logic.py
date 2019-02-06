@@ -75,7 +75,8 @@ for i in range(cf.generations):
                 output = InstrumentImporter.nidaqIO.IO_2D(x_scaled, cf.fs)
             elif(cf.device == 'adwin'):
                 adw = InstrumentImporter.adwinIO.initInstrument()
-                output = InstrumentImporter.adwinIO.IO_2D(adw, x_scaled, cf.fs)
+                output = InstrumentImporter.adwinIO.IO(adw, x_scaled, cf.fs)
+                output = output[0]
             else:
                 print('Specify measurement device as either adwin or nidaq')
 
@@ -134,7 +135,9 @@ for i in range(cf.generations):
     # Evolve to the next generation
     genePool.NextGen()
 
+InstrumentImporter.reset(0, 0)
+
 PlotBuilder.finalMain(mainFig)
 
-InstrumentImporter.reset(0, 0)
+
 
