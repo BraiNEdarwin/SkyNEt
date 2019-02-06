@@ -69,33 +69,48 @@ class experiment_config(config_class):
         ################################################
         self.comport = 'COM5'  # COM port for the ivvi rack
         self.device = 'adwin'  # Either nidaq or adwin
-
-        self.cv_amplification = 1
-        self.controlVoltages = [-1000,
-                                -507,
-                                257,
-                                -196,
-                                329]  # mV
-        self.controlVoltages = [cv/self.cv_amplification for cv in self.controlVoltages]
-        self.inputScaling = 0.667
+        
+        self.edgelength = 0  # because we use ivvi for input
+        self.signallength = 1  # s 
+        
+        self.Fitness = self.FitnessCorr
 
         # Define experiment
-        self.postgain = 100
-        self.amplification = 10  # nA/V
-        #self.edgelength = 1
-        #self.signallength = 4    
+        self.amplification = 10
+        self.TargetGen = self.XNOR
+        self.generations = 200
+        baseVoltage = 1
+		
+		# Explanation of genes:
+		# gene0: control voltage 1, unamplified and such that no clipping occurs
+		# gene1-4: regular control, amplified five times
+		# gene5: input scaling, in volts (is converted to ivvi range in measurement script
+        self.generange = [[-1000, 1000], 
+                           [-baseVoltage*1000/5, baseVoltage*1000/5],
+                           [-baseVoltage*1000/5, baseVoltage*1000/5],
+                           [-baseVoltage*1000/5, baseVoltage*1000/5],
+                           [-baseVoltage*1000/5, baseVoltage*1000/5],                          
+                           [0, baseVoltage]]
+
+
+        # Specify either partition or genomes
+        #self.partition = [5, 5, 5, 5, 5]
+        self.genomes = 25
+
+        # Documentation
+        self.genelabels = ['CV1/T1','CV2/T3','CV3/T11','CV4/T13','CV5/T15', 'Input scaling']
 
         ################################################
         ######### USER-SPECIFIC PARAMETERS #############
         ################################################
 
         ################# Save settings ################
-        self.filepath = r'D:\data\BramdW\DNB8_BdW1\D9\regular_boolean\\'
+        self.filepath = r'D:\data\BramdW\safety\\'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
 
         #                       Summing module S2d              Matrix module       on chip
         self.electrodeSetup = [[1,2,'ao0',3,'ao1',4,5,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
-        self.name = 'XOR_remeasure'
+        self.name = 'controls_electrostatic_XNOR'
 
         ################################################
         ################# OFF-LIMITS ###################
@@ -119,7 +134,7 @@ class experiment_config(config_class):
     #####################################################
     # Optionally define new methods here that you wish to use in your experiment.
     # These can be e.g. new fitness functions or input/output generators.
-	
+    
     def FitnessCorr(self, x, target, W):
         '''
         This implements the fitness function
@@ -137,8 +152,8 @@ class experiment_config(config_class):
         x_weighed = np.empty(len(indices))
         target_weighed = np.empty(len(indices))
         for i in range(len(indices)):
-        	x_weighed[i] = x[indices[i]]
-        	target_weighed[i] = target[indices[i]]
+            x_weighed[i] = x[indices[i]]
+            target_weighed[i] = target[indices[i]]
 
         F = np.corrcoef(x_weighed, target_weighed)[0, 1]
         clipcounter = 0

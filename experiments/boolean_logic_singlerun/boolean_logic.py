@@ -35,7 +35,7 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
 # Initialize instruments
 try:
-    ivvi = InstrumentImporter.IVVIrack.initInstrument()
+    ivvi = InstrumentImporter.IVVIrack.initInstrument(comport = cf.comport)
 except:
     pass
 	
