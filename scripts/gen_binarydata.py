@@ -7,65 +7,74 @@ Generating synthetic data sets with nonlinear boundaries to feed SkyNEt
 
 import numpy as np
 from matplotlib import pyplot as plt
+import data_generators as dg
 import pdb
 #Create N samples of 2-dim uniformely distributed features
-N = 10000
+N = 1000
 
-
-def ring(N, R_out=0.75, R_in=.5, epsilon=0.05):
-    samples = -1 + 2*np.random.rand(N,2)
-    norm = np.sqrt(np.sum(samples**2,axis=1))
-    labels = np.empty(samples.shape[0])
-#    labels[norm>R_out+epsilon/2] = 0
-    labels[norm<R_in-epsilon/2] = 0
-    labels[(norm<R_out-epsilon/2)*(norm>R_in+epsilon/2)] = 1
-    sample_0 = samples[labels==0]
-    sample_1 = samples[labels==1]
-    return sample_0,sample_1
-
-sample_0, sample_1 = ring(N)
-
-
+sample_0, sample_1 = dg.ring(N)
 #Subsample the largest class
 nr_samples = min(len(sample_0),len(sample_1))
 max_array = max(len(sample_0),len(sample_1))
 indices = np.random.permutation(max_array)[:nr_samples]
 if len(sample_0) == max_array:
     sample_0 = sample_0[indices]
-    
+else: 
+    sample_1 = sample_1[indices]
+
+#Sort samples within each class wrt the values of input x (i.e. index 0)
+sorting_indx0 = np.argsort(sample_0,axis=0)[:,0]
+sorting_indx1 = np.argsort(sample_1,axis=0)[:,0]
+xsorted_smpl0 = sample_0[sorting_indx0]
+xsorted_smpl1 = sample_1[sorting_indx1]
+
+#Filter by positive and negative values of y-axis
+nonnyxsrtd_smpl0 = xsorted_smpl0[xsorted_smpl0[:,1]>=0]
+nyxsrtd_smpl0 = xsorted_smpl0[xsorted_smpl0[:,1]<0]
+nonnyxsrtd_smpl1 = xsorted_smpl1[xsorted_smpl1[:,1]>=0]
+nyxsrtd_smpl1 = xsorted_smpl1[xsorted_smpl1[:,1]<0]
+
+#Reverse neg. y inputs
+nyxsrtd_smpl0 = nyxsrtd_smpl0[::-1]
+nyxsrtd_smpl1 = nyxsrtd_smpl1[::-1]
+
+# Define input variables and their target
+inp0 = np.concatenate((nonnyxsrtd_smpl0,nyxsrtd_smpl0))
+inp1 = np.concatenate((nonnyxsrtd_smpl1,nyxsrtd_smpl1))
+inp = np.concatenate((inp0,inp1))
+target = np.concatenate((np.zeros_like(inp0[:,0]),np.ones_like(inp1[:,0])))
+
 plt.figure()
-plt.plot(sample_0[:,0],sample_0[:,1],'.b')
-plt.plot(sample_1[:,0],sample_1[:,1],'.r')
+plt.subplot(1,2,1)
+plt.plot(inp[:,0],'.-')
+plt.plot(inp[:,1],'.-r')
+plt.plot(target,'k',label='target')
+plt.title('Waveform of inputs')
+plt.legend()
+plt.subplot(1,2,2)
+plt.plot(inp0[:,0],inp0[:,1],'.',label='class 0')
+plt.plot(inp1[:,0],inp1[:,1],'.r',label='class 1')
+plt.title('2D representation of classes')
+plt.legend()
 plt.show()
 
-def luna(N, a1=1, b1=0, a2=1.5, b2=0.3):
-    samples = -1 + 2*np.random.rand(N,2)
-    f1 = lambda x: a1*np.sqrt(x)
-    f2 = lambda x: a2*np.sqrt(x)
-    buff = samples[samples[:,0]>b1]
-    buff = buff[np.abs(buff[:,1])<f1(buff[:,0])]
-    
-    mask = (buff[:,0] > b2)*(np.abs(buff[:,1])<f2(buff[:,0]-b2))
-    buff = buff[~mask]
-    return buff
+np.savez(r'../experiments/2D_binary_classification/Ring/Class_data',
+         inp_wvfrm = inp, target = target,
+         inp_cl0 = inp0, inp_cl1 = inp1)
 
-l1 = luna(N)
-l2 = -luna(N)
-l2[:,0] += 0.9
-l2[:,1] += 0.75
-plt.figure()
-plt.plot(l1[:,0],l1[:,1],'.b')
-plt.plot(l2[:,0],l2[:,1],'.r')
-
-def cross(N, width=0.25, length=0.8):
-    samples = (-1 + 2*np.random.rand(N,2))*length/2
-    buff1 = samples[np.abs(samples[:,0])<width/2]
-    buff2 = samples[(np.abs(samples[:,1])<width/2)*(np.abs(samples[:,0])>width/2)]
-    buff = buff1.tolist()+buff2.tolist()
-    return np.array(buff)
-
-cx = cross(N)
-plt.figure()
-plt.plot(cx[:,0],cx[:,1],'.')
-plt.show()
-    
+#plt.figure()
+#plt.subplot(2,1,1)
+#plt.plot(nonnyxsrtd_smpl0[:,0], label = 'x-input',color = 'b')
+#plt.plot(nyxsrtd_smpl0[:,0], color = 'b')
+#plt.plot(nonnyxsrtd_smpl0[:,1], '.-', label = '+y input')
+#plt.plot(nyxsrtd_smpl0[:,1], '.-', label = '-y input')
+#plt.title('class 0')
+#plt.legend()
+#plt.subplot(2,1,2)
+#plt.plot(nonnyxsrtd_smpl1[:,0], label = 'x-input',color = 'b')
+#plt.plot(nyxsrtd_smpl1[:,0], color = 'b')
+#plt.plot(nonnyxsrtd_smpl1[:,1], '.-',label = '+y input')
+#plt.plot(nyxsrtd_smpl1[:,1], '.-',label = '-y input')
+#plt.title('class 1')
+#plt.legend()
+#plt.show()
