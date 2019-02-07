@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 import time
 import os
 
-inputs = [[-0.9,0.9,-0.9,0.9],[-0.9,-0.9,0.9,0.9]]
+inputs = [[-0.9,0.9,-0.9,0.9],[-0.9,-0.9,0.9,0.9]] ## MATBE NEEDS TO BE ADAPTED!!
 #[[-0.9,0.9,-0.9,0.9,0,0],[-0.9,-0.9,0.9,0.9,-0.6,0.6]]
 N=len(inputs[0])
 #Create save directory
