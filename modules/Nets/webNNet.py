@@ -241,7 +241,7 @@ class webNNet(torch.nn.Module):
             error_value = self.error_fn(predictions, target_data, beta, loss_fn, reg_scale=reg_scale)
             if torch.isnan(error_value):
                 print("WARN: Error is nan, stopping training.")
-                return [0], best_params
+                return [10e5], best_params
 
             error_value = error_value.item()
             error_list.append(error_value)
@@ -275,13 +275,14 @@ class webNNet(torch.nn.Module):
     ##################################################
     ### ---------------- General ----------------- ###
     ##################################################
-    def add_vertex(self, network, name, output=False, number_cv = 5):
+    def add_vertex(self, network, name, output=False, number_cv = 5, skip = False):
         """Adds neural network as a vertex to the graph.
         Args:
             network: vertex (object with attribute D_in and method output())
             name: key of graph dictionary in which vertex is created (str)
             output: wheter of not this vertex' output is output of complete graph (boolean)
             number_cv: nr of control voltages, the parameters which are trained (can be unused when connected to arc)
+            skip: whether to skip adding value to bias and scale tensors
         """
         
         assert not hasattr(self, name), "Name %s already in use, choose other name for vertex!" % name
@@ -293,9 +294,10 @@ class webNNet(torch.nn.Module):
         self.graph[name] = {  'network':network,
                               'isoutput':output}
         if output:
-            self.bias = torch.nn.Parameter(torch.cat((self.bias, torch.tensor([0.0]))))
-            self.scale = torch.nn.Parameter(torch.cat((self.scale, torch.tensor([0.0]))))
             self.nr_output_vertices  += 1
+            if not skip:
+                self.bias = torch.nn.Parameter(torch.cat((self.bias, torch.tensor([0.0]))))
+                self.scale = torch.nn.Parameter(torch.cat((self.scale, torch.tensor([0.0]))))
     
     def add_arc(self, source_name, sink_name, sink_gate):
         """Adds arc to graph, which connects an output of one vertex to the input of another.
