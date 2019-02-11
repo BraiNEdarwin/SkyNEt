@@ -15,6 +15,7 @@ I0 I1    AND NAND OR NOR XOR XNOR
 """
 
 import torch
+import numpy as np
 import matplotlib.pyplot as plt
 from SkyNEt.modules.Nets.predNNet import predNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
@@ -47,7 +48,7 @@ cv_reset = 'rand' #0.4*torch.ones(5)# None, 'rand', tensor(5)
 # None, mse, l1, bin, softmargin, binmse, cor, cormse
 training_type = 'cormse'
 
-add_noise = True # automatically set to false when using bin/softmargin
+add_noise = False # automatically set to false when using bin/softmargin
 sigma = 0.01 # standard deviation of added noise in target
 
 # wether to train scale output and bias before returning
@@ -123,8 +124,8 @@ if training_type == 'bin':
     add_noise = False
     target_data = target_data.long()
     def loss_fn(y_p, y):
-        y_pred = y_p - 0.5
-        y_pred = y_pred*8
+        y_pred = y_p - 0.3
+        y_pred = y_pred*10
         y_pred = torch.cat((-y_pred, y_pred), dim=1)
         return cross_fn(y_pred, y[:,0]) # cross_fn is defined below, just before training
 # L1 norm loss
@@ -228,7 +229,7 @@ def print_gates():
         plt.subplot(2, 3 , 1 + i//2 + i%2*3)
         plt.plot(target_data[i])
         legend_list = ['target']
-        if training_type == 'bin':
+        if False: #training_type == 'bin':
             plt.plot(torch.sigmoid(output_data))
             legend_list.append('sig(network) '+str(round(loss, 3)))
             plt.plot(torch.round(torch.sigmoid(output_data)))
@@ -240,7 +241,8 @@ def print_gates():
         legend_list.append('cv_output '+str(round(cv_loss, 3)))
         
         plt.legend(legend_list)
-        plt.title("%s, bias=%s, scale=%s" % (gate, round(web.bias.item(),3), round(web.scale.item()+1,3)))
+#        plt.title("%s, bias=%s, scale=%s" % (gate, round(web.bias.item(),3), round(web.scale.item()+1,3)))
+        plt.title("%s, cv:%s" % (gate, np.round(list_cv[i].numpy(), 3)))
     # adjust margins
     plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
     # fullscreen plot (only available with matplotlib auto)

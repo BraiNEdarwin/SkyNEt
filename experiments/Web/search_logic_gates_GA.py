@@ -49,7 +49,7 @@ lower = 0.0
 # if set to false, use output of known cv configurations as targets
 
 
-add_noise = True
+add_noise = False
 sigma = 0.01 # standard deviation of noise added to target
 
 # ------------------------ END configure ------------------------
@@ -100,8 +100,8 @@ mse_loss_fn = torch.nn.MSELoss()
 if training_type == 'bin':
     target_data = target_data.long()
     def loss_fn(y_p, y):
-        y_pred = y_p - 0.5
-        y_pred = y_pred/2
+        y_pred = y_p - 0.3
+        y_pred = y_pred*10
         y_pred = torch.cat((-y_pred, y_pred), dim=1)
         return cross_fn(y_pred, y[:,0])
     add_noise = False
@@ -116,7 +116,7 @@ elif training_type=='cor':
     loss_fn = cor_loss_fn
 elif training_type=='cormse':
     def loss_fn(x, y):
-        alpha = 0.5
+        alpha = 0.6
         mse = mse_loss_fn(x, y)
         cor = cor_loss_fn(x, y)
         return alpha*cor+(1-alpha)*mse
@@ -133,22 +133,28 @@ store_output = np.zeros((len(gates), input_data.shape[0]))
 store_cvs = np.zeros((len(gates), 5))
 for i,gate in enumerate(gates):
     print(i, gate)
-    web.reset_parameters()
     if training_type == 'bin':
         weights = torch.bincount(target_data[i,:]).float()
         weights = 1/weights
         weights /= torch.sum(weights)
         cross_fn = torch.nn.CrossEntropyLoss(weight = weights)
-    geneArray, outputArray, fitnessArray = web.trainGA(input_data, 
-                                                       target_data[i].view(-1,1), 
-                                                       cf,
-                                                       loss_fn = loss_fn)
-    # control voltages
-    store_cvs[i] = geneArray[-1,0]
-    # error
-    store_fitness[i] = -fitnessArray[:,0]
-    # best output
-    store_output[i] = outputArray[-1, 0, :, 0]
+    
+    best_error = 1e10
+    for j in range(10):
+        web.reset_parameters()
+        geneArray, outputArray, fitnessArray = web.trainGA(input_data, 
+                                                           target_data[i].view(-1,1), 
+                                                           cf,
+                                                           loss_fn = loss_fn)    
+        print('best error of session %i: %.3f' % (j+1, min(-fitnessArray[:,0])))
+        if min(-fitnessArray[:,0])<best_error:
+            best_error = min(-fitnessArray[:,0])
+            # control voltages
+            store_cvs[i] = geneArray[-1,0]
+            # error
+            store_fitness[i] = -fitnessArray[:,0]
+            # best output
+            store_output[i] = outputArray[-1, 0, :, 0]
 
 # printing
 def print_gates():
