@@ -1,0 +1,44 @@
+# This simple file is a wrapper for 
+# importing all measurement equipment available in the lab.
+# It also (importantly!) sets up a reset function that is executed
+# at ctrl-C
+
+from SkyNEt.instruments.ADwin import adwinIO
+from SkyNEt.instruments.niDAQ import nidaqIO
+from SkyNEt.instruments.DAC import IVVIrack
+import signal
+import sys
+
+def reset(signum, frame):
+        '''
+        This functions performs the following reset tasks:
+        - Set IVVI rack DACs to zero
+        - Apply zero signal to the NI daq
+        - Apply zero signal to the ADwin
+        '''
+        try:
+            ivviReset = IVVIrack.initInstrument(name='ivviReset', comport = 'COM5')
+            ivviReset.set_dacs_zero()
+            print('ivvi DACs set to zero')
+        except:
+            print('ivvi was not initialized, so also not reset')
+			
+        try:
+            nidaqIO.reset_device()
+            print('nidaq has been reset')
+        except:
+            print('nidaq not connected to PC, so also not reset')
+
+        try:
+            adw = adwinIO.initInstrument()
+            adwinIO.reset(adw)
+            print('adwin has been reset')
+        except:
+            print('adwin was not initialized, so also not reset')
+
+        # Finally stop the script execution
+        sys.exit()
+	
+# Set up reset call at ctrl-C
+signal.signal(signal.SIGINT, reset)
+
