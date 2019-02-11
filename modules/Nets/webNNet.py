@@ -384,7 +384,7 @@ class webNNet(torch.nn.Module):
         """Store training data for each network, assumes the torch tensor has the same ordering as in the dictionary"""
         # assumes each vertex has same number of parameters (could change in future)
         dim = x.shape[1]
-        # count number of parameters excluding biases and scales (which are first to parameters)
+        # count number of parameters excluding biases and scales (which are first two parameters)
         nr_of_params = sum([len(i) for i in self.get_parameters().values()][2:])        
         # if input data is provided for each network
         if dim+nr_of_params is 7*len(self.graph):
