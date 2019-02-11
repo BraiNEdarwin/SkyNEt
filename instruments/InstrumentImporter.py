@@ -9,7 +9,7 @@ from SkyNEt.instruments.DAC import IVVIrack
 import signal
 import sys
 
-def reset(signum, frame):
+def reset(signum, frame, exit = True):
         '''
         This functions performs the following reset tasks:
         - Set IVVI rack DACs to zero
@@ -37,7 +37,8 @@ def reset(signum, frame):
             print('adwin was not initialized, so also not reset')
 
         # Finally stop the script execution
-        sys.exit()
+        if(exit):
+            sys.exit()
 	
 # Set up reset call at ctrl-C
 signal.signal(signal.SIGINT, reset)

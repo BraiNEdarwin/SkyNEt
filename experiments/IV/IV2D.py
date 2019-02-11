@@ -18,8 +18,7 @@ Vin2dac=7
 
 adw = adwinIO.initInstrument()
 ivvi = InstrumentImporter.IVVIrack.initInstrument()
-ControlVoltages=np.array([[106.9,-401.5,166.32,-774.6,-116.1,-250,250], 
-							[106.9,-401.5,166.3,-774.6,-116.1,-250,250],
+ControlVoltages=np.array([[106.9,-401.5,166.3,-774.6,-116.1,-250,250],
 							[106.9,-688.7,166.3,-646.8,-76,-250,250],
 							[106.9,-728.7,166.3,-606.8,-116.1,-250,250],
 							[-134.1,241.4,159.1,-114.1,-116.6,-250,250],
@@ -38,8 +37,8 @@ ControlVoltages=np.array([[106.9,-401.5,166.32,-774.6,-116.1,-250,250],
 							[-856.9,-511.4,-23.2,443.4,-128.9,0,500],
 							[-891.8,-236.8,556.9,-49.6,244,0,500],
 							[-11.3,308.4,470.4,-777.9,385.7,0,500],
-							[-724.6,-771.3,-141.7,-508.1,-284.7]])
-
+							[-724.6,-771.3,-141.7,-508.1,-284.7,0,500]])
+InstrumentImporter.reset(0,0, exit=False)
 iCV=0
 for CV in ControlVoltages:
 	V1_low = CV[5]-150			#needs to be 0 or negative
@@ -57,9 +56,9 @@ for CV in ControlVoltages:
 		for Vin1 in V1range:
 			time.sleep(0.03)
 			x = np.zeros((1,siglen))
-			InstrumentImporter.IVVIrack.setControlVoltage(ivvi,Vin2,Vin1dac)
+			InstrumentImporter.IVVIrack.setControlVoltage(ivvi,Vin1,Vin1dac)
 			output = adwinIO.IO(adw, x, Fs)
-			data = np.append(data,[Vin2,Vin1,np.average(output)])
+			data = np.append(data,[Vin2,Vin1,Igain*np.average(output)])
 	datetime = time.strftime("%d_%m_%Y_%H%M%S")
 	fp = filepath + '/' + datetime +'_CV'+str(iCV)+'_'+ '_' + name
 	iCV=iCV+1
