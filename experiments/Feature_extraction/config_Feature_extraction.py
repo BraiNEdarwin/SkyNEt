@@ -131,10 +131,16 @@ class experiment_config(config_class):
 
         #distinguis if the feature will have to go for a positive or negative extractor and check how far it is away from this feature. 
         #done for higher but negative and lower but positive ass well.
-        if (I_average[marker]+I_std[marker])-(I_other[indexh]-I_otherstd[indexh])<(I_average[marker]-I_std[marker])-(I_other[indexl]+I_otherstd[indexl]):
-            F = I_average[marker]+I_std[marker]-I_other[indexh]-I_otherstd[indexh]
+        if I_average[marker]-I_std[marker]<I_other[indexh]+I_otherstd[indexh] && I_average[marker]+I_std[marker]>I_other[indexl]-I_otherstd[indexl]
+            sign = -1
+        else
+            sign = 1
+
+
+        if abs((I_average[marker]-I_std[marker])-(I_other[indexh]+I_otherstd[indexh]))<abs((I_average[marker]+I_std[marker])-(I_other[indexl]-I_otherstd[indexl])):
+            F = abs((I_average[marker]-I_std[marker])-(I_other[indexh]+I_otherstd[indexh]))*sign 
         else 
-            F = I_average[marker]-I_std[marker]-I_other[indexl]+I_otherstd[indexl]
+            F = abs((I_average[marker]+I_std[marker])-(I_other[indexl]-I_otherstd[indexl]))*sign
 
 
         #Fitness for when positive needs to be highest and negative needs to be lowest.
