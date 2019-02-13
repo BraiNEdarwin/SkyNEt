@@ -83,7 +83,7 @@ for i in range(cf.generations):
                     measureddata = np.asarray(InstrumentImporter.nidaqIO.IO(meas, cf.fs))*cf.amplification
                 elif(cf.device == 'adwin'):
                     adw = InstrumentImporter.adwinIO.initInstrument()
-                    output = InstrumentImporter.adwinIO.IO(adw, x_scaled, cf.fs)
+                    measureddata = InstrumentImporter.adwinIO.IO(adw, x_scaled, cf.fs)
                 else:
                     print('Specify measurement device as either adwin or nidaq')
                 output[n,m] = np.average(measureddata)

@@ -74,7 +74,7 @@ class experiment_config(config_class):
         self.amplification = 10
         self.TargetGen = 0 # defines which feature needs to be extraction from 0-15
         self.generations = 100
-        self.generange = [[-1500,1500], [-1500, 1500], [-1500, 1500]]
+        self.generange = [[-1000,1000], [-1000, 1000], [-1000, 1000]]
 
         # Specify either partition or genomes
         #self.partition = [5, 5, 5, 5, 5]
@@ -86,7 +86,7 @@ class experiment_config(config_class):
         self.genelabels = ['CV1','CV2','CV3']
 
         # Save settings
-        self.filepath = r'D:\Data\Bram\Feature_extracion\\'  #Important: end path with double backslash
+        self.filepath = r'D:\Data\Bram\Feature_extracion_2\\'  #Important: end path with double backslash
         self.name = '0000'
 
         self.Fitness = self.Fitness_extractiondiff
