@@ -15,7 +15,7 @@ This is done withing 3 for loops:
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
 import SkyNEt.modules.PlotBuilder as PlotBuilder
-import config_Feature_extract as config
+import SkyNEt.experiments.Feature_extraction.config_Feature_extraction as config
 from SkyNEt.instruments import InstrumentImporter
 
 # Other imports
@@ -30,15 +30,16 @@ inp = cf.InputGen()
 meas = np.zeros(cf.measurelength)
 # np arrays to save genePools, outputs and fitness
 geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
-outputArray = np.zeros((cf.generations, cf.genomes, len(inp), cf.ntest))
+outputArray = np.zeros((cf.generations, cf.genomes, len(inp), cf.measurelength))
 fitnessArray = np.zeros((cf.generations, cf.genomes))
 
 # Temporary arrays, overwritten each generation
 fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
-outputAvg = np.zeros((cf.fitnessavg, len(x[0])))
-outputTemp = np.zeros((cf.genomes, len(x[0])))
+outputAvg = np.zeros((cf.fitnessavg, len(inp),cf.measurelength))
+outputTemp = np.zeros((cf.genomes, len(inp),cf.measurelength))
 controlVoltages = np.zeros(7)
-
+controls = np.zeros(3)
+output = np.zeros((len(inp), cf.measurelength))
 # Initialize save directory
 saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
@@ -57,7 +58,7 @@ for i in range(cf.generations):
     for j in range(cf.genomes):
         # Set the DAC voltages
         contorls = np.zeros(cf.genes)
-        for k in range(cf.genes-1):
+        for k in range(cf.genes):
             controls[k] = genePool.MapGenes(
                                     cf.generange[k], genePool.pool[j, k])
         controlVoltages[4:] = controls[:3]
@@ -66,16 +67,16 @@ for i in range(cf.generations):
         print(controlVoltages[4:])
 
         # Set the input scaling
-        x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
+        #x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
 
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
             # set inputs to dacs
             for n in range(len(inp)):
-              inputVoltages = [(inp[n,0])*1000-500, (inp[n,1])*1000-500, (winp[n,2])*1000-500, (inp[n,3])*1000-500]
+              inputVoltages = [(inp[n,0])*1000-500, (inp[n,1])*1000-500, (inp[n,2])*1000-500, (inp[n,3])*1000-500]
               print("current input")
               print(inputVoltages)
-              InstrumentImporter.IVVIrack.setControlVoltages(ivvi, controlVoltages)
+              InstrumentImporter.IVVIrack.setControlVoltages(ivvi, inputVoltages)
               time.sleep(0.2)
               for m in range(cf.ntest):
             # Feed input to measurement device
@@ -83,13 +84,13 @@ for i in range(cf.generations):
                     measureddata = np.asarray(InstrumentImporter.nidaqIO.IO(meas, cf.fs))*cf.amplification
                 elif(cf.device == 'adwin'):
                     adw = InstrumentImporter.adwinIO.initInstrument()
-                    measureddata = InstrumentImporter.adwinIO.IO(adw, x_scaled, cf.fs)
+                    measureddata = InstrumentImporter.adwinIO.IO(adw, meas, cf.fs)
                 else:
                     print('Specify measurement device as either adwin or nidaq')
-                output[n,m] = np.average(measureddata)
+                output[n,0:cf.measurelength] = measureddata
 
             # Plot genome
-            PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
+            # PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
 
             # Train output
             outputAvg[avgIndex] = cf.amplification * np.asarray(output)  # empty for now, as we have only one output node
@@ -98,12 +99,13 @@ for i in range(cf.generations):
             fitnessTemp[j, avgIndex]= cf.Fitness(output,
                                                      cf.TargetGen,)
             # Plot output
-            PlotBuilder.currentOutputClassification(mainFig,
-                                               output,
-                                               inp,
-                                               j + 1, i + 1,
-                                               fitnessTemp[j, avgIndex],
-                                               cf.TargetGen)
+            # PlotBuilder.currentOutputClassification(mainFig,
+            #                                    output,
+            #                                    inp,
+            #                                    j + 1, i + 1,
+            #                                    fitnessTemp[j, avgIndex],
+            #                                    cf.TargetGen)
+            print(fitnessTemp[j, avgIndex])
 
         outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
 
@@ -119,15 +121,13 @@ for i in range(cf.generations):
     fitnessArray[i, :] = genePool.fitness
 
     # Update main figure
-    PlotBuilder.updateMainFigEvolution(mainFig,
+    PlotBuilder.updateMainFigClassification(mainFig,
                                        geneArray,
                                        fitnessArray,
                                        outputArray,
                                        i + 1,
-                                       t,
-                                       cf.amplification*target,
-                                       output,
-                                       w)
+                                       inp,
+                                       cf.TargetGen)
 
     # Save generation
     SaveLib.saveExperiment(saveDirectory,
@@ -135,8 +135,7 @@ for i in range(cf.generations):
                      outputArray = outputArray,
                      fitnessArray = fitnessArray,
                      input = inp,
-                     target = cf.TargetGen,
-                     amplified_target = cf.amplification*target)
+                     target = cf.TargetGen)
 
     # Evolve to the next generation
     genePool.NextGen()

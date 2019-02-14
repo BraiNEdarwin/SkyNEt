@@ -72,22 +72,22 @@ class experiment_config(config_class):
 
         # Define experiment
         self.amplification = 10
-        self.TargetGen = 0 # defines which feature needs to be extraction from 0-15
+        self.TargetGen = 1 # defines which feature needs to be extraction from 0-15
         self.generations = 100
         self.generange = [[-1000,1000], [-1000, 1000], [-1000, 1000]]
 
         # Specify either partition or genomes
         #self.partition = [5, 5, 5, 5, 5]
         self.genomes = 25
-        self.ntest = 10
-        self.measurelength = 200
+        self.ntest = 1
+        self.measurelength = 100
 
         # Documentation
         self.genelabels = ['CV1','CV2','CV3']
 
         # Save settings
         self.filepath = r'D:\Data\Bram\Feature_extracion_2\\'  #Important: end path with double backslash
-        self.name = '0000'
+        self.name = '0001'
 
         self.Fitness = self.Fitness_extractiondiff
         self.InputGen = self.Fe_input
@@ -116,7 +116,7 @@ class experiment_config(config_class):
     # These can be e.g. new fitness functions or input/output generators.
 
     def Fitness_extractiondiff(self, output, marker):
-    	I_std = np.zeros([16])
+        I_std = np.zeros([16])
         I_average = np.zeros([16])
 
         #find the average current and standard deviation of all outputs and without the desired feature. 
@@ -131,16 +131,16 @@ class experiment_config(config_class):
 
         #distinguis if the feature will have to go for a positive or negative extractor and check how far it is away from this feature. 
         #done for higher but negative and lower but positive ass well.
-        if I_average[marker]-I_std[marker]<I_other[indexh]+I_otherstd[indexh] && I_average[marker]+I_std[marker]>I_other[indexl]-I_otherstd[indexl]
+        if I_average[marker]-I_std[marker]<I_other[indexh]+I_otherstd[indexh] and I_average[marker]+I_std[marker]>I_other[indexl]-I_otherstd[indexl]:
             sign = -1
-        else
+        else:
             sign = 1
 
 
         if abs((I_average[marker]-I_std[marker])-(I_other[indexh]+I_otherstd[indexh]))<abs((I_average[marker]+I_std[marker])-(I_other[indexl]-I_otherstd[indexl])):
-            F = abs((I_average[marker]-I_std[marker])-(I_other[indexh]+I_otherstd[indexh]))*sign 
-        else 
-            F = abs((I_average[marker]+I_std[marker])-(I_other[indexl]-I_otherstd[indexl]))*sign
+            F = abs((I_average[marker]-I_std[marker])-(I_other[indexh]+I_otherstd[indexh]))*sign/abs(I_other[indexh]-I_other[indexl]) 
+        else: 
+            F = abs((I_average[marker]+I_std[marker])-(I_other[indexl]-I_otherstd[indexl]))*sign/abs(I_other[indexh]-I_other[indexl])
 
 
         #Fitness for when positive needs to be highest and negative needs to be lowest.
