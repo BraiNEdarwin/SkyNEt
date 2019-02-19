@@ -1,0 +1,36 @@
+git add XXX {Adds to the staging area}
+git add -A {All add}
+git reset {Remove all back to working directory}
+git commit -m"Comment"{comment important}
+git log {gives hash number of the commitment, detail also}
+git clone<url> <where to clone> {clone whole repository}
+git clone ../repository_from.git .{this copies everything from from.git to the current remote repository}
+git remote -v {remote list up}
+
+[
+git branch-->git checkout-->git add -A --> git commit -m"" 
+-->git push -u origin -->git pull origin master --> git merge-->git push -u origin-->git delete
+]
+
+git diff {show the changes that are made to the code}
+git pull origin master{pull any change made from last fetch}
+Git push origin master
+Origin--> name master-->branch status
+
+git branch XXnameofthebranchXX {creates new branch}
+{without name, it shows all the branch}
+git checkout XXnameofthebranchXX {change the working branch}
+
+Git push -u origin XXnameofthebranchXX{pushes the branch into remote repository}
+Git branch --merged{shows the branch that are sync'ed with master}
+Git merge XXnameofthebranchXX {merges branch to the master}
+
+Git branch -d XXnameofthebranchXX {deletes LOCAL branch}
+Git push origin --delete XXnameofthebranchXX{deletes remote repository}
+
+=================================================================================================================================================================================================================================================================================================================
+
+git commit --amend -m "newmessage"{this changes the commit message of the most recent one}
+Git com nt --amend{brings up interactive editor (what)}
+
+
