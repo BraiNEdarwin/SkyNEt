@@ -67,23 +67,36 @@ class experiment_config(config_class):
         ################################################
         ######### SPECIFY PARAMETERS ###################
         ################################################
-        self.comport = 'COM3'  # COM port for the ivvi rack
-        self.device = 'nidaq'  # Either nidaq or adwin
-		
+        self.comport = 'COM5'  # COM port for the ivvi rack
+        self.device = 'adwin'  # Either nidaq or adwin
+        
+        # Total signal is 5*edgelength + 4*signallength
+        self.edgelength = 0.1
+        self.signallength = 0.2 
+        self.extraweight = 0.1  # Add this amount of s of weight 0 to the signal bits
+        
         self.Fitness = self.FitnessCorr
 
         # Define experiment
         self.postgain = 100
-        self.amplification = 1
-        self.TargetGen = self.XNOR
-        self.generations = 200
+        self.amplification = 10
+        self.InputGen = self.BetterInputGen
+        self.TargetGen = self.XOR
+        self.generations = 100
+        self.fitnessavg = 1
         baseVoltage = 10
+        # self.generange = [[-1000, 400], 
+                           # [-baseVoltage*1000/5, baseVoltage*1000/5],
+                           # [-baseVoltage*1000/5, baseVoltage*1000/5],
+                           # [-baseVoltage*1000/5, baseVoltage*1000/5],
+                           # [-baseVoltage*1000/5, baseVoltage*1000/5],                          
+                           # [0, 20/5]]
         self.generange = [[-1000, 1000], 
-						   [-baseVoltage*1000/5, baseVoltage*1000/5],
-						   [-baseVoltage*1000/5, baseVoltage*1000/5],
-						   [-baseVoltage*1000/5, baseVoltage*1000/5],
-						   [-baseVoltage*1000/5, baseVoltage*1000/5],						  
-						   [0, baseVoltage]]
+                   [-1000, 1000],
+                   [-1000, 1000],
+                   [-1000, 1000],
+                   [-1000, 1000],                          
+                   [0, 1]]
 
 
         # Specify either partition or genomes
@@ -98,12 +111,12 @@ class experiment_config(config_class):
         ################################################
 
         ################# Save settings ################
-        self.filepath = r'D:\data\BramdW\electrostatic_fullboolean\\'
+        self.filepath = r'D:\data\BramdW\DNB8_BdW1\D9\regular_boolean\\'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
 
         #                       Summing module S2d              Matrix module       on chip
         self.electrodeSetup = [[1,2,'ao0',3,'ao1',4,5,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
-        self.name = 'controls_electrostatic_XNOR'
+        self.name = 'XOR_illustration'
 
         ################################################
         ################# OFF-LIMITS ###################
@@ -127,7 +140,7 @@ class experiment_config(config_class):
     #####################################################
     # Optionally define new methods here that you wish to use in your experiment.
     # These can be e.g. new fitness functions or input/output generators.
-	
+    
     def FitnessCorr(self, x, target, W):
         '''
         This implements the fitness function
@@ -145,14 +158,232 @@ class experiment_config(config_class):
         x_weighed = np.empty(len(indices))
         target_weighed = np.empty(len(indices))
         for i in range(len(indices)):
-        	x_weighed[i] = x[indices[i]]
-        	target_weighed[i] = target[indices[i]]
+            x_weighed[i] = x[indices[i]]
+            target_weighed[i] = target[indices[i]]
+            
+        # Get separation between 0 and 1
+        separation = np.min(x_weighed[target_weighed==1]) - np.max(x_weighed[target_weighed==0])
 
         F = np.corrcoef(x_weighed, target_weighed)[0, 1]
+        
+        # Add separation if gate is valid gate
+        #if(separation > 0):
+        #F = separation
         clipcounter = 0
         for i in range(len(x_weighed)):
             if(abs(x_weighed[i]) > 3.1*10):
                 clipcounter = clipcounter + 1
                 F = -100
         return F
+        
+    def AND(self, final_edge = True):
+        x = np.array([])
+        t = np.array([])
+        
+        x_bin = [0, 0, 0, 1]
+        
+        n_edge = round(self.fs * self.edgelength)  # Amount of datapoints per edge
+        n_signal = round(self.fs * self.signallength)  # Amount of datapoints per signal
+        
+        for i in range(4):
+            # Add edge
+            if(i == 0):
+                x = np.append(x, np.linspace(0, x_bin[0], n_edge))
+            else:
+                x = np.append(x, np.linspace(x_bin[i-1], x_bin[i], n_edge))
+                
+            # Add signal
+            x = np.append(x, np.ones(n_signal)*x_bin[i])
+            
+        if final_edge:
+            x = np.append(x, np.linspace(x_bin[-1], 0, n_edge))
+            t = np.linspace(0, (5*n_edge+4*n_signal)/self.fs, 5*n_edge+4*n_signal)
+        else:
+            t = np.linspace(0, (4*n_edge+4*n_signal)/self.fs, 4*n_edge+4*n_signal)
+        
+        
+        return t, x
+        
+    def OR(self, final_edge = True):
+        x = np.array([])
+        t = np.array([])
+        
+        x_bin = [0, 1, 1, 1]
+        
+        n_edge = round(self.fs * self.edgelength)  # Amount of datapoints per edge
+        n_signal = round(self.fs * self.signallength)  # Amount of datapoints per signal
+        
+        for i in range(4):
+            # Add edge
+            if(i == 0):
+                x = np.append(x, np.linspace(0, x_bin[0], n_edge))
+            else:
+                x = np.append(x, np.linspace(x_bin[i-1], x_bin[i], n_edge))
+                
+            # Add signal
+            x = np.append(x, np.ones(n_signal)*x_bin[i])
+            
+        if final_edge:
+            x = np.append(x, np.linspace(x_bin[-1], 0, n_edge))
+            t = np.linspace(0, (5*n_edge+4*n_signal)/self.fs, 5*n_edge+4*n_signal)
+        else:
+            t = np.linspace(0, (4*n_edge+4*n_signal)/self.fs, 4*n_edge+4*n_signal)
+        
+        
+        return t, x
+
+    def NAND(self, final_edge = True):
+        x = np.array([])
+        t = np.array([])
+        
+        x_bin = [1, 1, 1, 0]
+        
+        n_edge = round(self.fs * self.edgelength)  # Amount of datapoints per edge
+        n_signal = round(self.fs * self.signallength)  # Amount of datapoints per signal
+        
+        for i in range(4):
+            # Add edge
+            if(i == 0):
+                x = np.append(x, np.linspace(0, x_bin[0], n_edge))
+            else:
+                x = np.append(x, np.linspace(x_bin[i-1], x_bin[i], n_edge))
+                
+            # Add signal
+            x = np.append(x, np.ones(n_signal)*x_bin[i])
+            
+        if final_edge:
+            x = np.append(x, np.linspace(x_bin[-1], 0, n_edge))
+            t = np.linspace(0, (5*n_edge+4*n_signal)/self.fs, 5*n_edge+4*n_signal)
+        else:
+            t = np.linspace(0, (4*n_edge+4*n_signal)/self.fs, 4*n_edge+4*n_signal)
+        
+        
+        return t, x
+        
+    def NOR(self, final_edge = True):
+        x = np.array([])
+        t = np.array([])
+        
+        x_bin = [1, 0, 0, 0]
+        
+        n_edge = round(self.fs * self.edgelength)  # Amount of datapoints per edge
+        n_signal = round(self.fs * self.signallength)  # Amount of datapoints per signal
+        
+        for i in range(4):
+            # Add edge
+            if(i == 0):
+                x = np.append(x, np.linspace(0, x_bin[0], n_edge))
+            else:
+                x = np.append(x, np.linspace(x_bin[i-1], x_bin[i], n_edge))
+                
+            # Add signal
+            x = np.append(x, np.ones(n_signal)*x_bin[i])
+            
+        if final_edge:
+            x = np.append(x, np.linspace(x_bin[-1], 0, n_edge))
+            t = np.linspace(0, (5*n_edge+4*n_signal)/self.fs, 5*n_edge+4*n_signal)
+        else:
+            t = np.linspace(0, (4*n_edge+4*n_signal)/self.fs, 4*n_edge+4*n_signal)
+        
+        
+        return t, x
+
+    def XOR(self, final_edge = True):
+        x = np.array([])
+        t = np.array([])
+        
+        x_bin = [0, 1, 1, 0]
+        
+        n_edge = round(self.fs * self.edgelength)  # Amount of datapoints per edge
+        n_signal = round(self.fs * self.signallength)  # Amount of datapoints per signal
+        
+        for i in range(4):
+            # Add edge
+            if(i == 0):
+                x = np.append(x, np.linspace(0, x_bin[0], n_edge))
+            else:
+                x = np.append(x, np.linspace(x_bin[i-1], x_bin[i], n_edge))
+                
+            # Add signal
+            x = np.append(x, np.ones(n_signal)*x_bin[i])
+            
+        if final_edge:
+            x = np.append(x, np.linspace(x_bin[-1], 0, n_edge))
+            t = np.linspace(0, (5*n_edge+4*n_signal)/self.fs, 5*n_edge+4*n_signal)
+        else:
+            t = np.linspace(0, (4*n_edge+4*n_signal)/self.fs, 4*n_edge+4*n_signal)
+        
+        
+        return t, x
+                
+    def XNOR(self, final_edge = True):
+        x = np.array([])
+        t = np.array([])
+        
+        x_bin = [1, 0, 0, 1]
+        
+        n_edge = round(self.fs * self.edgelength)  # Amount of datapoints per edge
+        n_signal = round(self.fs * self.signallength)  # Amount of datapoints per signal
+        
+        for i in range(4):
+            # Add edge
+            if(i == 0):
+                x = np.append(x, np.linspace(0, x_bin[0], n_edge))
+            else:
+                x = np.append(x, np.linspace(x_bin[i-1], x_bin[i], n_edge))
+                
+            # Add signal
+            x = np.append(x, np.ones(n_signal)*x_bin[i])
+            
+        if final_edge:
+            x = np.append(x, np.linspace(x_bin[-1], 0, n_edge))
+            t = np.linspace(0, (5*n_edge+4*n_signal)/self.fs, 5*n_edge+4*n_signal)
+        else:
+            t = np.linspace(0, (4*n_edge+4*n_signal)/self.fs, 4*n_edge+4*n_signal)
+        
+        
+        return t, x
+        
+    def BetterInputGen(self, final_edge = True):
+        x = np.array([])
+        y = np.array([])
+        t = np.array([])
+        w = np.array([])
+        
+        x_bin = [0, 1, 0, 1]
+        y_bin = [0, 0, 1, 1]
+        
+        n_edge = round(self.fs * self.edgelength)  # Amount of datapoints per edge
+        n_signal = round(self.fs * self.signallength)  # Amount of datapoints per signal
+        n_extraweight = round(self.fs * self.extraweight)  # Amount of datapoints per signal
+        
+        w_signal = np.ones(n_signal)
+        w_signal[:n_extraweight] = 0
+        
+        for i in range(4):
+            # Add edge
+            if(i == 0):
+                x = np.append(x, np.linspace(0, x_bin[0], n_edge))
+                y = np.append(y, np.linspace(0, y_bin[0], n_edge))
+                w = np.append(w, np.zeros(n_edge))
+            else:
+                x = np.append(x, np.linspace(x_bin[i-1], x_bin[i], n_edge))
+                y = np.append(y, np.linspace(y_bin[i-1], y_bin[i], n_edge))
+                w = np.append(w, np.zeros(n_edge))
+                
+            # Add signal
+            x = np.append(x, np.ones(n_signal)*x_bin[i])
+            y = np.append(y, np.ones(n_signal)*y_bin[i])
+            w = np.append(w, w_signal)
+            
+        if final_edge:
+            x = np.append(x, np.linspace(x_bin[-1], 0, n_edge))
+            y = np.append(y, np.linspace(y_bin[-1], 0, n_edge))
+            w = np.append(w, np.zeros(n_edge))
+            t = np.linspace(0, (5*n_edge+4*n_signal)/self.fs, 5*n_edge+4*n_signal)
+        else:
+            t = np.linspace(0, (4*n_edge+4*n_signal)/self.fs, 4*n_edge+4*n_signal)
+        
+        
+        return t, x, y, w
 

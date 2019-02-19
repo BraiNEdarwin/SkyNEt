@@ -18,17 +18,17 @@ Input = config.Sweepgen( config.v_high, config.v_low, config.n_points, config.di
 if config.device == 'nidaq':
     Output = InstrumentImporter.nidaqIO.IO(Input, config.fs)
 elif config.device == 'adwin':
-    adwin = InstrumentImporter.adwinIO.InitInstrument()
+    adwin = InstrumentImporter.adwinIO.initInstrument()
     Output = InstrumentImporter.adwinIO.IO(adwin, Input, config.fs)
 else:
     print('specify measurement device')
 
 # Save the Input and Output
-SaveLib.saveExperiment(saveDirectory, input = Input, output = Output)
+SaveLib.saveExperiment(saveDirectory, input = Input, output = Output*config.amplification)
 
 # Plot the IV curve.
 plt.figure()
-plt.plot(Input[0:len(Output)], Output)
+plt.plot(Input[0], Output[0])
 plt.show()
 
 # Final reset

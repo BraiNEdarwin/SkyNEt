@@ -17,7 +17,7 @@ def reset(signum, frame):
         - Apply zero signal to the ADwin
         '''
         try:
-            ivviReset = IVVIrack.initInstrument(name='ivviReset')
+            ivviReset = IVVIrack.initInstrument(name='ivviReset', comport = 'COM5')
             ivviReset.set_dacs_zero()
             print('ivvi DACs set to zero')
         except:
@@ -30,9 +30,9 @@ def reset(signum, frame):
             print('nidaq not connected to PC, so also not reset')
 
         try:
-            global adw
-            reset_signal = np.zeros((2, 40003))
-            adwinIO.IO_2D(adw, reset_signal, 1000)
+            adw = adwinIO.initInstrument()
+            adwinIO.reset(adw)
+            print('adwin has been reset')
         except:
             print('adwin was not initialized, so also not reset')
 

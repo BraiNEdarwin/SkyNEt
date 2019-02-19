@@ -88,7 +88,7 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
             adw.Boot(str('adwin' + PROCESSORTYPE + '.btl'))
         else:
             adw.Boot('C:\\ADwin\\ADwin' + PROCESSORTYPE + '.btl')
-        adw.Load_Process('C:\\Users\\PNPNteam\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8Read_4Write.TB1')
+        adw.Load_Process('C:\\Users\\ursamajor\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8Read_4Write.TB1')
         adw.Set_Processdelay(1, int(300e6 / Fs))  # delay in clock cycles
         adw.Start_Process(1)
 

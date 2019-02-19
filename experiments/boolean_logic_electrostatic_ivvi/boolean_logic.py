@@ -29,7 +29,11 @@ cf = config.experiment_config()
 t = cf.InputGen()[0]  # Time array
 x = np.asarray(cf.InputGen()[1:3])  # Array with P and Q signal
 w = cf.InputGen()[3]  # Weight array
+w = np.ones(t.shape)  # Ugly quick fix
 target = cf.TargetGen()[1]  # Target signal
+P = [0, 1, 0, 1]
+Q = [0, 0, 1, 1]
+quarter = int(len(t)/4)
 
 # np arrays to save genePools, outputs and fitness
 geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
@@ -49,7 +53,7 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
 
 # Initialize instruments
-ivvi = InstrumentImporter.IVVIrack.initInstrument(comport=cf.comport)
+ivvi = InstrumentImporter.IVVIrack.initInstrument(comport = cf.comport)
 
 # Initialize genepool
 genePool = Evolution.GenePool(cf)
@@ -57,16 +61,12 @@ genePool = Evolution.GenePool(cf)
 #%% Measurement loop
 
 for i in range(cf.generations):
-    if(i==0):
-        starttime = time.time()
-    if(i==1):
-        first_gen_time = time.time()-starttime
-        print(f'Estimated remaining time = {first_gen_time*(cf.generations-1)} s')
     for j in range(cf.genomes):
-        # Set the DAC voltages
+        # Set the DAC voltages (DACs 1-5)
         for k in range(cf.genes-1):
             controlVoltages[k] = genePool.MapGenes(
                                     cf.generange[k], genePool.pool[j, k])
+        print(controlVoltages)
         InstrumentImporter.IVVIrack.setControlVoltages(ivvi, controlVoltages)
         time.sleep(1)  # Wait after setting DACs
 
@@ -75,14 +75,25 @@ for i in range(cf.generations):
 
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
-            # Feed input to measurement device
-            if(cf.device == 'nidaq'):
-                output = InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)
-            elif(cf.device == 'adwin'):
-                adw = InstrumentImporter.adwinIO.initInstrument()
-                output = InstrumentImporter.adwinIO.IO(adw, x_scaled, cf.fs)
-            else:
-                print('Specify measurement device as either adwin or nidaq')
+            # Obtain input range from last gene
+            inputRange = genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1]) * 1000/5  # originally in volts and 5 times amplification
+            
+            # Preallocate output
+            output = np.zeros(len(t))
+            for inputIndex in range(4):
+                # Set the input voltage DACs (6, 7)
+                InstrumentImporter.IVVIrack.setControlVoltage(ivvi, P[inputIndex]*inputRange, 5)
+                InstrumentImporter.IVVIrack.setControlVoltage(ivvi, Q[inputIndex]*inputRange, 6)
+                
+                # Feed input to measurement device
+                if(cf.device == 'nidaq'):
+                    output = InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)
+                elif(cf.device == 'adwin'):
+                    adw = InstrumentImporter.adwinIO.initInstrument()
+                    output[inputIndex*quarter:(1+inputIndex)*quarter] = \
+                        InstrumentImporter.adwinIO.IO(adw, x_scaled[:, inputIndex*quarter:(1+inputIndex)*quarter], cf.fs)
+                else:
+                    print('Specify measurement device as either adwin or nidaq')
 
             # Plot genome
             PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
@@ -99,7 +110,7 @@ for i in range(cf.generations):
             PlotBuilder.currentOutputEvolution(mainFig,
                                                t,
                                                target,
-                                               outputAvg[avgIndex],
+                                               output,
                                                j + 1, i + 1,
                                                fitnessTemp[j, avgIndex])
 
@@ -124,7 +135,7 @@ for i in range(cf.generations):
                                        i + 1,
                                        t,
                                        cf.amplification*target,
-                                       outputAvg[avgIndex],
+                                       output,
                                        w)
 
     # Save generation
@@ -139,10 +150,7 @@ for i in range(cf.generations):
     # Evolve to the next generation
     genePool.NextGen()
 
-InstrumentImporter.reset(0, 0)
-    
-    
 PlotBuilder.finalMain(mainFig)
 
-
+InstrumentImporter.reset(0, 0)
 

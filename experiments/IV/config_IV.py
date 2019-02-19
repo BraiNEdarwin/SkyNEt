@@ -22,17 +22,17 @@ class experiment_config(object):
 
 
         #define where you want to save the data.
-        self.filepath = r'D:\Bram\test'
-        self.name = 'test'
+        self.filepath = r'D:\data\BramdW\DNB8_BdW1\safety\\'
+        self.name = 'range7_long'
         
         #define the IV you want to take in volts.
-        self.v_low = -0.9
-        self.v_high = 0.9
-        self.n_points = 10000
+        self.v_low = -1
+        self.v_high = 1
+        self.n_points = 100000
         self.direction = 'up'
 
         #define the input and output amplifications.
-        self.amplification = 1
+        self.amplification = 10
         self.source_gain = 1
 
         #measurment tool settings.
@@ -57,10 +57,10 @@ class experiment_config(object):
             print('Specify the sweep direction')
 
 
-        Input = np.zeros(len(Input1)+len(Input2)+len(Input3))
-        Input[0:len(Input1)] = Input1
-        Input[len(Input1):len(Input1)+len(Input2)] = Input2
-        Input[len(Input1)+len(Input2):len(Input1)+len(Input2)+len(Input3)] = Input3
+        Input = np.zeros((1, len(Input1)+len(Input2)+len(Input3)))
+        Input[0, 0:len(Input1)] = Input1
+        Input[0, len(Input1):len(Input1)+len(Input2)] = Input2
+        Input[0, len(Input1)+len(Input2):len(Input1)+len(Input2)+len(Input3)] = Input3
         return Input
 
 
