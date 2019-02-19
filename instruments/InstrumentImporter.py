@@ -6,6 +6,7 @@
 from SkyNEt.instruments.ADwin import adwinIO
 from SkyNEt.instruments.niDAQ import nidaqIO
 from SkyNEt.instruments.DAC import IVVIrack
+from SkyNEt.instruments.switchnetwork import switch_utils
 import signal
 import sys
 
