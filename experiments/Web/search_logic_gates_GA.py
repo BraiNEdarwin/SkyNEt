@@ -94,7 +94,8 @@ else:
     target_data = torch.tensor(cv_data)
 
 def cor_loss_fn(x, y):
-    return 1.0-np.corrcoef(x[:,0], y[:,0])[0, 1]
+    corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))
+    return 1-corr/torch.std(x)/torch.std(y)
 mse_loss_fn = torch.nn.MSELoss()
 
 if training_type == 'bin':
@@ -140,7 +141,7 @@ for i,gate in enumerate(gates):
         cross_fn = torch.nn.CrossEntropyLoss(weight = weights)
     
     best_error = 1e10
-    for j in range(10):
+    for j in range(5):
         web.reset_parameters()
         geneArray, outputArray, fitnessArray = web.trainGA(input_data, 
                                                            target_data[i].view(-1,1), 
