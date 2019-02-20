@@ -22,7 +22,8 @@ def matrix_to_bytes(matrix):
     The first row of matrix corresponds to the switching configuration
     of C1.
     '''
-    send_string = '<'  # Start flag
+    #send_string = '<'  # Start flag
+    send_string = ''
 
     # Loop over each row of matrix
     for ii in range(matrix.shape[0]):
@@ -33,7 +34,7 @@ def matrix_to_bytes(matrix):
         if(ii < 7):
             send_string += ','  # Separator character
 
-    send_string += '>'  # End flag
+    #send_string += '>'  # End flag
 
     return send_string.encode()
             
@@ -49,7 +50,15 @@ def switch(ser, matrix):
             configuration of C1.
     '''
     send_string = matrix_to_bytes(matrix)
+
+    ser.write('<'.encode())
+    time.sleep(0.2)
+
     ser.write(send_string)
+    time.sleep(0.2)
+
+    ser.write('>'.encode())
+    time.sleep(0.2)
 
 def connect_single_device(ser, device_number):
     '''

@@ -1,2 +1,2 @@
-cmd /k "C:\ProgramData\Anaconda3\Scripts\activate skynet && ipython"
+cmd /k "C:\Users\Darwin\Anaconda3\Scripts\activate skynet && ipython"
 

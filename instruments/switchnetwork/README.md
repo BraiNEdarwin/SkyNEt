@@ -47,3 +47,10 @@ For the functions in `switch_utils.py` to work, it is important that
 the Arduino sketch `switch_driver.ino` is uploaded to the Arduino.
 This can be easily done from the Arduino IDE and should already be
 fine. 
+
+Also, the code uses the python package `pyserial`, which can be installed
+with (when activated the skynet environment):
+
+```
+pip install pyserial
+```

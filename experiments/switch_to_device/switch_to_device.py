@@ -1,5 +1,6 @@
 # SkyNEt imports
 from SkyNEt.instruments import InstrumentImporter
+import config_switch_to_device as config
 
 # Initialize config object
 cf = config.experiment_config()

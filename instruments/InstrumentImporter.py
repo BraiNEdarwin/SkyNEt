@@ -1,3 +1,4 @@
+
 # This simple file is a wrapper for 
 # importing all measurement equipment available in the lab.
 # It also (importantly!) sets up a reset function that is executed
@@ -18,12 +19,12 @@ def reset(signum, frame):
         - Apply zero signal to the ADwin
         '''
         try:
-            ivviReset = IVVIrack.initInstrument(name='ivviReset')
+            ivviReset = IVVIrack.initInstrument(name='ivviReset', comport = 'COM5')
             ivviReset.set_dacs_zero()
             print('ivvi DACs set to zero')
         except:
             print('ivvi was not initialized, so also not reset')
-			
+            
         try:
             nidaqIO.reset_device()
             print('nidaq has been reset')
@@ -31,15 +32,14 @@ def reset(signum, frame):
             print('nidaq not connected to PC, so also not reset')
 
         try:
-            global adw
-            reset_signal = np.zeros((2, 40003))
-            adwinIO.IO_2D(adw, reset_signal, 1000)
+            adw = adwinIO.initInstrument()
+            adwinIO.reset(adw)
+            print('adwin has been reset')
         except:
             print('adwin was not initialized, so also not reset')
 
         # Finally stop the script execution
         sys.exit()
-	
+    
 # Set up reset call at ctrl-C
 signal.signal(signal.SIGINT, reset)
-
