@@ -72,9 +72,9 @@ class experiment_config(config_class):
 
         # Define experiment
         self.amplification = 10
-        self.TargetGen = 1 # defines which feature needs to be extraction from 0-15
+        self.TargetGen = 13 # defines which feature needs to be extraction from 0-15
         self.generations = 100
-        self.generange = [[-1000,1000], [-1000, 1000], [-1000, 1000]]
+        self.generange = [[-1500,1500], [-1500, 1500], [-1500, 1500]]
 
         # Specify either partition or genomes
         #self.partition = [5, 5, 5, 5, 5]
@@ -87,7 +87,7 @@ class experiment_config(config_class):
 
         # Save settings
         self.filepath = r'D:\Data\Bram\Feature_extracion_2\\'  #Important: end path with double backslash
-        self.name = '0001'
+        self.name = '1101'
 
         self.Fitness = self.Fitness_extractiondiff
         self.InputGen = self.Fe_input
@@ -158,6 +158,47 @@ class experiment_config(config_class):
         return F
 
 
+    def Fitness_extractionvar(self, output, marker):
+        I_std = np.zeros([16])
+        I_average = np.zeros([16])
+
+        #find the average current and standard deviation of all outputs and without the desired feature. 
+        for i in range(16):
+            I_std[i] = np.std(output[i])
+            I_average[i] = np.average(output[i])
+        I_other = np.delete(I_average, marker)
+        I_otherstd = np.delete(I_std, marker)
+
+        indexh = np.argmax(I_other+I_otherstd)
+        indexl = np.argmin(I_other-I_otherstd)
+
+        #distinguis if the feature will have to go for a positive or negative extractor and check how far it is away from this feature. 
+        #done for higher but negative and lower but positive ass well.
+        if I_average[marker]-I_std[marker]<I_other[indexh]+I_otherstd[indexh] and I_average[marker]+I_std[marker]>I_other[indexl]-I_otherstd[indexl]:
+            sign = -1
+        else:
+            sign = 1
+
+
+        if abs((I_average[marker]-I_std[marker])-(I_other[indexh]+I_otherstd[indexh]))<abs((I_average[marker]+I_std[marker])-(I_other[indexl]-I_otherstd[indexl])):
+            F = abs(I_average[marker]-I_std[marker])**2/(np.average(I_other)+np.var(I_other))
+        else: 
+            F = abs(I_average[marker]+I_std[marker])**2/(np.average(I_other)+np.var(I_other))
+
+
+        #Fitness for when positive needs to be highest and negative needs to be lowest.
+        # if I_average[marker] > 0 
+        #     F = I_average[marker]+I_std[marker]-I_other[indexh]-I_otherstd[indexh]
+        # else 
+        #     F = I_average[marker]-I_std[marker]-I_other[indexl]+I_otherstd[indexl]
+
+
+        for i in range(len(output)): 
+            for j in range(len(output[0])):
+                if(abs(output[i][j])>3.1*10):
+                    return -100
+
+        return F
 
     def Fe_input(self):
         a = [0, 1]
