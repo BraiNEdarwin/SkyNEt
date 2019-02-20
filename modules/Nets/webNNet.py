@@ -151,7 +151,6 @@ class webNNet(torch.nn.Module):
         fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
         outputAvg = torch.zeros(cf.fitnessavg, train_data.shape[0], self.nr_output_vertices, device=self.cuda)
         outputTemp = torch.zeros(cf.genomes, train_data.shape[0], self.nr_output_vertices, device=self.cuda)
-
         for i in range(cf.generations):
             for j in range(cf.genomes):
                 for avgIndex in range(cf.fitnessavg):
@@ -180,6 +179,96 @@ class webNNet(torch.nn.Module):
         return geneArray, outputArray, fitnessArray
     
     
+    def noveltyGA(self, train_data, cf, initial_archive_size, novelty_threshold, normalize=False, verbose=False):
+        update_threshold_generations = 10
+
+        train_data = self.check_cuda(train_data)
+
+        self.check_graph()
+
+
+        # prepare config object with information of web, # of genes, partitions, genomes, etc
+        self.prepare_config_obj(cf, None)
+
+        archive = np.zeros((initial_archive_size+cf.generations*cf.genomes, cf.genes)) # archive with actual genes
+        archive_output = torch.zeros(initial_archive_size+cf.generations*cf.genomes, train_data.shape[0]) # archive with behaviour of genes
+
+        def sparseness(y_pred, archive_output, index):
+            return torch.mean(torch.sum((archive_output[:index]-y_pred.view(1,-1))**2, dim = 1)**0.5)
+
+        # initialize genepool
+        genepool = Evolution.GenePool(cf)
+        # stores which indices of self.parameters to change during training
+        self.set_dict_indices_from_pool(genepool.pool[0])
+
+        # np arrays to save genePools, outputs and fitness
+        geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
+        outputArray = np.zeros((cf.generations, cf.genomes, train_data.shape[0], self.nr_output_vertices))
+        fitnessArray = np.zeros((cf.generations, cf.genomes))
+
+        # Temporary arrays, overwritten each generation
+        fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
+        outputAvg = torch.zeros(cf.fitnessavg, train_data.shape[0], self.nr_output_vertices, device=self.cuda)
+        outputTemp = torch.zeros(cf.genomes, train_data.shape[0], self.nr_output_vertices, device=self.cuda)
+
+        with torch.no_grad():
+            for i in range(initial_archive_size):
+                self.reset_parameters('rand')
+                archive[i] = np.random.rand(cf.genes)
+                self.set_parameters_from_pool(archive[i])
+                if normalize:
+                    temp = self.forward(train_data)[:,0]
+                    archive_output[i] = (temp-torch.mean(temp))/torch.std(temp)
+                else:
+                    archive_output[i] = self.forward(train_data)[:,0]
+            current_size = initial_archive_size
+            nr_genomes_added = 0
+            for i in range(cf.generations):
+                for j in range(cf.genomes):
+                    for avgIndex in range(cf.fitnessavg):
+                        # update parameters of each network
+                        self.set_parameters_from_pool(genepool.pool[j])
+                        self.forward(train_data)
+                        outputAvg[avgIndex] = self.get_output()
+                        fitnessTemp[j, avgIndex] = sparseness(outputAvg[avgIndex], archive_output, current_size).item()
+
+                    outputTemp[j] = outputAvg[np.argmax(fitnessTemp[j])]
+
+                genepool.fitness = fitnessTemp.max(1)  # Save best fitness of averages
+
+                archive_indices = np.where(genepool.fitness > novelty_threshold)
+                nr_genomes_to_add = len(archive_indices[0])
+                if nr_genomes_to_add != 0:
+                    # add novel genomes
+                    archive[current_size:current_size+nr_genomes_to_add] = genepool.pool[archive_indices]
+                    temp = outputTemp[archive_indices, :, 0]
+                    if normalize:
+                        temp = (temp-torch.mean(temp))/torch.std(temp)
+                    archive_output[current_size:current_size+nr_genomes_to_add] = temp
+                    current_size += nr_genomes_to_add
+                    nr_genomes_added += nr_genomes_to_add
+
+                # update threshold
+                if i%update_threshold_generations == update_threshold_generations-1:
+                    if nr_genomes_added == 0:
+                        novelty_threshold *= 0.95
+                    elif nr_genomes_added > 10:
+                        novelty_threshold *= 1.2
+                    nr_genomes_added = 0
+
+                # Save generation data
+                geneArray[i, :, :] = genepool.pool
+                outputArray[i, :, :] = outputTemp
+                fitnessArray[i, :] = genepool.fitness
+
+                if verbose:
+                    print("Generation nr. " + str(i + 1) + " completed")
+                    print("Best fitness: " + str(max(genepool.fitness)))
+
+                genepool.NextGen()
+
+        return geneArray, outputArray, fitnessArray, archive[:current_size], archive_output[:current_size], novelty_threshold
+
     ############################################################
     ### ----------------- Gradient Descent ----------------- ###
     ############################################################
@@ -471,7 +560,10 @@ class webNNet(torch.nn.Module):
                 buf_lst.append(arg.to(self.cuda))
         else:
             buf_lst = args
-        return tuple(buf_lst)
+        if len(buf_lst) == 1:
+            return buf_lst[0]
+        else:
+            return tuple(buf_lst)
 
     def check_graph(self, print_graph=False):
         """Checks if the build graph is valid, optional plotting of graph"""
