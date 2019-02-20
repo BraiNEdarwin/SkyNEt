@@ -12,9 +12,9 @@ class experiment_config(object):
     '''
 
     def __init__(self):
-        self.fs = 1000
-        self.n_points = 10000
-        self.frequency = 1  # Hz
+        self.fs = 10000
+        self.n_points = 50000
+        self.frequency = 10  # Hz
 
     def Generate_input(self):
         t = np.linspace(0, self.n_points/self.fs, self.n_points)

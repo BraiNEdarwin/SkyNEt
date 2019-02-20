@@ -11,13 +11,17 @@ cf = config.experiment_config()
 t, x = cf.Generate_input() 
 
 adwin = InstrumentImporter.adwinIO.initInstrument()
-y = InstrumentImporter.adwinIO.IO(adwin, x, cf.fs)
+y = InstrumentImporter.adwinIO.IO(adwin, x, cf.fs, inputPorts=[1, 1, 1, 1, 0, 0, 0, 0])
 
 # Plot the output curve.
 for i in range(4):
     plt.figure()
     plt.plot(t, x[i], 'r--', label = 'Analog output signal')
     plt.plot(t, y[i], 'b', label = 'Analog input signal')
+    plt.title(f'AO/AI {i+1}')
+    plt.xlabel('t (s)')
+    plt.ylabel('V')
+    plt.legend()
 plt.show()
 
 # Final reset
