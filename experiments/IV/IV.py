@@ -12,8 +12,8 @@ config = config.experiment_config()
 saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.name)
 
 # Define the device input using the function in the config class.
-Input = np.zeros([2, config.n_points])
-Input[0] = config.Sweepgen( config.v_high, config.v_low, config.n_points, config.direction)
+# Input = np.zeros([2, config.n_points])
+Input = config.Sweepgen( config.v_high, config.v_low, config.n_points, config.direction)
 
 
 # Measure using the device specified in the config class.
@@ -28,10 +28,12 @@ else:
 # Save the Input and Output
 SaveLib.saveExperiment(saveDirectory, input = Input, output = Output)
 
-# Plot the IV curve.
-plt.figure()
-plt.plot(Input[0], Output[0,:])
-plt.show()
-
 # Final reset
 InstrumentImporter.reset(0, 0)
+
+# Plot the IV curve.
+plt.figure()
+plt.plot(Input, Output[0,:])
+plt.show()
+
+
