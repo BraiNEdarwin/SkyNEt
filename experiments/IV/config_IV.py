@@ -36,7 +36,7 @@ class experiment_config(object):
         self.source_gain = 1
 
         #measurment tool settings.
-        self.device = 'nidaq'
+        self.device = 'adwin'
         self.fs = 1000
 
 

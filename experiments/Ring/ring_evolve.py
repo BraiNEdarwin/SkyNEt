@@ -8,9 +8,10 @@ import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
 import SkyNEt.modules.PlotBuilder as PlotBuilder
 import config_ring as config
+from SkyNEt.instruments import InstrumentImporter
 try:
     from SkyNEt.instruments.DAC import IVVIrack
-    from SkyNEt.instruments.niDAQ import nidaqIO
+    from SkyNEt.instruments.ADwin import adwinIO
 except:
     print('WARNING! Random input will be generated, IVVIrack or nidaqIO not imported')    
 from SkyNEt.modules.Classifiers import perceptron
@@ -53,7 +54,8 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
     
     # Initialize instruments
     try:
-        ivvi = IVVIrack.initInstrument()
+        ivvi = InstrumentImporter.IVVIrack.initInstrument()
+        adw = InstrumentImporter.adwinIO.initInstrument()
     except:
         pass
     # Initialize genepool
@@ -71,6 +73,7 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
                 IVVIrack.setControlVoltages(ivvi, controlVoltages)
                 time.sleep(1)  # Wait after setting DACs
             except:
+                print('IVVI malfunctioning...')
                 pass
             # Set the input scaling
             x_scaled = x * genePool.config_obj.input_scaling
@@ -79,15 +82,17 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
                 try:
-                    output = nidaqIO.IO_2D(x_scaled, cf.fs)
+                    output = adwinIO.IO(adw, x_scaled, cf.fs)
                     output = np.array(output)
                 except:
+                    print('sampling output error...')
                     output = np.random.standard_normal(len(x[0]))
     
                 # Plot genome
                 try:
                     PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
                 except:
+                    print('plot current genome error...')
                     pass
     
                 # Train output
@@ -102,10 +107,14 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
                     PlotBuilder.currentOutputEvolution(mainFig,
                                                        t,
                                                        target,
-                                                       output,
+                                                       output[0,:],
                                                        j + 1, i + 1,
                                                        fitnessTemp[j, avgIndex])
                 except:
+                    print('plot current output error...')
+                    print(len(t))
+                    print(np.shape(output))
+                    print(len(target))
                     pass
                 
             outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
