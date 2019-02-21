@@ -11,8 +11,8 @@ import data_generators as dg
 import pdb
 #Create N samples of 2-dim uniformely distributed features
 N = 1000
-
-sample_0, sample_1 = dg.ring(N)
+eps = 0.2
+sample_0, sample_1 = dg.ring(N,epsilon=eps)
 #Subsample the largest class
 nr_samples = min(len(sample_0),len(sample_1))
 max_array = max(len(sample_0),len(sample_1))
@@ -58,7 +58,7 @@ plt.title('2D representation of classes')
 plt.legend()
 plt.show()
 
-np.savez(r'../experiments/2D_binary_classification/Ring/Class_data',
+np.savez(r'../experiments/2D_binary_classification/Ring/Class_data_%1.2f' % eps ,
          inp_wvfrm = inp, target = target,
          inp_cl0 = inp0, inp_cl1 = inp1)
 
