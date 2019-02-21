@@ -22,7 +22,7 @@ import numpy as np
 import pdb
 
 #%%
-def evolve(inputs, binary_labels, filepath = r'D:/data/Bram/Ring/', hush=False):
+def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_testing/', hush=False):
     signal.signal(signal.SIGINT, reset)
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
@@ -55,7 +55,6 @@ def evolve(inputs, binary_labels, filepath = r'D:/data/Bram/Ring/', hush=False):
     try:
         ivvi = IVVIrack.initInstrument()
         adwin = adwinIO.initInstrument()
-
     except:
         pass
     # Initialize genepool
@@ -81,8 +80,8 @@ def evolve(inputs, binary_labels, filepath = r'D:/data/Bram/Ring/', hush=False):
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
                 try:
-                    output = adwinIO.IO(adwin,x_scaled, cf.fs)
-                    output = np.array(output)
+                    output = adwinIO.IO(adwin, x_scaled, cf.fs)
+                    output = np.array([output])
                 except:
                     output = np.random.standard_normal(len(x[0]))
     

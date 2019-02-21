@@ -61,7 +61,7 @@ class experiment_config(config_class):
     Fitness; specify the fitness function, as the accuracy of a perceptron separating the data
     '''
 
-    def __init__(self, inputs, labels,filepath=r'../../test/evolution_test/Ring_testing/'):
+    def __init__(self, inputs, labels,filepath=r'D:/data/Bram/Ring/'):
         super().__init__() #DO NOT REMOVE!
         ################################################
         ######### SPECIFY PARAMETERS ###################
@@ -69,13 +69,13 @@ class experiment_config(config_class):
         self.comport = 'COM3'  # COM port for the ivvi rack
 
         # Define experiment
-        self.lengths, self.slopes = [120], [10] # in 1/fs
+        self.lengths, self.slopes = [60], [10] # in 1/fs
         self.InputGen = self.input_waveform(inputs)
         self.amplification = 1
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 2
-        self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]
-        self.input_scaling = 0.5
+        self.generations = 100
+        self.generange = [[-1000,1000], [-1000, 1000], [-1000, 1000], [-1000, 1000], [-1000, 1000],[1,1]]
+        self.input_scaling = 0.6
         print('INPUT will be SCALED with',self.input_scaling)  
 
         self.Fitness = self.corr_fit
@@ -85,7 +85,7 @@ class experiment_config(config_class):
 #        self.partition = [2, 6, 6, 6, 5]
 
         # Documentation
-        self.genelabels = ['CV1','CV2','CV3','CV4','CV5']
+        self.genelabels = ['CV1','CV2','CV3','CV4','CV5','inp']
 
         # Save settings
         self.filepath = filepath
@@ -143,35 +143,30 @@ class experiment_config(config_class):
         return acc*corr
     
     def corr_fit(self, output, target, w):
-        x = output[w][:,np.newaxis]
-        y = target[w][:,np.newaxis]
-        X = np.stack((x, y), axis=0)[:,:,0]
-        corr = np.corrcoef(X)[0,1]
-#        print('corr_fit')
+        if np.any(output>3.5):
+            corr = -1
+        else:
+            x = output[w][:,np.newaxis]
+            y = target[w][:,np.newaxis]
+            X = np.stack((x, y), axis=0)[:,:,0]
+            corr = np.corrcoef(X)[0,1]
+    #        print('corr_fit')
         return corr
     
 if __name__ is '__main__':
     
     from matplotlib import pyplot as plt
-    steps = 2
-    with np.load('Class_data_0.20.npz') as data:
+    with np.load('Class_data.npz') as data:
         print(data.keys())
-        inputs = data['inp_wvfrm'][::steps,:].T
-        labels = data['target'][::steps]
-        inp0, inp1 = data['inp_cl0'][::steps], data['inp_cl1'][::steps]
+        inputs = data['inp_wvfrm'].T
+        labels = data['target']
         
     cf = experiment_config(inputs, labels)
     target_wave = cf.TargetGen
     t, inp_wave, weights = cf.InputGen
     print('Max jump for y-input: ', np.diff(inputs[1]).max())
     plt.figure()
-    plt.subplot(121)
     plt.plot(t,inp_wave.T)
     plt.plot(t,target_wave,'k')
-    plt.subplot(122)
-    plt.plot(inp0[:,0],inp0[:,1],'.',label='class 0')
-    plt.plot(inp1[:,0],inp1[:,1],'.r',label='class 1')
-    plt.title('2D representation of classes')
-    plt.legend()
     plt.show()
     
