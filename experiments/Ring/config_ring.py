@@ -1,10 +1,18 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Feb  7 15:31:48 2019
+
+@author: hruiz
+"""
+
 import numpy as np
 from SkyNEt.config.config_class import config_class
 from SkyNEt.modules.GenWaveform import GenWaveform
 from SkyNEt.modules.Classifiers import perceptron
 
 class experiment_config(config_class):
-    '''This is the experiment configuration file to measure VC dim.
+    '''This is the experiment configuration file to classify center-ring classes
     This experiment_config class inherits from config_class default values that are known to work well with boolean logic.
     You can define user-specific parameters in the construction of the object in __init__() or define
     methods that you might need after, e.g. a new fitness function or input and output generators.
@@ -49,17 +57,11 @@ class experiment_config(config_class):
     ----------------------------------------------------------------------------
     Description of methods
     ----------------------------------------------------------------------------
-    TargetGen; specify the target function you wish to evolve, examples for N=4 are:
-        - OR
-        - AND
-        - NOR
-        - NAND
-        - XOR
-        - XNOR
+    TargetGen; specify the target function you wish to evolve
     Fitness; specify the fitness function, as the accuracy of a perceptron separating the data
     '''
 
-    def __init__(self, inputs, labels,filepath=r'../../test/evolution_test/VCdim_testing/'):
+    def __init__(self, inputs, labels,filepath=r'../../test/evolution_test/Ring_testing/'):
         super().__init__() #DO NOT REMOVE!
         ################################################
         ######### SPECIFY PARAMETERS ###################
@@ -67,29 +69,27 @@ class experiment_config(config_class):
         self.comport = 'COM3'  # COM port for the ivvi rack
 
         # Define experiment
-        self.lengths, self.slopes = [125], [10] # in 1/fs
+        self.lengths, self.slopes = [60], [10] # in 1/fs
         self.InputGen = self.input_waveform(inputs)
         self.amplification = 1
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
         self.generations = 100
-        self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]
-        self.input_scaling = 1.0
+        self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900],[1,1]]
+        self.input_scaling = 0.85
         print('INPUT will be SCALED with',self.input_scaling)  
 
-#        self.Fitness = self.corr_fit
-#        self.fitnessparameters = [1, 0, 0, 1]
+        self.Fitness = self.corr_fit
 
-        # Specify either partition or genomes
-        self.genomes = 25
-        #self.partition = [2, 6, 6, 6, 5]
+#        #Specify either partition or genomes
+#        self.genomes = 25
+#        self.partition = [2, 6, 6, 6, 5]
 
         # Documentation
         self.genelabels = ['CV1','CV2','CV3','CV4','CV5']
 
         # Save settings
         self.filepath = filepath
-        buf_str = str(labels)
-        self.name = 'VCdim-'+''.join(buf_str.lstrip('[').strip(']').split(', '))
+        self.name = 'Ring-'
 
         ################################################
         ################# OFF-LIMITS ###################
@@ -143,9 +143,30 @@ class experiment_config(config_class):
         return acc*corr
     
     def corr_fit(self, output, target, w):
-        x = output[w][:,np.newaxis]
-        y = target[w][:,np.newaxis]
-        X = np.stack((x, y), axis=0)[:,:,0]
-        corr = np.corrcoef(X)[0,1]
-#        print('corr_fit')
+        if np.any(output>3.5):
+            corr = -1
+        else:
+            x = output[w][:,np.newaxis]
+            y = target[w][:,np.newaxis]
+            X = np.stack((x, y), axis=0)[:,:,0]
+            corr = np.corrcoef(X)[0,1]
+    #        print('corr_fit')
         return corr
+    
+if __name__ is '__main__':
+    
+    from matplotlib import pyplot as plt
+    with np.load('Class_data.npz') as data:
+        print(data.keys())
+        inputs = data['inp_wvfrm'].T
+        labels = data['target']
+        
+    cf = experiment_config(inputs, labels)
+    target_wave = cf.TargetGen
+    t, inp_wave, weights = cf.InputGen
+    print('Max jump for y-input: ', np.diff(inputs[1]).max())
+    plt.figure()
+    plt.plot(t,inp_wave.T)
+    plt.plot(t,target_wave,'k')
+    plt.show()
+    

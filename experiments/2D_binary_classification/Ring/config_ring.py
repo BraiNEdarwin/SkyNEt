@@ -69,13 +69,13 @@ class experiment_config(config_class):
         self.comport = 'COM3'  # COM port for the ivvi rack
 
         # Define experiment
-        self.lengths, self.slopes = [60], [10] # in 1/fs
+        self.lengths, self.slopes = [120], [10] # in 1/fs
         self.InputGen = self.input_waveform(inputs)
         self.amplification = 1
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 100
+        self.generations = 2
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]
-        self.input_scaling = 1.0 
+        self.input_scaling = 0.5
         print('INPUT will be SCALED with',self.input_scaling)  
 
         self.Fitness = self.corr_fit
