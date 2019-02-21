@@ -14,6 +14,8 @@ steps = 3
 
 with np.load('Class_data_0.20.npz') as data:
     inputs = data['inp_wvfrm'][::steps,:].T
+    inputs[0,0:46]=inputs[0,0:46]*0.2
+    inputs[1,0:46]=inputs[1,0:46]*0.2
     print('Input shape: ', inputs.shape)
     labels = data['target'][::steps]
     print('Target sgape ', labels.shape)

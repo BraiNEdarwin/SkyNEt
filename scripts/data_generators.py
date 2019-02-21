@@ -8,7 +8,7 @@ Functio0ns to generate data in 2-dim feature space
 import numpy as np
 from matplotlib import pyplot as plt
 
-def ring(N, R_out=1.0, R_in=.5, epsilon=0.05):
+def ring(N, R_out=0.5, R_in=.1, epsilon=0.1):
     '''Generates labelled data of a ring with class 1 and the center with class 0
     '''
     samples = -1 + 2*np.random.rand(N,2)
