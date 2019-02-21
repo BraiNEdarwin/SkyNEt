@@ -10,7 +10,7 @@ import SkyNEt.modules.PlotBuilder as PlotBuilder
 import config_ring as config
 try:
     from SkyNEt.instruments.DAC import IVVIrack
-    from SkyNEt.instruments.niDAQ import nidaqIO
+    from SkyNEt.instruments.Adwin import AdwinIO
 except:
     print('WARNING! Random input will be generated, IVVIrack or nidaqIO not imported')    
 from SkyNEt.modules.Classifiers import perceptron
@@ -22,7 +22,7 @@ import numpy as np
 import pdb
 
 #%%
-def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_testing/', hush=False):
+def evolve(inputs, binary_labels, filepath = r'D:/data/Bram/Ring/', hush=False):
     signal.signal(signal.SIGINT, reset)
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
@@ -54,6 +54,8 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
     # Initialize instruments
     try:
         ivvi = IVVIrack.initInstrument()
+        adwin = AdwinIO.initInstrument()
+
     except:
         pass
     # Initialize genepool
@@ -79,7 +81,7 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
                 try:
-                    output = nidaqIO.IO_2D(x_scaled, cf.fs)
+                    output = AdwinIO.IO(adwin,x_scaled, cf.fs)
                     output = np.array(output)
                 except:
                     output = np.random.standard_normal(len(x[0]))
