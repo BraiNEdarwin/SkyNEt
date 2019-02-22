@@ -28,10 +28,19 @@ else:
 # Save the Input and Output
 SaveLib.saveExperiment(saveDirectory, input = Input, output = Output*config.amplification)
 
+# Convert to current
+R = 1E6  # Ohm
+V = grounded_input[0] - Output[0]
+I = Output[0]/R
+
 # Plot the IV curve.
 plt.figure()
-plt.plot(grounded_input[0], Output[0])
+#plt.plot(grounded_input[0], Output[0])
+plt.plot(V, I)
 plt.show()
 
 # Final reset
 InstrumentImporter.reset(0, 0)
+
+
+
