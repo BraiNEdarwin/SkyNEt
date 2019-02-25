@@ -11,8 +11,8 @@ import config_ring as config
 try:
     from SkyNEt.instruments.DAC import IVVIrack
     from SkyNEt.instruments.niDAQ import nidaqIO
-except:
-    print('WARNING! Random input will be generated, IVVIrack or nidaqIO not imported')    
+except ImportError:
+    print('WARNING: IVVIrack or nidaqIO not imported!! Random input will be generated')    
 from SkyNEt.modules.Classifiers import perceptron
 # Other imports
 import signal
@@ -83,6 +83,7 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
                     output = np.array(output)
                 except:
                     output = np.random.standard_normal(len(x[0]))
+                    print('WARNING: Debugg mode active; output is a sandom time-series!!')
     
                 # Plot genome
                 try:
