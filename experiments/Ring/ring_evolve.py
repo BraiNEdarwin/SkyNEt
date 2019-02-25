@@ -9,10 +9,11 @@ import SkyNEt.modules.Evolution as Evolution
 import SkyNEt.modules.PlotBuilder as PlotBuilder
 import config_ring as config
 try:
+    from SkyNEt.instruments import InstrumentImporter
     from SkyNEt.instruments.DAC import IVVIrack
-    from SkyNEt.instruments.niDAQ import nidaqIO
+    from SkyNEt.instruments.ADwin import adwinIO
 except ImportError:
-    print('WARNING: IVVIrack or nidaqIO not imported!! Random input will be generated')    
+    print('WARNING: IVVIrack or adwinIO not imported!! Random output will be generated')    
 from SkyNEt.modules.Classifiers import perceptron
 # Other imports
 import signal
@@ -22,7 +23,7 @@ import numpy as np
 import pdb
 
 #%%
-def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_testing/', hush=False):
+def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_testing/', hush=True):
     signal.signal(signal.SIGINT, reset)
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
@@ -50,10 +51,12 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
     # Initialize main figure
     if not hush:
         mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
-    
+    else:
+        print('WARNING: Plot is hushed; change hush flag to True for plotting...')
     # Initialize instruments
     try:
-        ivvi = IVVIrack.initInstrument()
+        ivvi = InstrumentImporter.IVVIrack.initInstrument()
+        adw = InstrumentImporter.adwinIO.initInstrument()
     except:
         pass
     # Initialize genepool
@@ -79,11 +82,12 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
                 try:
-                    output = nidaqIO.IO_2D(x_scaled, cf.fs)
+                    output = adwinIO.IO(adw, x_scaled, cf.fs)
                     output = np.array(output)
                 except:
                     output = np.random.standard_normal(len(x[0]))
-                    print('WARNING: Debugg mode active; output is a sandom time-series!!')
+                    if j == 0:
+                        print('WARNING: Debug mode active; output is white noise!!')
     
                 # Plot genome
                 try:
@@ -103,7 +107,7 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
                     PlotBuilder.currentOutputEvolution(mainFig,
                                                        t,
                                                        target,
-                                                       output,
+                                                       output[0,:],
                                                        j + 1, i + 1,
                                                        fitnessTemp[j, avgIndex])
                 except:
@@ -211,5 +215,5 @@ if __name__=='__main__':
     plt.plot(t,inp_wave.T)
     plt.plot(t,target_wave,'k')
     plt.show()
-    print(sys.path)
+#    print(sys.path)
     _,_,_,_ = evolve(inputs,labels)

@@ -74,8 +74,8 @@ class experiment_config(config_class):
         self.amplification = 1
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
         self.generations = 100
-        self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900],[1,1]]
-        self.input_scaling = 0.85
+        self.generange = [[-1000,1000], [-1000, 1000], [-1000, 1000], [-1000, 1000], [-1000, 1000],[1,1]]
+        self.input_scaling = 0.6
         print('INPUT will be SCALED with',self.input_scaling)  
 
         self.Fitness = self.corr_fit
@@ -85,7 +85,7 @@ class experiment_config(config_class):
 #        self.partition = [2, 6, 6, 6, 5]
 
         # Documentation
-        self.genelabels = ['CV1','CV2','CV3','CV4','CV5']
+        self.genelabels = ['CV1','CV2','CV3','CV4','CV5','inp']
 
         # Save settings
         self.filepath = filepath

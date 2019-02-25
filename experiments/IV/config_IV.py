@@ -26,8 +26,8 @@ class experiment_config(object):
         self.name = 'test'
         
         #define the IV you want to take in volts.
-        self.v_low = -1.5
-        self.v_high = 1.5
+        self.v_low = -1.0
+        self.v_high = 1.0
         self.n_points = 10000
         self.direction = 'up'
 
@@ -36,7 +36,7 @@ class experiment_config(object):
         self.source_gain = 1
 
         #measurment tool settings.
-        self.device = 'nidaq'
+        self.device = 'adwin'
         self.fs = 1000
 
 
