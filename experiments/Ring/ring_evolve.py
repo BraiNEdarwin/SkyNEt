@@ -23,7 +23,8 @@ import numpy as np
 import pdb
 
 #%%
-def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_testing/', hush=True):
+def evolve(inputs, binary_labels,
+           filepath = r'../../test/evolution_test/Ring_testing/', hush=True):
     signal.signal(signal.SIGINT, reset)
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
@@ -76,8 +77,14 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
             except:
                 pass
             # Set the input scaling
-            x_scaled = x * genePool.config_obj.input_scaling
-    
+#            x_scaled = x * genePool.config_obj.input_scaling
+            x_scaled = x * genePool.MapGenes(cf.generange[-3], genePool.pool[j, -3]) 
+            # Set the input offset
+            s1 = genePool.MapGenes(cf.generange[-2], genePool.pool[j, -2])
+            s2 = genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
+            shift = np.array([s1,s2])[:,np.newaxis]
+#            pdb.set_trace()
+            x_scaled += shift
             # Measure cf.fitnessavg times the current configuration
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
@@ -85,7 +92,7 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
                     output = adwinIO.IO(adw, x_scaled, cf.fs)
                     output = np.array(output)
                 except:
-                    output = np.random.standard_normal(len(x[0]))
+                    output = 0.1*np.random.standard_normal(len(x[0]))
                     if j == 0:
                         print('WARNING: Debug mode active; output is white noise!!')
     

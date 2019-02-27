@@ -74,10 +74,14 @@ class experiment_config(config_class):
         self.amplification = 1
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
         self.generations = 100
-        self.generange = [[-1000,1000], [-1000, 1000], [-1000, 1000], [-1000, 1000], [-1000, 1000],[1,1]]
-        self.input_scaling = 0.6
-        print('INPUT will be SCALED with',self.input_scaling)  
-
+        self.generange = [[-1000,1000], [-1000, 1000], [-1000, 1000], 
+                          [-1000, 1000], [-1000, 1000],[0.25,1.5],[-.5,.5],[-.5,.5]]
+        if len(self.generange) < 6:
+            self.input_scaling = 0.6
+            print('INPUT will be SCALED with',self.input_scaling)  
+        else:
+            print('Input scaling included in evolution')
+        
         self.Fitness = self.corr_fit
 
 #        #Specify either partition or genomes
