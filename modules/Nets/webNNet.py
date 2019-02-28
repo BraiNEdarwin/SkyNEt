@@ -151,6 +151,7 @@ class webNNet(torch.nn.Module):
         fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
         outputAvg = torch.zeros(cf.fitnessavg, train_data.shape[0], self.nr_output_vertices, device=self.cuda)
         outputTemp = torch.zeros(cf.genomes, train_data.shape[0], self.nr_output_vertices, device=self.cuda)
+
         for i in range(cf.generations):
             for j in range(cf.genomes):
                 for avgIndex in range(cf.fitnessavg):
@@ -177,7 +178,6 @@ class webNNet(torch.nn.Module):
             genepool.NextGen()
 
         return geneArray, outputArray, fitnessArray
-    
     
     def noveltyGA(self,
                   train_data, 
@@ -314,6 +314,7 @@ class webNNet(torch.nn.Module):
 
         return geneArray, outputArray, fitnessArray, archive[:current_size], archive_output[:current_size], novelty_threshold
 
+
     ############################################################
     ### ----------------- Gradient Descent ----------------- ###
     ############################################################
@@ -422,6 +423,7 @@ class webNNet(torch.nn.Module):
         assert not hasattr(self, name), "Name %s already in use, choose other name for vertex!" % name
         assert 'bias' not in name, "Name should not contain 'bias'"
         assert 'scale' not in name, "Name should not contain 'scale'"
+
         cv = self.default_param*torch.ones(number_cv)
         self.register_parameter(name, torch.nn.Parameter(cv))
         
@@ -492,8 +494,7 @@ class webNNet(torch.nn.Module):
                     # first evaluate vertices on which this input depends
                     self.forward_vertex(source_name)
                     # insert data from arc into control voltage parameters
-                    data[:, sink_gate] = self.transfer(self.graph[source_name]['output'][:,0])
-            
+                    data[:, sink_gate] = self.transfer(self.graph[source_name]['output'][:,0])            
             # feed through network
             v['output'] = v['network'].model(data)
     
@@ -610,6 +611,7 @@ class webNNet(torch.nn.Module):
         else:
             return tuple(buf_lst)
 
+
     def check_graph(self, print_graph=False):
         """Checks if the build graph is valid, optional plotting of graph"""
         vertices = [*self.graph.keys()]
@@ -676,6 +678,7 @@ class webNNet(torch.nn.Module):
                     x = (i+offset)/width
                     y = j/height
                     patches.append(mpatches.Polygon(np.array(((x,y), (x+boxw,y), (x+boxw/2.,y+boxh))), ec="none"))
+                    patches.append(mpatches.Rectangle((x,y), boxw, boxh, ec="none"))
                     plt.text(x+boxw/2, y+boxh/2, vertex, ha="center", family='sans-serif', size=14)
             collection = PatchCollection(patches, cmap=plt.cm.hsv, alpha=0.4)
             ax.add_collection(collection)
