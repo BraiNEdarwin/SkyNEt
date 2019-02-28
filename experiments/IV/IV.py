@@ -12,7 +12,7 @@ config = config.experiment_config()
 saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.name)
 
 # Define the device input using the function in the config class.
-# Input = np.zeros([2, config.n_points])
+Input = np.zeros([2, config.n_points])
 Input = config.Sweepgen( config.v_high, config.v_low, config.n_points, config.direction)
 
 
@@ -33,7 +33,7 @@ InstrumentImporter.reset(0, 0)
 
 # Plot the IV curve.
 plt.figure()
-plt.plot(Input, Output[0,:])
+plt.plot(Input[0], Output[0,:])
 plt.show()
 
 

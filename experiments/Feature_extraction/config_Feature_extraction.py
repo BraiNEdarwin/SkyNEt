@@ -68,12 +68,12 @@ class experiment_config(config_class):
         ######### SPECIFY PARAMETERS ###################
         ################################################
         self.comport = 'COM3'  # COM port for the ivvi rack
-        self.device = 'nidaq'  # Either nidaq or adwin
+        self.device = 'adwin'  # Either nidaq or adwin
 
         # Define experiment
         self.amplification = 10
         self.TargetGen = 13 # defines which feature needs to be extraction from 0-15
-        self.generations = 100
+        self.generations = 200
         self.generange = [[-1500,1500], [-1500, 1500], [-1500, 1500]]
 
         # Specify either partition or genomes
@@ -143,6 +143,23 @@ class experiment_config(config_class):
             F = abs((I_average[marker]+I_std[marker])-(I_other[indexl]-I_otherstd[indexl]))*sign/abs(I_other[indexh]-I_other[indexl])
 
 
+        #fitness for high
+        # if I_average[marker] > I_other[indexh]:
+        #     sign = 1
+        # else:
+        #     sign = -1
+
+        # F = sign*abs(I_average[marker]-I_other[indexh])/abs(I_other[indexh])
+
+        #Fitness for low
+        # if I_average[marker] < I_other[indexl]:
+        #     sign = 1
+        # else:
+        #     sign = -1
+
+        # F = sign*abs(I_average[marker]-I_other[indexl])/abs(I_other[indexl])
+
+
         #Fitness for when positive needs to be highest and negative needs to be lowest.
         # if I_average[marker] > 0 
         #     F = I_average[marker]+I_std[marker]-I_other[indexh]-I_otherstd[indexh]
@@ -174,16 +191,19 @@ class experiment_config(config_class):
 
         #distinguis if the feature will have to go for a positive or negative extractor and check how far it is away from this feature. 
         #done for higher but negative and lower but positive ass well.
-        if I_average[marker]-I_std[marker]<I_other[indexh]+I_otherstd[indexh] and I_average[marker]+I_std[marker]>I_other[indexl]-I_otherstd[indexl]:
-            sign = -1
-        else:
-            sign = 1
+        # if I_average[marker]-I_std[marker]<I_other[indexh]+I_otherstd[indexh] and I_average[marker]+I_std[marker]>I_other[indexl]-I_otherstd[indexl]:
+        #     sign = -1
+        # else:
+        #     sign = 1
 
 
-        if abs((I_average[marker]-I_std[marker])-(I_other[indexh]+I_otherstd[indexh]))<abs((I_average[marker]+I_std[marker])-(I_other[indexl]-I_otherstd[indexl])):
-            F = abs(I_average[marker]-I_std[marker])**2/(np.average(I_other)+np.var(I_other))
-        else: 
-            F = abs(I_average[marker]+I_std[marker])**2/(np.average(I_other)+np.var(I_other))
+        # if abs((I_average[marker]-I_std[marker])-(I_other[indexh]+I_otherstd[indexh]))<abs((I_average[marker]+I_std[marker])-(I_other[indexl]-I_otherstd[indexl])):
+        #     F = abs(I_average[marker]-I_std[marker])**2/(np.average(I_other)+np.var(I_other))
+        # else: 
+        #     F = abs(I_average[marker]+I_std[marker])**2/(np.average(I_other)+np.var(I_other))
+
+        # Fitness for evolving the target output to the largest
+
 
 
         #Fitness for when positive needs to be highest and negative needs to be lowest.

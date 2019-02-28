@@ -85,6 +85,7 @@ for i in range(cf.generations):
                 elif(cf.device == 'adwin'):
                     adw = InstrumentImporter.adwinIO.initInstrument()
                     measureddata = InstrumentImporter.adwinIO.IO(adw, meas, cf.fs)
+                    measureddata = np.array(measureddata[0]*cf.amplification)
                 else:
                     print('Specify measurement device as either adwin or nidaq')
                 output[n,0:cf.measurelength] = measureddata

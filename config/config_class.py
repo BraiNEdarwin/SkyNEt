@@ -81,7 +81,7 @@ class config_class(object):
         self.partition = self.default_partition.copy()
         self.genomes = 25
         self.genes = 6
-        self.mutationrate = 0.1
+        self.mutationrate = 0.2
         self.fitnessavg = 1
         self.fitnessparameters = [1, 0, 1, 0.01]
 

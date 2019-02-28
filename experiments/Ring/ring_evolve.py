@@ -22,7 +22,7 @@ import numpy as np
 import pdb
 
 #%%
-def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_testing/', hush=False):
+def evolve(inputs, binary_labels, filepath = r'D:/data/Bram/Ring/', hush=False):
     signal.signal(signal.SIGINT, reset)
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
@@ -74,14 +74,15 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
             except:
                 pass
             # Set the input scaling
-            x_scaled = x * genePool.config_obj.input_scaling
+            x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])+250
+
     
             # Measure cf.fitnessavg times the current configuration
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
                 try:
                     output = adwinIO.IO(adwin, x_scaled, cf.fs)
-                    output = np.array([output])
+                    output = output[0]
                 except:
                     output = np.random.standard_normal(len(x[0]))
     
@@ -107,6 +108,7 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
                                                        j + 1, i + 1,
                                                        fitnessTemp[j, avgIndex])
                 except:
+                    print(np.shape(output))
                     pass
                 
             outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
