@@ -23,10 +23,10 @@ Structure of self.arcs (dictionary):
 See webNN_template.py for example use.
 
 Shape of input data:
-    (batch size, input_dimension * nr_output_networks)
+    (batch size, # of inputs * # of vertices)
 Shape of target data:
     depends on loss function, but for MSEloss, target needs to be same shape as output of web:
-    (batch size, nr_output_networks)
+    (batch size, # of output networks)
 
 
 @author: ljknoll
@@ -179,8 +179,46 @@ class webNNet(torch.nn.Module):
         return geneArray, outputArray, fitnessArray
     
     
-    def noveltyGA(self, train_data, cf, initial_archive_size, novelty_threshold, normalize=False, verbose=False):
-        update_threshold_generations = 10
+    def noveltyGA(self,
+                  train_data, 
+                  cf,
+                  initial_archive_size,
+                  novelty_threshold,
+                  threshold_update_interval=None,
+                  k_nearest_neighbors=5,
+                  genomes_added_threshold = 50,
+                  novelty_threshold_dec=0.95,
+                  novelty_threshold_inc=1.2,
+                  normalize=False,
+                  verbose=False):
+        """
+        Implementation of part of the novelty search of the CHARC framework, see 
+        'A Substrate-Independent Framework to Characterise Reservoir Computers'
+        
+        arguments:
+        train_data              data used as input
+        cf                      configuration object for GA
+        initial_archive_size    archive is initialized with random control voltages
+        novelty_threshold       fitness threshold determining if the current cv is added to archive
+        threshold_update_interval (optional, int) after how many generations to do a threshold update
+        k_nearest_neighbors     (optional, int) how many nearest neighbors to look at when calculating novelty
+        genomes_added_threshold (optional, int) if nr_genomes added is more than this threshold, novelty_threshold is increased by 20%
+        novelty_threshold_dec   (optional, float) factor which novelty_threshold is decreased
+        novelty_threshold_inc   (optional, float) factor which novelty_threshold is increased
+        normalize               (optional, bool) whether to use and return normalized archive_output
+        verbose                 (optional, bool) whether to print information during search
+        
+        returns:
+        geneArray               all genes visited
+        outputArray             all outputs visited
+        fitnessArray            fitness values of outputArray
+        archive                 archive of control voltages
+        archive_output          outputs of archive
+        novelty_threshold       novelty threshold after searching (changes during)
+        """
+        
+        if threshold_update_interval == None:
+            threshold_update_interval = np.ceil(cf.generations/10)
 
         train_data = self.check_cuda(train_data)
 
@@ -190,11 +228,18 @@ class webNNet(torch.nn.Module):
         # prepare config object with information of web, # of genes, partitions, genomes, etc
         self.prepare_config_obj(cf, None)
 
-        archive = np.zeros((initial_archive_size+cf.generations*cf.genomes, cf.genes)) # archive with actual genes
-        archive_output = torch.zeros(initial_archive_size+cf.generations*cf.genomes, train_data.shape[0]) # archive with behaviour of genes
+        # archive with actual genes
+        archive = np.zeros((initial_archive_size+cf.generations*cf.genomes, cf.genes))
+        # archive with behaviour of genes, index (maximum size of archive, train_data length, nr of output vertices)
+        archive_output = torch.zeros(initial_archive_size+cf.generations*cf.genomes, 
+                                     train_data.shape[0], 
+                                     self.nr_output_vertices)
 
         def sparseness(y_pred, archive_output, index):
-            return torch.mean(torch.sum((archive_output[:index]-y_pred.view(1,-1))**2, dim = 1)**0.5)
+            # find k nearest neighbors and return mean distance
+            distances, _ = torch.topk((archive_output[:index]-y_pred)**2, min(k_nearest_neighbors, index), dim=0, largest=False)
+            # first mean over all elements in archive, second mean over all values along one output dimension
+            return torch.mean(torch.mean(distances, dim = 0)**0.5, dim=0)
 
         # initialize genepool
         genepool = Evolution.GenePool(cf)
@@ -216,11 +261,11 @@ class webNNet(torch.nn.Module):
                 self.reset_parameters('rand')
                 archive[i] = np.random.rand(cf.genes)
                 self.set_parameters_from_pool(archive[i])
+                self.forward(train_data)
+                temp = self.get_output(False, False)
                 if normalize:
-                    temp = self.forward(train_data)[:,0]
-                    archive_output[i] = (temp-torch.mean(temp))/torch.std(temp)
-                else:
-                    archive_output[i] = self.forward(train_data)[:,0]
+                    temp = (temp-torch.mean(temp, dim=0))/torch.std(temp, dim=0)
+                archive_output[i] = temp
             current_size = initial_archive_size
             nr_genomes_added = 0
             for i in range(cf.generations):
@@ -241,19 +286,19 @@ class webNNet(torch.nn.Module):
                 if nr_genomes_to_add != 0:
                     # add novel genomes
                     archive[current_size:current_size+nr_genomes_to_add] = genepool.pool[archive_indices]
-                    temp = outputTemp[archive_indices, :, 0]
+                    temp = outputTemp[archive_indices]
                     if normalize:
-                        temp = (temp-torch.mean(temp))/torch.std(temp)
+                        temp = (temp-torch.mean(temp, dim=0))/torch.std(temp, dim=0)
                     archive_output[current_size:current_size+nr_genomes_to_add] = temp
                     current_size += nr_genomes_to_add
                     nr_genomes_added += nr_genomes_to_add
 
                 # update threshold
-                if i%update_threshold_generations == update_threshold_generations-1:
+                if i%threshold_update_interval == threshold_update_interval-1:
                     if nr_genomes_added == 0:
-                        novelty_threshold *= 0.95
-                    elif nr_genomes_added > 10:
-                        novelty_threshold *= 1.2
+                        novelty_threshold *= novelty_threshold_dec
+                    elif nr_genomes_added > genomes_added_threshold:
+                        novelty_threshold *= novelty_threshold_inc
                     nr_genomes_added = 0
 
                 # Save generation data
@@ -479,8 +524,8 @@ class webNNet(torch.nn.Module):
         if dim+nr_of_params is 7*len(self.graph):
             i = 0
             for key,v in self.graph.items():
-                v['train_data'] = x[:,i:i+dim]
-                i += dim
+                v['train_data'] = x[:,i:i+int(dim/len(self.graph))]
+                i += int(dim/len(self.graph))
         # if input data is supposed to be reused for each network
         elif dim + int(nr_of_params/len(self.graph)) is 7:
             for v in self.graph.values():
