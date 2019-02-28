@@ -190,9 +190,12 @@ class staNNet(object):
             self.loss_fn = nn.MSELoss()
  
     def loss_fn(self, pred, targets):
-        a = torch.tensor([-1.8952696965704424, 2.0460188581447363])
-        b = torch.tensor([1.351742112771171, 1.0736291344545681])
-        sign = torch.sign(pred)
+        #a = torch.tensor([-0.0033915818901652465, 0.004080650538246971]) #f0.1
+        #b = torch.tensor([0.006117984943787791, 0.006686746890205169])
+        a = torch.tensor([-0.018952696965704424, 0.020460188581447363]) #f2
+        b = torch.tensor([0.1351742112771171, 0.10736291344545681]) 
+        
+        sign = torch.sign(targets)
         # added weight of the form w = (c - (ay + b))/c
         #w = ((sign-1)/2 * (-1.5 * self.ymax * a[0] + b[0]) +
         #     (sign+1)/2 * (1.5 * self.ymax * a[1] + b[1]) - 
@@ -200,7 +203,7 @@ class staNNet(object):
         #     (sign+1)/2 * (a[1] * targets + b[1])) \
         #    /((sign-1)/2 * (-1.5 * self.ymax * a[0] + b[0]) +
         #     (sign+1)/2 * (1.5 * self.ymax * a[1] + b[1]))
-        sigma = -1 * (sign-1)/2 * (a[0] * targets + b[0]) + (sign+1)/2 * (a[1] * targets + b[1])
+        sigma = -1 * (sign-1)/2 * (abs(a[0] * pred) + b[0]) + (sign+1)/2 * (abs(a[1] * pred) + b[1])
               
         r = torch.mean(((pred - targets) ** 2) / sigma ** 2 ) 
         return r
@@ -233,7 +236,7 @@ class staNNet(object):
                 else:
                     y_pred = self.model(self.x_train[indices]) 
                 
-                # Compute and print loss. #\\
+                # Compute and print loss. 
                 loss = self.loss_fn(y_pred, self.y_train[indices])
                 #loss = loss*(self.C.cuda())
                 running_loss += loss.item()      
@@ -289,7 +292,6 @@ class staNNet(object):
         if len(args) == 4:
             freq,Vmax,fs,phase = args
         if inputs.shape[1] == 1:
-            # TODO: test this
             return self.model(self.generateSineWave(freq,inputs,Vmax,fs,phase)).data.cpu().numpy()[:,0]
         else:
             return self.model(inputs).data.cpu().numpy()[:,0]

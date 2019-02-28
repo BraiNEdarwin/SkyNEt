@@ -4,53 +4,53 @@ import os
 
 class experiment_config(config_class):
     '''
-    This is the config for the grid search experiment.
-
-    ----------------------------------------------------------------------------
-    Description of general parameters
-    ----------------------------------------------------------------------------
-    filepath = 'D:\data\data4nn'
-    name = 'FullSwipe_TEST'
-    controlVoltages = [[-900, -600, -300, 0, 300, 600, 900]]*5
-    input2 = [-900, -600, -300, 0, 300, 600, 900]
-    input1 = [-900,0,900]
-    voltageGrid = [*controlVoltages,input2,input1]
-    electrodes = len(voltageGrid) #amount of electrodes
-    acqTime = 0.01
-    samples = 50
-
+    This is the config for the gradient descent experiment
+    
     '''
 
     def __init__(self):
         super().__init__() #DO NOT REMOVE!
-        ################################################
-        ######### SPECIFY PARAMETERS ###################
-        ################################################
-
-        # Specify CVs as list of lists.
-        #self.controlVoltages = [[-750, -450, -150, 0, 150, 450, 750]]*5
-        #self.input2 = [-900, -600, -300, 0, 300, 600, 900]
-        #self.input1 = [-900,0,900]
-
+        #######################
+        # Physical parameters #
+        #######################
         self.controls = 5
-        self.freq = np.array([10, 12, 14, 16, 18])  #
-        self.fs = 1000
+        self.freq = np.array([3, 5, 7, 11, 13])  #
+        self.fs = 5000
         self.n = 20                 # Amount of iterations
         self.amplification = 1000
         self.postgain = 100
-        self.Vmax = 0.9 # Maximum voltage for the inputs
-        self.waveAmplitude = 0.1 # Amplitude of the waves used in the controls
-
-        self.keithley_address = 'GPIB0::17::INSTR'#                              Summing module S2d      Matrix module           device
-        self.electrodeSetup = [['ao0','ao2','ao4''ao6','a05','ao3','ao1','out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
+        self.Vrange = [-0.9, 0.9]   # Maximum voltage for the inputs
+        self.waveAmplitude = 0.1    # Amplitude of the waves used in the controls
+        self.rampT = 0.05           # time to ramp up and ramp down the voltages at start and end of a measurement.
+        #                        Summing module S2d      Matrix module           device
+        # For the first array: 7 is always the output, 0 corresponds to ao0, 1 to ao1 etc.
+        self.electrodeSetup = [[0,1,2,3,4,5,6,7],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
+        
+        self.controlLabels = ['ao0','ao1','ao2','ao3','ao4','ao5']
+        self.inputIndex = [2,4] # Electrodes that will be used as boolean input
+        
+        ###################
+        # rest parameters #
+        ###################
+        # parameters for methods
+        self.signallength = 1.5  #in seconds
+        self.edgelength = 0.01  #in seconds
+        
+        self.fft_N = 1000       # To obtain an accurate FFT, select freq and N such that 
+        self.phase_thres = 0.3
+        self.eta = 1            # Learn rate 
+        self.errorFunct = self.MSEloss
+        self.keithley_address = 'GPIB0::17::INSTR'
         # Save settings
         self.filepath = r'D:\\data\\Mark\\gradient_descent\\'
         self.name = 'gradient_descent'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
-        
+        self.gainFactor = self.amplification/self.postgain
 
-    #####################################################
-    ############# USER-SPECIFIC METHODS #################
-    #####################################################
-    # Optionally define new methods here that you wish to use in your experiment.
-    # These can be e.g. new fitness functions or input/output generators.
+
+    def MSEloss(self, y, targets, gradients, weights):
+        ''' Calculates the mean squared error loss given the gradient of the 
+        output w.r.t. the input voltages. This function calculates the error
+        for each control separately '''        
+        return abs(np.sum((y - targets) * weights)) / np.sum(weights) * gradients
+        

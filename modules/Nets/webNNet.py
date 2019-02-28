@@ -414,7 +414,7 @@ class webNNet(torch.nn.Module):
 
     def check_cuda(self, *args):
         """Converts tensors that are going to be used to cuda"""
-        if torch.cuda.is_available():
+        if False: #torch.cuda.is_available():
             self.cuda = torch.device('cuda')
             
             # move registered parameters (control voltages)
