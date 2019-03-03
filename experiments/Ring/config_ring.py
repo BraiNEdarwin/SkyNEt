@@ -73,9 +73,11 @@ class experiment_config(config_class):
         self.InputGen = self.input_waveform(inputs)
         self.amplification = 1
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 100
-        self.generange = [[-1000,1000], [-1000, 1000], [-1000, 1000], 
-                          [-1000, 1000], [-1000, 1000],[0.25,1.5],[-.5,.5],[-.5,.5]]
+        self.generations = 50
+        self.generange = [[-600,-200], [-1450, -1050], [-1200, -800], 
+                          [800, 1200], [-1050, -650],[0.75,1.1],[-.25,0.05],[-.3,0.]]
+        #[[-1500,1500], [-1500, 1500], [-1500, 1500], 
+        #                  [-1500, 1500], [-1500, 1500],[0.2,1.],[-.35,.35],[-.35,.35]]
         if len(self.generange) < 6:
             self.input_scaling = 0.6
             print('INPUT will be SCALED with',self.input_scaling)  
@@ -89,11 +91,12 @@ class experiment_config(config_class):
 #        self.partition = [2, 6, 6, 6, 5]
 
         # Documentation
-        self.genelabels = ['CV1','CV2','CV3','CV4','CV5','inp']
-
+        self.genelabels = ['CV1','CV2','CV3','CV4','CV5','inp','shift 1','shift 2']
+        print('# Generations: ',self.generations)
+        print('Gene ranges are: ',self.generange)
         # Save settings
         self.filepath = filepath
-        self.name = 'Ring-'
+        self.name = 'Ring-v2-high-offset'
 
         ################################################
         ################# OFF-LIMITS ###################
@@ -111,7 +114,7 @@ class experiment_config(config_class):
 
         self.genomes = sum(self.partition)  # Make sure genomes parameter is correct
         self.genes = len(self.generange)  # Make sure genes parameter is correct
-
+        print('# of genes: ',self.genes)
     #####################################################
     ############# USER-SPECIFIC METHODS #################
     #####################################################

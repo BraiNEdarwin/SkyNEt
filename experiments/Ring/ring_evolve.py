@@ -98,8 +98,11 @@ def evolve(inputs, binary_labels,
     
                 # Plot genome
                 try:
-                    PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
+                    if not hush: PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
                 except:
+                    if j == 0:
+                        print('PlotBuilder.currentGenomeEvolution FAILED!')
+                        print('Gene pool shape is ',genePool.pool.shape)
                     pass
     
                 # Train output
@@ -111,13 +114,14 @@ def evolve(inputs, binary_labels,
     
                 # Plot output
                 try:
-                    PlotBuilder.currentOutputEvolution(mainFig,
+                    if not hush:PlotBuilder.currentOutputEvolution(mainFig,
                                                        t,
                                                        target,
                                                        output[0,:],
                                                        j + 1, i + 1,
                                                        fitnessTemp[j, avgIndex])
                 except:
+                    if j == 0: print('PlotBuilder.currentOutputEvolution FAILED!')
                     pass
                 
             outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
@@ -145,6 +149,7 @@ def evolve(inputs, binary_labels,
                                                output,
                                                w)
         except:
+            if not hush: print('PlotBuilder.updateMainFigEvolution FAILED!')
             pass
         # Save generation
         SaveLib.saveExperiment(saveDirectory,
