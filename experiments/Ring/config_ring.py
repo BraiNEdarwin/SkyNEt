@@ -156,17 +156,21 @@ class experiment_config(config_class):
 if __name__ is '__main__':
     
     from matplotlib import pyplot as plt
-    with np.load('Class_data.npz') as data:
+    steps = 3
+    with np.load('Class_data_0.20.npz') as data:
         print(data.keys())
-        inputs = data['inp_wvfrm'].T
-        labels = data['target']
+        inputs = data['inp_wvfrm'][::steps,:].T
+        labels = data['target'][::steps]
         
     cf = experiment_config(inputs, labels)
     target_wave = cf.TargetGen
     t, inp_wave, weights = cf.InputGen
     print('Max jump for y-input: ', np.diff(inputs[1]).max())
     plt.figure()
+    plt.subplot(121)
     plt.plot(t,inp_wave.T)
     plt.plot(t,target_wave,'k')
+    plt.subplot(122)
+    plt.plot(inputs[0],inputs[1],'.')
     plt.show()
     
