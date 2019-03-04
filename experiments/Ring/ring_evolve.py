@@ -23,7 +23,8 @@ import numpy as np
 import pdb
 
 #%%
-def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_testing/', hush=True):
+def evolve(inputs, binary_labels,
+           filepath = r'../../test/evolution_test/Ring_testing/', hush=True):
     signal.signal(signal.SIGINT, reset)
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
@@ -76,8 +77,14 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
             except:
                 pass
             # Set the input scaling
-            x_scaled = x * genePool.config_obj.input_scaling
-    
+#            x_scaled = x * genePool.config_obj.input_scaling
+            x_scaled = x * genePool.MapGenes(cf.generange[-3], genePool.pool[j, -3]) 
+            # Set the input offset
+            s1 = genePool.MapGenes(cf.generange[-2], genePool.pool[j, -2])
+            s2 = genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
+            shift = np.array([s1,s2])[:,np.newaxis]
+#            pdb.set_trace()
+            x_scaled += shift
             # Measure cf.fitnessavg times the current configuration
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
@@ -85,14 +92,17 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
                     output = adwinIO.IO(adw, x_scaled, cf.fs)
                     output = np.array(output)
                 except:
-                    output = np.random.standard_normal(len(x[0]))
+                    output = 0.1*np.random.standard_normal(len(x[0]))
                     if j == 0:
                         print('WARNING: Debug mode active; output is white noise!!')
     
                 # Plot genome
                 try:
-                    PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
+                    if not hush: PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
                 except:
+                    if j == 0:
+                        print('PlotBuilder.currentGenomeEvolution FAILED!')
+                        print('Gene pool shape is ',genePool.pool.shape)
                     pass
     
                 # Train output
@@ -104,13 +114,14 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
     
                 # Plot output
                 try:
-                    PlotBuilder.currentOutputEvolution(mainFig,
+                    if not hush:PlotBuilder.currentOutputEvolution(mainFig,
                                                        t,
                                                        target,
                                                        output[0,:],
                                                        j + 1, i + 1,
                                                        fitnessTemp[j, avgIndex])
                 except:
+                    if j == 0: print('PlotBuilder.currentOutputEvolution FAILED!')
                     pass
                 
             outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
@@ -138,6 +149,7 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/Ring_te
                                                output,
                                                w)
         except:
+            if not hush: print('PlotBuilder.updateMainFigEvolution FAILED!')
             pass
         # Save generation
         SaveLib.saveExperiment(saveDirectory,

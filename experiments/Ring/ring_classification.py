@@ -12,11 +12,11 @@ import config_ring as config
 
 steps = 3
 
-with np.load('Class_data_0.20.npz') as data:
+with np.load(r'experiments\Ring\Class_data_0.40.npz') as data:
     inputs = data['inp_wvfrm'][::steps,:].T
     print('Input shape: ', inputs.shape)
     labels = data['target'][::steps]
-    print('Target sgape ', labels.shape)
+    print('Target shape ', labels.shape)
 
 mask0 = labels==0
 mask1 = labels==1
@@ -29,10 +29,12 @@ plt.figure()
 plt.plot(t,inp_wave.T)
 plt.plot(t,target_wave,'k')
 plt.show()
-print(sys.path)
-_,_,_,_ = re.evolve(inputs,labels)
+
+best_genome, best_output, max_fitness, accuracy = re.evolve(inputs, labels, filepath = r'D:\\data\\Hans\\Ring_testing\\', hush=False)
+
+best_cv = [g[0] + best_genome[i]*(g[1]-g[0]) for i,g in enumerate(cf.generange)]
 
 try:
     re.reset(0, 0)
 except:
-    pass
+    print('Not resetted')
