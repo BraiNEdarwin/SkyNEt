@@ -26,9 +26,7 @@ import numpy as np
 
 class staNNet(object):
     
-    def __init__(self,*args,loss='MSE',C=1.0,activation='ReLU', dim_cv=5, BN=False):
-        
-        self.C = torch.FloatTensor([C])
+    def __init__(self,*args,loss='MSE',activation='ReLU', dim_cv=5, BN=False):
         
         if len(args) == 3: #data,depth,width
            data,depth,width = args
@@ -50,7 +48,6 @@ class staNNet(object):
            self._contruct_model()
            if isinstance(self.x_train.data,torch.cuda.FloatTensor): 
                self.itype = torch.cuda.LongTensor
-               self.C.cuda()
                self.model.cuda()
                self.loss_fn.cuda()
                print('Sent to GPU')
@@ -105,7 +102,6 @@ class staNNet(object):
             self.itype = torch.LongTensor
         else: 
             self.itype = torch.cuda.LongTensor
-            self.C.cuda()
             self.model.cuda()
             self.loss_fn.cuda()    
         self.model.eval()
@@ -187,7 +183,6 @@ class staNNet(object):
                 
                 # Compute and print loss.
                 loss = self.loss_fn(y_pred, self.y_train[indices])
-                loss = loss*(self.C.cuda())
                 running_loss += loss.item()      
                 # Before the backward pass, use the optimizer object to zero all of the
                 # gradients for the variables it will update (which are the learnable

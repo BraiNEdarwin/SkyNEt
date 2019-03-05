@@ -13,8 +13,8 @@ from SkyNEt.modules.Nets.staNNet import staNNet
 
 class predNNet(staNNet):
     
-    def __init__(self,*args,loss='MSE',C=1.,activation='ReLU',BN=False):
-        super(predNNet,self).__init__(*args,loss=loss,C=C,activation=activation,BN=BN)
+    def __init__(self,*args,loss='MSE',activation='ReLU',BN=False):
+        super(predNNet,self).__init__(*args,loss=loss,activation=activation,BN=BN)
     
     def _construct_predictor(self):
         model = self.model
@@ -49,13 +49,11 @@ class predNNet(staNNet):
 #                print('reg_loss = ',reg_loss)
         return reg_loss
     
-    def predict(self,data,learning_rate,nr_epochs,batch_size,betas=(0.9,0.999),
-                scale=1.0,reg_scale=0.0,seed=False):
+    def predict(self, data, learning_rate, nr_epochs, batch_size,
+                betas=(0.9,0.999), reg_scale=0.0, seed=False):
         
-        scale = torch.FloatTensor([scale])
-        print('Scale is ',scale)
         x_train, y_train = data[0]
-        yt_var = torch.FloatTensor([np.var(y_train.data.numpy())])
+#        yt_var = torch.var(y_train)
         
         x_val, y_val = data[1]
         self.pred_in = x_train.shape[1]
@@ -82,13 +80,17 @@ class predNNet(staNNet):
 
                 # Forward pass: compute predicted y by passing x to the model.
                 indices = permutation[i:i+batch_size]
+#                print('predictor is cuda? ', next(self.predictor.parameters()).is_cuda)
+                print('type of x_train ',x_train.type())
+                print('type of indices ',indices.type())
                 y_pred = self.predictor(x_train[indices])
-                
+                print('Shape of net output: ',y_pred[:,0].shape)
                 # Compute and print loss.
 #                loss = self.loss_fn(y_pred, y_train[indices])
-                loss = self.loss_fn(y_pred, y_train[indices])/yt_var + reg_scale*self.cv_regularizer()
+                loss = self.loss_fn(y_pred[:,0], y_train[indices]) + reg_scale*self.cv_regularizer()
+#                loss = self.loss_fn(y_pred, y_train[indices])/yt_var + reg_scale*self.cv_regularizer()
 #                loss = torch.log10(self.loss_fn(y_pred, y_train[indices])) + reg_scale*self.cv_regularizer()
-                loss = loss*scale
+                loss = loss
                 
                 running_loss += loss.item()      
                 # Before the backward pass, use the optimizer object to zero all of the
@@ -118,9 +120,10 @@ class predNNet(staNNet):
                 
             y_pred = self.predictor(x_val)
 #            loss = self.loss_fn(y_pred, y_val)
-            loss = self.loss_fn(y_pred, y_val)/yt_var + reg_scale*self.cv_regularizer()
+            loss = self.loss_fn(y_pred, y_val) + reg_scale*self.cv_regularizer()
+#            loss = self.loss_fn(y_pred, y_val)/yt_var + reg_scale*self.cv_regularizer()
 #            loss = torch.log10(self.loss_fn(y_pred, y_val)) + reg_scale*self.cv_regularizer()
-            loss = loss*scale
+            loss = loss
             
             valErr_pred[epoch] = loss.item()
 
