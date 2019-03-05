@@ -26,11 +26,14 @@ elif config.device == 'adwin':
     Output = InstrumentImporter.adwinIO.IO(adwin, grounded_input, config.fs)
 elif config.device == 'keithley':
     Output = np.zeros_like(Input)
-    keithley = Keith2400.Keithley_2400('keithley', 'GPIB0::11')
+    keithley = Keithley2400.Keithley_2400('keithley', 'GPIB0::11')
 
     # Set compliances
     keithley.compliancei.set(1E-6)
     keithley.compliancev.set(4)
+
+    # Turn keithley output on
+    keithley.output.set(1)
 
     for ii in range(len(Input)):
         # Set voltage
@@ -39,6 +42,9 @@ elif config.device == 'keithley':
         # Record current
         time.sleep(0.05)
         Output[ii] = keithley.curr()
+
+    # Turn keithley output off
+    keithley.output.set(0)
 else:
     print('specify measurement device')
 
