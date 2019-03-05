@@ -19,19 +19,20 @@ import numpy as np
 cf = config.experiment_config()
 
 # Initialize save directory
-saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
+
 
 # Initialize instruments
 ivvi = InstrumentImporter.IVVIrack.initInstrument()
 keithley = Keithley2400.Keithley_2400('keithley', 'GPIB0::11')
 
 # Set compliances
-keithley.compliancei.set(1E-6)
+keithley.compliancei.set(100E-6)
 keithley.compliancev.set(4)
 
 P = [0, 1, 0, 1]
 Q = [0, 0, 1, 1]
 for ii in range(cf.control_sequence.shape[0]):
+    print(f'Now measuring control sequence {ii}')
     controlVoltages = cf.control_sequence[ii].copy()
     input_output = np.zeros((4, 8))  # Each row is control sequence + measured current
     waveform = np.zeros((4, cf.N))
@@ -42,25 +43,31 @@ for ii in range(cf.control_sequence.shape[0]):
 
         # Set the DAC voltages
         InstrumentImporter.IVVIrack.setControlVoltages(ivvi, controlVoltages)
-        time.sleep(.1)  # Wait after setting DACs
+        
+        time.sleep(1)  # Wait after setting DACs
 
         # Apply Keithley input
+        if(cf.measure_electrode == 7):
+            keithley.volt.set(0)
+        else:
+            keithley.volt.set(controlVoltages[cf.measure_electrode]/1000-0.01)
         keithley.output.set(1)
-        keithley.volt.set(controlVoltages[cf.measure_electrode])
-        time.sleep(.1)
+        
+        time.sleep(1)
 
         # Measure N datapoints
         for kk in range(cf.N):
-            waveform[jj] = keithley.curr()
+            waveform[jj, kk] = keithley.curr()
             time.sleep(cf.wait_time)
 
         # Store result in input_output
         input_output[jj, :7] = controlVoltages
-        input_output[jj, 7] = np.mean(waveform)
+        input_output[jj, 7] = np.mean(waveform[jj])
 
     keithley.output.set(0)
 
     # Save experiment
+    saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name[ii])
     SaveLib.saveExperiment(saveDirectory,
                            input_output = input_output,
                            waveform = waveform,
