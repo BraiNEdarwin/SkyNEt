@@ -59,8 +59,8 @@ class CPNet(staNNet):
                 scr_loss += torch.norm(param)**2
         return self.lambda_scr*scr_loss
     
-    def predict(self, data, learning_rate, nr_epochs, batch_size,
-                betas=(0.9,0.999), reg_scale=2.0, lambda_scr=0.0, seed=False):
+    def predict(self, data, lr_cv,lr_scr, nr_epochs, batch_size,
+                betas=(0.9,0.999), reg_scale=5.0, lambda_scr=0.0, seed=False):
         self.lambda_scr=lambda_scr
         x_train, y_train = data[0]
 #        yt_var = torch.var(y_train)
@@ -73,10 +73,20 @@ class CPNet(staNNet):
             np.random.seed(4367)
             
         self._construct_predictor()
-        params_opt = filter(lambda p: p.requires_grad, self.predictor.parameters())
-#        optimizer = torch.optim.SGD(params_opt, lr=learning_rate,momentum=0.7,nesterov=True) 
-#        print('params_opt: ',list(params_opt))
-        optimizer = torch.optim.Adam(params_opt, lr=learning_rate,betas=betas) # OR SGD?!
+#        params_opt = filter(lambda p: p.requires_grad, self.predictor.parameters())
+#        optimizer = torch.optim.SGD(params_opt, lr=lr_cv,momentum=0.7,nesterov=True) 
+#        params_opt=list(params_opt)
+#        print('params_opt: ',params_opt)
+        scr_params = []
+        for name, param in self.predictor.named_parameters():
+            if param.requires_grad:
+                if name=='0.bias': 
+                    cv_params=param
+                elif name in ['2.weight','2.bias']:
+                    scr_params.append(param)
+#        print('params of score: ',scr_params)        
+        params_opt = [{'params':cv_params},{'params':scr_params,'lr':lr_scr}]
+        optimizer = torch.optim.Adam(params_opt, lr=lr_cv,betas=betas) # OR SGD?!
         print('Prediction using ADAM optimizer')
         self.score_params = np.zeros((2,nr_epochs,3))
         self.cv_epoch = np.zeros((nr_epochs,self.dim_cv))
