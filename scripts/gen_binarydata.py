@@ -10,9 +10,9 @@ from matplotlib import pyplot as plt
 import data_generators as dg
 import pdb
 #Create N samples of 2-dim uniformely distributed features
-N = 1000
-eps = 0.2
-sample_0, sample_1 = dg.ring(N,epsilon=eps)
+N = 10000
+eps = 0.4
+sample_0, sample_1 = dg.ring(N,R_out=0.8, R_in=0.3,epsilon=eps)
 #Subsample the largest class
 nr_samples = min(len(sample_0),len(sample_1))
 max_array = max(len(sample_0),len(sample_1))

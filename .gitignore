@@ -106,3 +106,4 @@ results
 experiments.db 
 test/
 Nets.zip
+*.png

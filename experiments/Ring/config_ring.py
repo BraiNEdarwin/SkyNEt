@@ -163,8 +163,8 @@ class experiment_config(config_class):
 if __name__ is '__main__':
     
     from matplotlib import pyplot as plt
-    steps = 3
-    with np.load('Class_data_0.20.npz') as data:
+    steps = 1
+    with np.load('Class_data_0.40.npz') as data:
         print(data.keys())
         inputs = data['inp_wvfrm'][::steps,:].T
         labels = data['target'][::steps]
