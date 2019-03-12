@@ -30,8 +30,9 @@ def reset(signum, frame):
             print('nidaq not connected to PC, so also not reset')
 
         try:
-            global adwin
-            adwinIO.reset(adwin)
+            adw = adwinIO.initInstrument()
+            adwinIO.reset(adw)
+
             print('adwin has been reset')
         except:
             print('adwin was not initialized, so also not reset')

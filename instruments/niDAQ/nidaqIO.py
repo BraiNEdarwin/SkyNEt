@@ -43,7 +43,7 @@ def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     if n_ao == 2:
         N = y.shape[1]
 
-    np.append(y, 0)  # Finish by setting dacs to 0
+
     with nidaqmx.Task() as output_task, nidaqmx.Task() as input_task:
       # Define ao/ai channels
         for i in range(n_ao):
@@ -51,7 +51,6 @@ def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
         for i in range(len(inputPorts)):
             if(inputPorts[i] == 1):
                 input_task.ai_channels.add_ai_voltage_chan('Dev1/ai'+str(i)+'') 
-
 
         
         # Configure sample rate and set acquisition mode to finite
@@ -70,7 +69,9 @@ def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
         input_task.start()
         
         #read data
+
         read_data = input_task.read(N + 1, math.ceil(N/Fs)+1)
+
 
         read_data = np.asarray(read_data)
         if len(read_data.shape) == 1:
@@ -100,7 +101,6 @@ def IO_cDAQ(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     y: N x M array, N output ports, M datapoints
     Fs: sample frequency
     n_ai: number of input ports
-
     Return
     -------
     data: P x M array, P input ports, M datapoints
