@@ -33,7 +33,7 @@ for i in range(0, batches):
     start_wave = time.time()
     
     t = np.linspace(i * cf.samplePoints, (i + 1) * cf.samplePoints - 1, cf.samplePoints)
-    waves = cf.generateSineWave(cf.freq, t, cf.Vmax, cf.fs)
+    waves = cf.generateSineWave(cf.freq, t, cf.amplitude, cf.fs) + np.outer(cf.offset, np.ones(t.shape[0]))
     # Use 0.05 second to ramp up to the value where data aqcuisition stopped previous iteration
     # and 0.05 second to ramp down after the batch is done
     wavesRamped = np.zeros((waves.shape[0], waves.shape[1] + int(0.1*cf.fs))) 

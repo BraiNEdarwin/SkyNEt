@@ -12,9 +12,9 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
 dims = 7
-Fs = 1000
-factor = 0.1
-skip_points = 12
+Fs = 250
+factor = 1
+skip_points = 1
 
 freq2 = np.array([2,np.pi,5,7,13,17,19])
 freq = factor*np.sqrt(freq2[:dims])
@@ -31,6 +31,8 @@ for i in range(int(cycles/c_update)):
     inputs = np.concatenate((inputs, input_part),axis=1)
 inputs = inputs[:,1:]
 
+font = {'font.size': 12}
+plt.rcParams.update(font)
 """
 plt.figure()
 n = 1
@@ -38,13 +40,14 @@ buf = list(range(dims))
 for i in range(dims):
     buf.remove(i)
     for j in buf:
-        plt.subplot(3,dims,n)
+        plt.subplot(2,dims-1,n)
         plt.plot(inputs[i],inputs[j],linewidth = .5)
-        plt.xlabel('freq '+str(i)+' sqrt('+str(freq2[i])+')')
-        plt.ylabel('freq '+str(j)+' sqrt('+str(freq2[j])+')')
+        plt.xlabel('freq '+str(i)+' sqrt('+format(freq2[i],'.2f')+')')
+        plt.ylabel('freq '+str(j)+' sqrt('+format(freq2[j],'.2f')+')')
 #        plt.title('quotient: '+str(freq2[i]/freq2[j]))
         n += 1
 plt.tight_layout()
+
 #
 #plt.figure()
 #plt.hist2d(inputs[5],inputs[2],bins=50)
@@ -208,13 +211,15 @@ def distanceRandomGridBrute(gridpoints, inputs, grid_range = 0.25):
 
 gridpoints = 10000
 #min_dist_brute, empty_counter_brute = distance5D_brute(grid, inputs)
-min_dist, empty_counter = distanceRandomGrid(gridpoints, inputs, radius = 0.5)
+min_dist, empty_counter = distanceRandomGrid(gridpoints, inputs, radius = 0.18)
 
 plt.figure()
 #plt.hist(np.reshape(min_dist_brute, (min_dist_brute.size,1)),bins=50, normed = True,label = "Full grid search")
-plt.hist(min_dist[0,:],bins=50, normed=True, label = "Random grid, n = " + str(gridpoints))
+plt.hist(min_dist[0,:],bins=50, normed=False, label = "Random grid, n = " + str(gridpoints))
 #plt.legend()
-plt.title(str(dims) +"D, " + str(cycles) + " cycles")
+plt.xlabel('Distance (V)')
+#plt.ylabel('Sampled points')
+#plt.title(str(dims) +"D, " + str(cycles) + " cycles")
 
 # Computation test: 5D, 10 cycles, radius = 0.2
 # Brute force: 1875s

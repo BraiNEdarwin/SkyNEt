@@ -8,7 +8,7 @@ class experiment_config(config_class):
     which can be configured with the parameters below. The input data is not saved in the experiment file
     (and also not in the RAM) since this takes up too much space. 
 
-    Warning: the  ao and ai slowly get out of sync so it is best to sample data in small batches. It is not
+    Warning: the  ao and ai slowly get out of sync on the cDAQ so it is best to sample data in small batches. It is not
     consistent when they get out of sync, but it is advised to stay at least below batches of 25 seconds so 
     that the input/output mismatch is at most 1 datapoint.
 
@@ -28,24 +28,22 @@ class experiment_config(config_class):
     '''
 
     def __init__(self):
-        super().__init__() #DO NOT REMOVE!
-        ################################################
-        ######### SPECIFY PARAMETERS ###################
-        ################################################
+        super().__init__() 
 
         self.waveElectrodes = 7
-        self.factor = 40
+        self.factor = 1
         self.freq2 = np.array([2,np.pi,5,7,13,17,19]) 
         self.freq = np.sqrt(self.freq2[:self.waveElectrodes])*self.factor
         self.phase = np.zeros(self.waveElectrodes)
         self.sampleTime = 50 # Sample time of the sine waves for one grid point (in seconds)
-        self.fs = 4000
+        self.fs = 1000
         self.transientTest = True
         self.n = 50 # Amount of test points for the transient test
-        self.samplePoints = 40000 # Amount of sample points per batch measurement (sampleTime*fs/samplePoints batches)
+        self.samplePoints = 50*1000 # Amount of sample points per batch measurement (sampleTime*fs/samplePoints batches)
         self.amplification = 1000
         self.postgain = 100
-        self.Vmax = 0.6 # Maximum amount of voltage for the inputs
+        self.amplitude = 0.6 # Maximum amount of voltage for the inputs
+        self.offset = np.zeros(self.waveElectrodes) # Optional offset for the sine waves
 
         self.keithley_address = 'GPIB0::17::INSTR'
         #                               Summing module S2d      Matrix module           device
@@ -59,11 +57,7 @@ class experiment_config(config_class):
         self.inputData = self.generateSineWave
 
 
-    #####################################################
-    ############# USER-SPECIFIC METHODS #################
-    #####################################################
-    # Optionally define new methods here that you wish to use in your experiment.
-    # These can be e.g. new fitness functions or input/output generators.
+
 
     def generateSineWave(self, freq, t, amplitude, fs, phase = np.zeros(7)):
         '''
