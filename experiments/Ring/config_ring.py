@@ -139,16 +139,19 @@ class experiment_config(config_class):
     def accuracy_fit(self, output, target, w):
 #        print(w)
 #        print('shape of target = ', target.shape)
-        x = output[w][:,np.newaxis]
-        y = target[w][:,np.newaxis]
-#        print('shape of x,y: ', x.shape,y.shape)
-        acc, _, _ = perceptron(x,y)
-        X = np.stack((x, y), axis=0)[:,:,0]
-        corr = np.corrcoef(X)[0,1]
-        return acc*corr
+        if np.any(np.abs(output)>3.5):
+            acc = 0
+            print('Clipping value set at 3.5')
+        else:
+            x = output[w][:,np.newaxis]
+            y = target[w][:,np.newaxis]
+    #        print('shape of x,y: ', x.shape,y.shape)
+            acc, _, _ = perceptron(x,y)
+        return acc
     
     def corr_fit(self, output, target, w):
-        if np.any(output>3.5):
+        if np.any(np.abs(output)>3.5):
+            print('Clipping value set at 3.5')
             corr = -1
         else:
             x = output[w][:,np.newaxis]

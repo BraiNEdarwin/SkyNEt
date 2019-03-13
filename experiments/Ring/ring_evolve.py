@@ -12,8 +12,13 @@ try:
     from SkyNEt.instruments import InstrumentImporter
     from SkyNEt.instruments.DAC import IVVIrack
     from SkyNEt.instruments.ADwin import adwinIO
-except ImportError:
-    print('WARNING: IVVIrack or adwinIO not imported!! Random output will be generated')    
+    importerror = []
+except ImportError as error:
+    print('############################################')
+    print('WARNING:',error,'!!')
+    print('WARNING: Random output will be generated!!')
+    importerror = error
+    print('############################################')
 from SkyNEt.modules.Classifiers import perceptron
 # Other imports
 import signal
@@ -55,11 +60,9 @@ def evolve(inputs, binary_labels,
     else:
         print('WARNING: Plot is hushed; change hush flag to True for plotting...')
     # Initialize instruments
-    try:
+    if not importerror:
         ivvi = InstrumentImporter.IVVIrack.initInstrument()
         adw = InstrumentImporter.adwinIO.initInstrument()
-    except:
-        pass
     # Initialize genepool
     genePool = Evolution.GenePool(cf)
     
@@ -71,11 +74,10 @@ def evolve(inputs, binary_labels,
             for k in range(cf.genes-1):
                 controlVoltages[k] = genePool.MapGenes(
                                         cf.generange[k], genePool.pool[j, k])
-            try:
+            if not importerror:
                 IVVIrack.setControlVoltages(ivvi, controlVoltages)
                 time.sleep(1)  # Wait after setting DACs
-            except:
-                pass
+
             # Set the input scaling
 #            x_scaled = x * genePool.config_obj.input_scaling
             x_scaled = x * genePool.MapGenes(cf.generange[-3], genePool.pool[j, -3]) 
@@ -88,10 +90,10 @@ def evolve(inputs, binary_labels,
             # Measure cf.fitnessavg times the current configuration
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
-                try:
+                if not importerror:
                     output = adwinIO.IO(adw, x_scaled, cf.fs)
                     output = np.array(output)
-                except:
+                else:
                     output = 0.1*np.random.standard_normal(len(x[0]))
                     if j == 0:
                         print('WARNING: Debug mode active; output is white noise!!')
@@ -103,7 +105,6 @@ def evolve(inputs, binary_labels,
                     if j == 0:
                         print('PlotBuilder.currentGenomeEvolution FAILED!')
                         print('Gene pool shape is ',genePool.pool.shape)
-                    pass
     
                 # Train output
                 outputAvg[avgIndex] = cf.amplification * output
@@ -111,7 +112,6 @@ def evolve(inputs, binary_labels,
                 fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],
                                                          target,
                                                          w)
-    
                 # Plot output
                 try:
                     if not hush:PlotBuilder.currentOutputEvolution(mainFig,
@@ -122,7 +122,6 @@ def evolve(inputs, binary_labels,
                                                        fitnessTemp[j, avgIndex])
                 except:
                     if j == 0: print('PlotBuilder.currentOutputEvolution FAILED!')
-                    pass
                 
             outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
     
@@ -150,7 +149,6 @@ def evolve(inputs, binary_labels,
                                                w)
         except:
             if not hush: print('PlotBuilder.updateMainFigEvolution FAILED!')
-            pass
         # Save generation
         SaveLib.saveExperiment(saveDirectory,
                                genes = geneArray,
@@ -164,7 +162,7 @@ def evolve(inputs, binary_labels,
     try:
         PlotBuilder.finalMain(mainFig)
     except:
-        pass
+        if not hush: print('WARNING: PlotBuilder.finalMain FAILED!')
     
     #Get best results
     max_fitness = np.max(fitnessArray)
@@ -228,4 +226,4 @@ if __name__=='__main__':
     plt.plot(t,target_wave,'k')
     plt.show()
 #    print(sys.path)
-    _,_,_,_ = evolve(inputs,labels)
+    _,_,_,_ = evolve(inputs,labels,hush=False)
