@@ -3,6 +3,13 @@ This is a template for evolving the NN based on the boolean_logic experiment.
 The only difference to the measurement scripts are on lines where the device is called.
 
 '''
+# General imports
+import signal
+import sys
+import time
+import numpy as np
+import pdb
+import logging
 # SkyNEt imports
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
@@ -20,12 +27,7 @@ except ImportError as error:
     importerror = error
     print('############################################')
 from SkyNEt.modules.Classifiers import perceptron
-# Other imports
-import signal
-import sys
-import time
-import numpy as np
-import pdb
+
 
 #%%
 def evolve(inputs, binary_labels,
@@ -92,7 +94,7 @@ def evolve(inputs, binary_labels,
                 # Feed input to niDAQ
                 if not importerror:
                     output = adwinIO.IO(adw, x_scaled, cf.fs)
-                    output = np.array(output)
+                    output = np.array(output[0,:])
                 else:
                     output = 0.1*np.random.standard_normal(len(x[0]))
                     if j == 0:
@@ -103,7 +105,7 @@ def evolve(inputs, binary_labels,
                     if not hush: PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
                 except:
                     if j == 0:
-                        print('PlotBuilder.currentGenomeEvolution FAILED!')
+                        logging.exception('PlotBuilder.currentGenomeEvolution FAILED!')
                         print('Gene pool shape is ',genePool.pool.shape)
     
                 # Train output
@@ -117,11 +119,11 @@ def evolve(inputs, binary_labels,
                     if not hush:PlotBuilder.currentOutputEvolution(mainFig,
                                                        t,
                                                        target,
-                                                       output[0,:],
+                                                       output,
                                                        j + 1, i + 1,
                                                        fitnessTemp[j, avgIndex])
                 except:
-                    if j == 0: print('PlotBuilder.currentOutputEvolution FAILED!')
+                    if j == 0: logging.exception('PlotBuilder.currentOutputEvolution FAILED!')
                 
             outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
     
@@ -148,7 +150,7 @@ def evolve(inputs, binary_labels,
                                                output,
                                                w)
         except:
-            if not hush: print('PlotBuilder.updateMainFigEvolution FAILED!')
+            if not hush: logging.exception('PlotBuilder.updateMainFigEvolution FAILED!')
         # Save generation
         SaveLib.saveExperiment(saveDirectory,
                                genes = geneArray,
@@ -162,7 +164,7 @@ def evolve(inputs, binary_labels,
     try:
         PlotBuilder.finalMain(mainFig)
     except:
-        if not hush: print('WARNING: PlotBuilder.finalMain FAILED!')
+        if not hush: logging.exception('WARNING: PlotBuilder.finalMain FAILED!')
     
     #Get best results
     max_fitness = np.max(fitnessArray)
