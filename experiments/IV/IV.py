@@ -20,11 +20,13 @@ if config.device == 'nidaq':
 elif config.device == 'adwin':
     adwin = InstrumentImporter.adwinIO.initInstrument()
     Output = InstrumentImporter.adwinIO.IO(adwin, Input, config.fs)
+elif config.device == 'cDAQ':
+	Output = InstrumentImporter.nidaqIO.IO_cDAQ(Input, config.fs)
 else:
     print('specify measurement device')
 
 # Save the Input and Output
-SaveLib.saveExperiment(config.configSrc, saveDirectory, input = Input, output = Output)
+SaveLib.saveExperiment(config.configSrc, saveDirectory, input = Input, output = Output*config.amplification)
 
 
 # Plot the IV curve.

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Dec 17 16:51:29 2018
-
 Script to characterize a device using partially a grid and partially sine wave 
 functions
 @author: Mark
@@ -29,37 +28,39 @@ data = np.zeros((1, int(cf.sampleTime * cf.fs)))
 
 batches = int(cf.fs * cf.sampleTime / cf.samplePoints)
 
-#############################
-adwin = InstrumentImporter.adwinIO.initInstrument()
-# Initialize instruments
-ivvi = InstrumentImporter.IVVIrack.initInstrument()
-InstrumentImporter.IVVIrack.setControlVoltages(ivvi, np.array([-772.9, -710.0, -383.4, 491.6, -479.1]))
-
-#############################
-
 for i in range(0, batches):
     start_wave = time.time()
     
     t = np.linspace(i * cf.samplePoints, (i + 1) * cf.samplePoints - 1, cf.samplePoints)
-    waves = cf.generateSineWave(cf.freq, t, cf.Vmax, cf.fs, cf.phase) + np.outer(np.array([0.250, 0.250]), np.ones(t.shape[0]))
-    # Use 0.05 second to ramp up to the value where data aqcuisition stopped previous iteration
-    # and 0.05 second to ramp down after the batch is done
-    wavesRamped = np.zeros((waves.shape[0], waves.shape[1] + int(0.1*cf.fs))) 
+    waves = cf.generateSineWave(cf.freq, t, cf.amplitude, cf.fs, cf.phase) + np.outer(cf.offset, np.ones(t.shape[0]))
+    # Use 0.5 second to ramp up to the value where data aqcuisition stopped previous iteration
+    # and 0.5 second to ramp down after the batch is done
+    wavesRamped = np.zeros((waves.shape[0], waves.shape[1] + int(cf.fs))) 
     dataRamped = np.zeros((1,wavesRamped.shape[1]))
     for j in range(wavesRamped.shape[0]):
-        wavesRamped[j,0:int(0.05*cf.fs)] = np.linspace(0,waves[j,0], int(0.05*cf.fs))
-        wavesRamped[j,int(0.05*cf.fs): int(0.05*cf.fs) + waves.shape[1]] = waves[j,:]
-        wavesRamped[j,int(0.05*cf.fs) + waves.shape[1]:] = np.linspace(waves[j,-1], 0, int(0.05*cf.fs))
-     
+        wavesRamped[j,0:int(0.5*cf.fs)] = np.linspace(0,waves[j,0], int(0.5*cf.fs))
+        wavesRamped[j,int(0.5*cf.fs): int(0.5*cf.fs) + waves.shape[1]] = waves[j,:]
+        wavesRamped[j,int(0.5*cf.fs) + waves.shape[1]:] = np.linspace(waves[j,-1], 0, int(0.5*cf.fs))
+        
+    dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, cf.fs)      
+    data[0, i*cf.samplePoints: (i+1)*cf.samplePoints] = dataRamped[:, int(0.5*cf.fs):int(0.5*cf.fs) + waves.shape[1]]
 
-
-    #dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, cf.fs)      
-    # ADwin version
-    dataRamped = InstrumentImporter.adwinIO.IO(adwin, wavesRamped, cf.fs)
-
-    data[0, i*cf.samplePoints: (i+1)*cf.samplePoints] = dataRamped[:, int(0.05*cf.fs):int(0.05*cf.fs) + waves.shape[1]]
+    if i % 10 == 0: # Save after every 10 mini batches
+        print('Saving...')
+        SaveLib.saveExperiment(cf.configSrc, saveDirectory, 
+                                output = data*cf.amplification/cf.postgain,
+                                freq = cf.freq,
+                                sampleTime = cf.sampleTime,
+                                fs = cf.fs,
+                                phase = cf.phase,
+                                amplitude = cf.amplitude,
+                                offset = cf.offset,
+                                filename = 'training_NN_data')
     end_wave = time.time()
     print('Data collection for part ' + str(i+1) + ' of ' + str(batches) + ' took '+str(end_wave-start_wave)+' sec.')
+
+    
+    
 
 
 if cf.transientTest:
@@ -75,7 +76,8 @@ if cf.transientTest:
                             sampleTime = cf.sampleTime,
                             fs = cf.fs,
                             phase = cf.phase,
-                            Vmax = cf.Vmax,
+                            amplitude = cf.amplitude,
+                            offset = cf.offset,
                             filename = 'training_NN_data')
 else:
     SaveLib.saveExperiment(cf.configSrc, saveDirectory, 
@@ -84,9 +86,9 @@ else:
                             sampleTime = cf.sampleTime,
                             fs = cf.fs,
                             phase = cf.phase,
-                            Vmax = cf.Vmax,
+                            amplitude = cf.amplitude,
+                            offset = cf.offset,
                             filename = 'training_NN_data')
   
 
 InstrumentImporter.reset(0,0)
-

@@ -12,24 +12,27 @@ import time
 import matplotlib.pyplot as plt
 
 def transient_test(waves, data, fs, sampleTime, n):
-    T = 4 # Amount of time of sampling one datapoint
-    testdata = np.zeros((n, (T-1)*fs))
+    T = 5 # Amount of time of sampling one datapoint
+    rampT = int(2*fs/2)
+    testdata = np.zeros((n, (T*fs - 2*rampT)))
+    #testdata = np.zeros((n, T*fs))
     test_cases = np.random.randint(waves.shape[1], size=(1,n)) # Index for the wave
     difference = np.zeros((n,1))
     
     for i in range(n):     
         start_wave = time.time()
 
-        wavesRamped = np.zeros((waves.shape[0], T*fs)) # .5 second to ramp up to desired input, T-1 seconds measuring, 0.5 second to ramp input down to zero
+        wavesRamped = np.zeros((waves.shape[0], T*fs)) # 1.5 second to ramp up to desired input, T-3 seconds measuring, 1.5 second to ramp input down to zero
         dataRamped = np.zeros((1,wavesRamped.shape[1]))
         for j in range(wavesRamped.shape[0]):
-            wavesRamped[j,0:int(fs/2)] = np.linspace(0,waves[j,test_cases[0,i]], int(fs/2))
-            wavesRamped[j,int(fs/2): int(fs/2) + (T-1)*fs] = np.ones((T-1)*fs) * waves[j, test_cases[0,i],np.newaxis]
-            wavesRamped[j,int(fs/2) + (T-1)*fs:] = np.linspace(waves[j,test_cases[0,i]], 0, int(fs/2))
+            # Ramp up linearly (starting from value CV/2 since at CV=0V nothing happens anyway) and ramp back down to 0
+            wavesRamped[j,0:rampT] = np.linspace(0,waves[j,test_cases[0,i]], rampT) 
+            wavesRamped[j,rampT: rampT + (T*fs-2*rampT)] = np.ones((T*fs-2*rampT)) * waves[j, test_cases[0,i],np.newaxis]
+            wavesRamped[j,rampT + (T*fs-2*rampT):] = np.linspace(waves[j,test_cases[0,i]], 0, rampT)
 
-        dataRamped = InstrumentImporter.nidaqIO.IO(wavesRamped, fs)
-        testdata[i,:] = dataRamped[0, int(fs/2): int(fs/2) + (T-1)*fs]
-        #testdata[i,:] = InstrumentImporter.nidaqIO.IO_cDAQ(np.ones((waves.shape[0], 2*fs)) * waves[:, test_cases[0,i],np.newaxis], fs) # sample for 2s
+        dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, fs)
+        testdata[i,:] = dataRamped[0, rampT: rampT + (T*fs-2*rampT)]
+        #testdata[i,:] = dataRamped[0, :]
 
         difference[i,0] = np.mean(testdata[i,:]) - data[test_cases[0,i]] 
         end_wave = time.time()

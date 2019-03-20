@@ -42,10 +42,10 @@ mainFig = PlotBuilder.initMainFigEvolution(cf.controls, cf.n, cf.controlLabels, 
 # Main aqcuisition loop
 for i in range(cf.n):
     # Apply the sine waves on top of the control voltages:
-    inputs[:, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)]  = np.dot(controls[:, i:i+1], np.ones((1, x.shape[1]))) + np.sin(2 * np.pi * np.dot(t[:,np.newaxis],cf.freq[np.newaxis,:])) * cf.waveAmplitude
+    inputs[:, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)]  = controls[i,:][:,np.newaxis] * np.ones( x.shape[1]) + np.sin(2 * np.pi * cf.freq[:,np.newaxis] * t) * cf.waveAmplitude
     
     # Add (boolean) input at the correct index of the input matrix:
-    for j in range(cf.inputIndex):
+    for j in range(len(cf.inputIndex)):
         inputs = np.insert(inputs, cf.inputIndex[j], np.concatenate((np.zeros(int(cf.fs*cf.rampT)), x_scaled[j,:], np.zeros(int(cf.fs*cf.rampT)))), axis=0)
     
     # Add ramping up and ramping down the voltages at start and end of iteration
@@ -55,7 +55,7 @@ for i in range(cf.n):
         
     # Measure output
     dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(inputs, cf.fs) * cf.gainFactor
-    data[i,:] = dataRamped[int(cf.fs*cf.rampT),-int(cf.fs*cf.rampT)]   # Cut off the ramping up and down part
+    data[i,:] = dataRamped[0, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)]   # Cut off the ramping up and down part
 
     # Fourier transform on output data to find dI/dV
     yf = scipy.fftpack.fft(data[i,:], cf.fft_N)
