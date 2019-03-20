@@ -43,6 +43,11 @@ for ii in range(cf.control_sequence.shape[0]):
         # Measure output with ADwin
         currents = InstrumentImporter.nidaqIO.IO(np.zeros(cf.N), cf.fs, inputPorts = [1, 1, 1, 1, 1, 1, 1, 1]) 
         
+        plt.figure()
+        for kk in range(currents.shape[0]):
+            plt.plot(currents[kk], label = {kk})
+        plt.legend()
+        
         # Convert voltages to currents
         for kk in range(7):
             currents[kk] = (controlVoltages[kk]/1E3 - currents[kk])/cf.resistance
@@ -69,8 +74,9 @@ SaveLib.saveExperiment(saveDirectory,
 for ii in range(cf.control_sequence.shape[0]):
     plt.figure()
     for jj in range(8):
-        plt.plot(data[ii, jj, :, 1])
+        plt.plot(data[ii, jj, :, 1], label = f'{jj}')
     plt.title(cf.gates[ii])
+    plt.legend()
     
 plt.show()
 
