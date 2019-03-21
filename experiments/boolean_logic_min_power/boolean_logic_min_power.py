@@ -74,7 +74,7 @@ for i in range(cf.generations):
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
             # Get raw voltages
-            output = InstrumentImporter.nidaqIO.IO_2D(x_scaled, cf.fs, 
+            output = InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs, 
                     inputPorts = [1, 1, 1, 1, 1, 1, 1, 1])
 
             # Convert voltages to currents (in A)
@@ -101,7 +101,7 @@ for i in range(cf.generations):
             PlotBuilder.currentOutputEvolution(mainFig,
                                                t,
                                                target,
-                                               output,
+                                               output[7],
                                                j + 1, i + 1,
                                                fitnessTemp[j, avgIndex])
 
@@ -122,7 +122,7 @@ for i in range(cf.generations):
     PlotBuilder.updateMainFigEvolution(mainFig,
                                        geneArray,
                                        fitnessArray,
-                                       outputArray,
+                                       outputArray[:, :, 7],
                                        i + 1,
                                        t,
                                        cf.amplification*target,
