@@ -49,6 +49,9 @@ ivvi = InstrumentImporter.IVVIrack.initInstrument()
 # Initialize genepool
 genePool = Evolution.GenePool(cf)
 
+# Initialize V array
+V = np.zeros((8, len(x[0])))
+
 #%% Measurement loop
 
 for i in range(cf.generations):
@@ -63,6 +66,11 @@ for i in range(cf.generations):
         # Set the input scaling
         x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
 
+        # Construct voltage array for fitness function
+        V[:2] = x_scaled 
+        for control in range(2, 7):
+            V[control] = controlVoltages[control-2]*np.ones(len(x[0]))/1E3
+
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
             # Get raw voltages
@@ -71,7 +79,7 @@ for i in range(cf.generations):
 
             # Convert voltages to currents (in A)
             for kk in range(2):
-                output[kk] = (x_scaled[kk]/1E3 - output[kk])/cf.resistance
+                output[kk] = (x_scaled[kk] - output[kk])/cf.resistance
             for kk in range(2,7):
                 output[kk] = (controlVoltages[kk-2]/1E3 - output[kk])/cf.resistance
             output[7] = output[7]*cf.amplification/1E9
@@ -84,8 +92,10 @@ for i in range(cf.generations):
 
             # Calculate fitness
             fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],
-                                                     target,
-                                                     w)
+                                                 V,
+                                                 target,
+                                                 w,
+                                                 cf.P_max)
 
             # Plot output
             PlotBuilder.currentOutputEvolution(mainFig,
