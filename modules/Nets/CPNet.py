@@ -38,9 +38,9 @@ class CPNet(staNNet):
         score_layer.weight.data[1] = 0.
         score_layer.bias.data[1] = 0.
         self.predictor = nn.Sequential(pred_layer,model,score_layer)
-        for name, params in self.predictor.named_parameters():
-            print('Name: ',name, '| shape:',params.shape,'| Requires grad:',params.requires_grad)
-            if name in ['2.weight','2.bias']: print(params)
+#        for name, params in self.predictor.named_parameters():
+#            print('Name: ',name, '| shape:',params.shape,'| Requires grad:',params.requires_grad)
+#            if name in ['2.weight','2.bias']: print(params)
             
     def cv_regularizer(self):
         reg_loss =0 
@@ -87,7 +87,7 @@ class CPNet(staNNet):
 #        print('params of score: ',scr_params)        
         params_opt = [{'params':cv_params},{'params':scr_params,'lr':lr_scr}]
         optimizer = torch.optim.Adam(params_opt, lr=lr_cv,betas=betas) # OR SGD?!
-        print('Prediction using ADAM optimizer')
+#        print('Prediction using ADAM optimizer')
         self.score_params = np.zeros((2,nr_epochs,3))
         self.cv_epoch = np.zeros((nr_epochs,self.dim_cv))
         valErr_pred = np.zeros((nr_epochs,))
@@ -148,7 +148,7 @@ class CPNet(staNNet):
             y_pred = self.predictor(x_val)
             loss = self.loss_fn(y_pred, y_val[:,0])
             valErr_pred[epoch] = loss.item()
-            print('Epoch',epoch,'Training Error: ', running_loss/batch_size)
+#            print('Epoch',epoch,'Training Error: ', running_loss/batch_size)
 
         print('Val. Error @ END:', loss.item())
         for name, param in self.predictor.named_parameters():
