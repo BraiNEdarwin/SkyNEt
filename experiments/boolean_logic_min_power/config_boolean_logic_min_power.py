@@ -72,15 +72,15 @@ class experiment_config(config_class):
         # Define experiment
         self.amplification = 10  # nA/V
         self.TargetGen = self.AND
-        self.generations = 2
-        self.generange = [[-200,200], [-200, 200], [-200, 200], [-200, 200], [-200, 200], [0.1, 0.5]]
+        self.generations = 50
+        self.generange = [[-800,200], [-1100, 700], [-1100, 700], [-1100, 700], [-800, 200], [0.1, 0.7]]
         self.resistance = 1E3  # Ohm
         self.P_max = 10E-6  # W
 
         # Specify either partition or genomes
         #self.partition = [5, 5, 5, 5, 5]
-        self.genomes = 10
-
+        self.genomes = 25
+        self.Fitness = self.FitnessPower
         # Documentation
         self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
 
@@ -124,9 +124,9 @@ class experiment_config(config_class):
         V_weighed = np.zeros((8, len(indices)))
         target_weighed = np.zeros(len(indices))
         for i in range(len(indices)):
-                I_weighed[:, i] = I[:, indices[i]]
-                V_weighed[:, i] = V[:, indices[i]]
-        	target_weighed[i] = target[indices[i]]
+                I_weighed[:, i] = I[:, indices[i][0]]
+                V_weighed[:, i] = V[:, indices[i][0]]
+                target_weighed[i] = target[indices[i][0]]
 
         # Get correlation
         corr = np.corrcoef(I_weighed[7], target_weighed)[0, 1]
@@ -147,8 +147,20 @@ class experiment_config(config_class):
         # Calculate average power
         P_avg = np.abs(np.mean(P))
 
+        # Check for clipping
+        clipped = False
+        for i in range(len(indices)):
+            if(abs(I_weighed[7,i]) > 3.3E-9*self.amplification):
+                clipped = True
+                break
+                
         # Calculate final fitness
-        return (1 - P_avg/P_max)*corr
+        if(clipped):
+            return -100
+        elif((1-P_avg/P_max) < 0 and corr < 0):
+            return -(1 - P_avg/P_max)*corr
+        else:
+            return (1 - P_avg/P_max)*corr
 
     def FitnessEvolution(self, x, target, W):
         '''
