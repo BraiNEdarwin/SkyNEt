@@ -35,6 +35,7 @@ fitnessArray = np.zeros((cf.generations, cf.genomes))
 fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
 outputAvg = np.zeros((cf.fitnessavg, 8, len(x[0])))
 outputTemp = np.zeros((cf.genomes, 8, len(x[0])))
+inputTemp = np.zeros((cf.genomes, 8, len(x[0])))
 controlVoltages = np.zeros(cf.genes)
 
 # Initialize save directory
@@ -70,6 +71,9 @@ for i in range(cf.generations):
         V[:2] = x_scaled 
         for control in range(2, 7):
             V[control] = controlVoltages[control-2]*np.ones(len(x[0]))/1E3
+
+        # Save voltage array
+        inputTemp[j] = V
 
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
@@ -116,6 +120,7 @@ for i in range(cf.generations):
     # Save generation data
     geneArray[i, :, :] = genePool.pool
     outputArray[i, :, :] = outputTemp
+    inputArray[i, :, :] = inputTemp
     fitnessArray[i, :] = genePool.fitness
 
     # Update main figure

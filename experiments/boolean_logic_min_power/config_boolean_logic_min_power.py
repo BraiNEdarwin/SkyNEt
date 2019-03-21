@@ -81,7 +81,7 @@ class experiment_config(config_class):
         # Specify either partition or genomes
         #self.partition = [5, 5, 5, 5, 5]
         self.genomes = 25
-        self.Fitness = self.FitnessPower
+        self.Fitness = self.FitnessPower2
         # Documentation
         self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
 
@@ -206,6 +206,13 @@ class experiment_config(config_class):
 
         # Calculate average power
         P_avg = np.abs(np.mean(P))
+
+        # Check for clipping
+        clipped = False
+        for i in range(len(indices)):
+            if(abs(I_weighed[7,i]) > 3.3E-9*self.amplification):
+                clipped = True
+                return -100
 
         # Return final fitness
         if(Q < 1):
