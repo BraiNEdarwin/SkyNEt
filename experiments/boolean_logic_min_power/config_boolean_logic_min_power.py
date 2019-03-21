@@ -76,6 +76,7 @@ class experiment_config(config_class):
         self.generange = [[-200,200], [-200, 200], [-200, 200], [-200, 200], [-200, 200], [0.1, 0.5]]
         self.resistance = 1E3  # Ohm
         self.P_max = 10E-6  # W
+        self.separation_treshold = 1E-9
 
         # Specify either partition or genomes
         #self.partition = [5, 5, 5, 5, 5]
@@ -149,6 +150,56 @@ class experiment_config(config_class):
 
         # Calculate final fitness
         return (1 - P_avg/P_max)*corr
+
+    def FitnessPower2(self, I, V, target, w, P_max):
+        '''
+        This fitness function attempts to minimize total power consumption.
+
+        Assumes both I and V vectors have consisent units!
+        '''
+        # Apply weights w
+        indices = np.argwhere(w)  #indices where w is nonzero (i.e. 1)
+
+        I_weighed = np.zeros((8, len(indices)))
+        V_weighed = np.zeros((8, len(indices)))
+        target_weighed = np.zeros(len(indices))
+        for i in range(len(indices)):
+            I_weighed[:, i] = I[:, indices[i]]
+            V_weighed[:, i] = V[:, indices[i]]
+            target_weighed[i] = target[indices[i]]
+
+        # Determine normalized separation
+        indices1 = np.argwhere(target_weighed)  #all indices where target is nonzero
+        x0 = np.empty(0)  #list of values where x should be 0
+        x1 = np.empty(0)  #list of values where x should be 1
+        for i in range(len(target_weighed)):
+            if(i in indices1):
+                x1 = np.append(x1, x_weighed[i])
+            else:
+                x0 = np.append(x0, x_weighed[i])
+        Q = (min(x1) - max(x0)) / (self.separation_treshold)
+
+        # Get average currents per input configuration
+        I_avg = np.zeros((8, 4))
+        V_avg = np.zeros((8, 4))
+        blocksize = len(target_weighed)//4
+        for i in range(4):
+            I_avg[:, i] = np.mean(I_weighed[:, i*blocksize:(i+1)*blocksize], axis=1)
+            V_avg[:, i] = np.mean(V_weighed[:, i*blocksize:(i+1)*blocksize], axis=1)
+
+        # Calculate power for each input configuration
+        P = np.zeros(4)
+        for i in range(4):
+            P[i] = np.sum(I_avg[:7, i]*V_avg[:7, i])
+
+        # Calculate average power
+        P_avg = np.abs(np.mean(P))
+
+        # Return final fitness
+        if(Q < 1):
+            return Q
+        else:
+            return 1 + 1/P_avg
 
     def FitnessEvolution(self, x, target, W):
         '''
