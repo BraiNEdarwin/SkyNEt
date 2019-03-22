@@ -103,7 +103,7 @@ def train(self,
             break
     return error_list, best_params
 
-def session_train(self, *args, nr_sessions=1, **kwargs):
+def session_train(self, *args, nr_sessions=5, **kwargs):
     """
     Initialize random and train for nr_sessions, returns only the results with the lowest error
     """

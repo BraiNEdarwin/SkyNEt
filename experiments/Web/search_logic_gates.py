@@ -17,7 +17,7 @@ I0 I1    AND NAND OR NOR XOR XNOR
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from SkyNEt.modules.Nets.predNNet import predNNet
+from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 
 
@@ -25,7 +25,7 @@ from SkyNEt.modules.Nets.webNNet import webNNet
 # load device simulation
 main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
 data_dir = 'lr2e-4_eps400_mb512_20180807CP.pt'
-net1 = predNNet(main_dir+data_dir)
+net1 = staNNet(main_dir+data_dir)
 
 # single device web
 web = webNNet()
@@ -47,7 +47,7 @@ cv_reset = 'rand'
 
 training_type = 'cormse' # options: None, mse, bin, binmse, cor, cormse
 
-add_noise = True # automatically set to false when using bin/softmargin
+add_noise = False # automatically set to false when using bin
 sigma = 0.01 # standard deviation of added noise in target
 
 
@@ -174,7 +174,8 @@ for (i,gate) in enumerate(gates):
                      optimizer=optimizer,
                      loss_fn=loss_fn,
                      stop_fn = stop_fn,
-                     lr = lr)
+                     lr = lr,
+                     nr_sessions=5)
     losslist.append(loss_l)
     trained_cv.append(best_cv)
 

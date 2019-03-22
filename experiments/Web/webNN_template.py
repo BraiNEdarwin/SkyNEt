@@ -7,13 +7,13 @@ This script is an example on how to construct and train a web of multiple neural
 """
 import torch
 import matplotlib.pyplot as plt
-from SkyNEt.modules.Nets.predNNet import predNNet
+from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 
 # create nn object from which the web is made
 main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
 data_dir = 'lr2e-4_eps400_mb512_20180807CP.pt'
-net1 = predNNet(main_dir+data_dir)
+net1 = staNNet(main_dir+data_dir)
 
 
 # Initialize web object

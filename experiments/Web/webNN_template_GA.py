@@ -11,7 +11,7 @@ Testing evolution script for training web of neural networks, both GA and GD
 import torch
 import matplotlib.pyplot as plt
 
-from SkyNEt.modules.Nets.predNNet import predNNet
+from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 import SkyNEt.experiments.boolean_logic.config_evolve_NN as config
 
@@ -23,7 +23,7 @@ cf.fitnessavg = 1
 
 # Initialize NN
 nn_file = r'/home/lennart/Dropbox/afstuderen/search_scripts/lr2e-4_eps400_mb512_20180807CP.pt'
-net = predNNet(nn_file)
+net = staNNet(nn_file)
 
 # build web
 web = webNNet()
