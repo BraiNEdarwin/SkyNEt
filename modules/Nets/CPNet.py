@@ -85,7 +85,7 @@ class CPNet(staNNet):
                 elif name in ['2.weight','2.bias']:
                     scr_params.append(param)
 #        print('params of score: ',scr_params)        
-        params_opt = [{'params':cv_params},{'params':scr_params,'lr':lr_scr}]
+        params_opt = [{'params':cv_params},{'params':scr_params,'lr':lr_scr,'betas':(0.15,0.1)}]
         optimizer = torch.optim.Adam(params_opt, lr=lr_cv,betas=betas) # OR SGD?!
 #        print('Prediction using ADAM optimizer')
         self.score_params = np.zeros((2,nr_epochs,3))

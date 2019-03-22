@@ -11,7 +11,7 @@ from torch.autograd import Variable
 from matplotlib import pyplot as plt
 
 from SkyNEt.modules.Nets.CPNet import CPNet
-#
+
 #np.random.seed(333)
 #torch.manual_seed(23)
 ########################### LOAD NN & DATA ########################################
@@ -66,8 +66,13 @@ plt.plot(test_indices.numpy(),y_test.numpy(),'ro')
 plt.plot(targets.numpy(),'k')
 
 data = [(x_train,y_train),(x_test,y_test)]
-lr_cv, lr_scr, nr_epochs, batch_size = 1e-3, 0.4, 1000, 512 #for 0.22 val err w. seed: lr_scr=0.3,lr_cv=7e-3, mb=256
-nruns = 4000
+lr_cv, lr_scr, nr_epochs, batch_size = 2.1e-3, 0.2, 1000, 512 
+# lr_scr=0.3,lr_cv=7e-3, mb=256
+#7e-4, 0.1, 256 
+#7e-3, 0.3, 512 
+#7e-5, 0.1, 1000, 512 
+#1e-4, 0.1, 1000, 512 
+nruns = 1000
 pred_voltages = np.zeros((nruns,5))
 valErr_pred = np.zeros((nruns,nr_epochs))
 classes_run = np.zeros((nruns,3150))
@@ -76,7 +81,7 @@ min_valerr = np.inf
 for i in range(nruns):
     print('Run #',i)
     pred_voltages[i], valErr_pred[i] = net.predict(data, lr_cv, lr_scr,
-                                         nr_epochs, batch_size,lambda_scr=1e-6, seed=False)
+                                         nr_epochs, batch_size,betas=(0.999,0.999),lambda_scr=1e-9, seed=False)
     y = net.predictor(x).cpu().detach().numpy()
     labels = np.arange(y.shape[1])
     classes = [labels[yn==np.max(yn)] for yn in y]
@@ -86,6 +91,8 @@ for i in range(nruns):
     print('Std of decision boundary :', np.std(dboundary[i,:,:],axis=-1))
     if valErr_pred[i,-1]<min_valerr:
         min_valerr = valErr_pred[i,-1]
+        min_cv = pred_voltages[i]
+        min_scrp = net.score_params[:,-1,:]
     print('Min. Val. Error: ',min_valerr)
 
 
@@ -96,14 +103,18 @@ plt.figure()
 plt.plot(classes_run[best_idx,:].T)
 plt.plot(targets.cpu().data.numpy(),'k:')
 
-best_set = np.arange(nruns)[valErr_pred[:,-1]<=0.13]
+plt.figure()
+plt.plot(valErr_pred.T)
+plt.figure()
+plt.plot(np.arange(nr_epochs),net.cv_epoch)
+                                                
+best_set = np.arange(nruns)[valErr_pred[:,-1]<=0.1]
 plt.figure()
 plt.subplot(2,1,1)
 plt.plot(valErr_pred[best_set].T)
 plt.subplot(2,1,2)
 plt.plot(classes_run[best_set,:].T)
 plt.plot(targets.cpu().data.numpy(),'k:')
-
 plt.figure()
 plt.subplot(2,1,1)
 plt.plot(dboundary[best_set,0,:].T)
@@ -111,16 +122,15 @@ plt.title('Decision boundary of p0 while learning')
 plt.subplot(2,1,2)
 plt.plot(dboundary[best_set,1,:].T)
 plt.title('Decision boundary of p2 while learning')
-                                                
+
+
+
 print('Score weights \n', net.score_weights)
 print('Score bias', net.score_bias)
 #print('Predicted voltages: \n',pred_voltages)
 plt.figure()
-plt.plot(valErr_pred.T)
-plt.figure()
 plt.plot(classes_run.T)
-plt.figure()
-plt.plot(np.arange(nr_epochs),net.cv_epoch)
+
 
 plt.figure()
 plt.plot(targets.cpu().data.numpy(),'ko')
@@ -145,7 +155,7 @@ plt.subplot(122)
 plt.plot(net.score_params[1])
 plt.title('bias')
 
-best_cv = np.array([0.00635616, 0.12560761, 0.86242163, 0.9589921, 0.9429861])
+best_cv = min_cv#np.array([0.00635616, 0.12560761, 0.86242163, 0.9589921, 0.9429861])
 x = x.data.numpy()
 cv = best_cv[:,np.newaxis].T*np.ones((x.shape[0],len(best_cv)))
 ipts = np.concatenate((x,cv),axis=1)
@@ -157,15 +167,29 @@ plt.figure()
 plt.plot(targets.cpu().data.numpy(),'ko',label='targets')
 plt.plot(targets.cpu().data.numpy(),'r-',label='classifier')
 plt.plot(-3*out+2.5,label='trafo. output')
-plt.plot(1.31*np.ones_like(out),'k:')
-plt.plot(0.03*np.ones_like(out),'k:')
+plt.plot(1.27*np.ones_like(out),'k:')
+plt.plot(0.0*np.ones_like(out),'k:')
+plt.legend()
+plt.show()
+
+boundary_best = np.mean(dboundary[best_idx][:,:,-20:],axis=2)[0]
+classifier = np.ones_like(out)
+classifier[boundary_best[0]<out] = 0
+classifier[boundary_best[1]>out] = 2
+plt.figure()
+plt.plot(targets.cpu().data.numpy(),'ko',label='targets')
+plt.plot(classifier,'r-',label='classifier')
+plt.plot(out)
+plt.plot(boundary_best[0]*np.ones_like(out),'k:')
+plt.plot(boundary_best[1]*np.ones_like(out),'k:')
 plt.legend()
 plt.show()
 
 file_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Code/packages/SkyNEt/experiments/CP_NN/'
 name = 'Results_{}Runs_{}lrcv-{}lrscr-{}mb.npz'.format(nruns,lr_cv,lr_scr,batch_size)
-np.savez(file_dir+name,lr_cv=lr_cv, lr_scr=lr_scr, nr_epochs=nr_epochs, batch_size=batch_size,nruns=nruns, 
-         pred_voltages=pred_voltages,
-         valErr_pred=valErr_pred,
-         classes_run=classes_run,
-         dboundary=dboundary)
+#np.savez(file_dir+name,lr_cv=lr_cv, lr_scr=lr_scr, nr_epochs=nr_epochs, batch_size=batch_size,nruns=nruns, 
+#         pred_voltages=pred_voltages,
+#         valErr_pred=valErr_pred,
+#         classes_run=classes_run,
+#         dboundary=dboundary, boundary_best=boundary_best,
+#         min_valerr=min_valerr,min_cv=min_cv,min_scrp=min_scrp)
