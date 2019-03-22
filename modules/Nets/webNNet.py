@@ -39,7 +39,7 @@ from collections import OrderedDict as odict
 import SkyNEt.modules.Nets.webNNetTrain as webNNetTrain
 
 # import additional methods (search optional#1)
-import SkyNEt.modules.Nets.webNNetGA as GA
+import SkyNEt.modules.Nets.webNNetTrainGA as GA
 
 
 # imports for plotting graph

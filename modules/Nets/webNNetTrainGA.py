@@ -1,5 +1,5 @@
 """
-webNNet method definitions for everything GA related
+webNNet method definitions for everything GA related (including novelty search)
 
 @author: ljknoll
 """
