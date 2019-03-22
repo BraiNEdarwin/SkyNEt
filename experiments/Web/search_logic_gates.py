@@ -43,20 +43,16 @@ batch_size = 100
 max_epochs = 500
 lr = 0.05
 beta = 0.1
-cv_reset = 'rand' #0.4*torch.ones(5)# None, 'rand', tensor(5)
+cv_reset = 'rand'
 
-# None, mse, l1, bin, softmargin, binmse, cor, cormse
-training_type = 'cormse'
+training_type = 'cormse' # options: None, mse, bin, binmse, cor, cormse
 
-add_noise = False # automatically set to false when using bin/softmargin
+add_noise = True # automatically set to false when using bin/softmargin
 sigma = 0.01 # standard deviation of added noise in target
 
-# wether to train scale output and bias before returning
-bias=False
-scale=False
 
 # define custom stopping criteria
-def stop_func(epoch, error_list, best_error):
+def stop_fn(epoch, error_list, best_error):
     # if the error has not improved the last 50 epochs, reset parameters random
     if min(error_list[-50:]) > best_error:
         print("INFO: No improvement after 50 iterations")
@@ -128,18 +124,9 @@ if training_type == 'bin':
         y_pred = y_pred*10
         y_pred = torch.cat((-y_pred, y_pred), dim=1)
         return cross_fn(y_pred, y[:,0]) # cross_fn is defined below, just before training
-# L1 norm loss
-elif training_type == 'l1':
-    loss_fn = torch.nn.L1Loss()
 # default mse loss
 elif training_type == 'mse' or training_type == None:
     loss_fn = mse_loss_fn
-# two-class classification logistic loss
-elif training_type=='softmargin':
-    loss_fn = torch.nn.SoftMarginLoss()
-    target_data -= 0.5
-    target_data *= 2.0
-    add_noise = False
 # combining binary and mse loss
 elif training_type=='binmse':
     def loss_fn(y_pred, y):
@@ -157,7 +144,7 @@ elif training_type=='cor':
     def loss_fn(x, y):
         return cor_loss_fn(x[:,0], y[:,0])
 elif training_type=='cormse':
-    alpha = 0.6
+    alpha = 0.6 # fraction of cor and mse => 0:cor, 1: mse
     def loss_fn(x_in, y_in):
         x = x_in[:,0]
         y = y_in[:,0]
@@ -186,9 +173,7 @@ for (i,gate) in enumerate(gates):
                      max_epochs=max_epochs,
                      optimizer=optimizer,
                      loss_fn=loss_fn,
-                     bias=bias,
-                     scale=scale,
-                     stop_func = stop_func,
+                     stop_fn = stop_fn,
                      lr = lr)
     losslist.append(loss_l)
     trained_cv.append(best_cv)
@@ -214,12 +199,12 @@ def print_gates():
         # calculate errors
         web.reset_parameters(list_cv[i])
         cv_output = web.forward(input_data).data
-        cv_loss = web.error_fn(cv_output, target_data[i].view(-1,1), beta, loss_fn).item()
+        cv_loss = web.error_fn(cv_output, target_data[i].view(-1,1), beta).item()
         print("cv loss:", cv_loss)
     
         web.reset_parameters(trained_cv[i])
         output_data = web.forward(input_data).data 
-        loss = web.error_fn(output_data, target_data[i].view(-1,1), beta, loss_fn).item()
+        loss = web.error_fn(output_data, target_data[i].view(-1,1), beta).item()
         print("loss:", loss)
         
         mseloss = torch.nn.MSELoss()(output_data, target_data[i].view(-1,1).float()).item()
@@ -241,7 +226,6 @@ def print_gates():
         legend_list.append('cv_output '+str(round(cv_loss, 3)))
         
         plt.legend(legend_list)
-#        plt.title("%s, bias=%s, scale=%s" % (gate, round(web.bias.item(),3), round(web.scale.item()+1,3)))
         plt.title("%s, cv:%s" % (gate, np.round(list_cv[i].numpy(), 3)))
     # adjust margins
     plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)

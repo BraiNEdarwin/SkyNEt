@@ -23,68 +23,76 @@ web = webNNet()
 # network object, name of vertex
 web.add_vertex(net1, 'A', output=True)
 web.add_vertex(net1, 'B')
+web.add_vertex(net1, 'C')
 
 # connect vertices with arcs, source->sink
 # source vertex, sink vertex, sink gate index
 web.add_arc('B', 'A', 2)
+web.add_arc('C', 'A', 3)
 
 
 # Check if web is valid (and optionally plot)
-#web.check_graph(print_graph=True)
+web.check_graph(print_graph=True)
 
-N = 10
-batch_size = 2
-max_epochs = 100
+N = 100
+batch_size = 20
+max_epochs = 20
 
-# explicitly set traindata for each network:
-train_data = torch.zeros(N, 4)
-train_data[:,1] = 0.2
-train_data[:,3] = 0.3
+# input data, size (N, 2 * nr of networks)
+train_data = torch.cat((torch.zeros(N), torch.linspace(-0.9, 0.9, N))).view(2, -1).t()
 
-# use same train data for all vertices:
-#train_data = torch.zeros(N, 2)
-#train_data[:,1] = 0.9
+# duplicate train_data for each network
+train_data = torch.cat((train_data,)*len(web.graph), dim=1)
 
-# target data 
-targets = 0.5*torch.ones(N, 1)
+# target data, size (N, nr output vertices)
+targets = torch.linspace(0, 0.5, N).view(-1,1)
+
+
+# create plot function
+def plot_results(loss, params, title, error_name):
+    web.reset_parameters(params)
+    web.forward(train_data)
+    output = web.get_output()
+
+    fig = plt.figure()
+    fig.suptitle(title)
+    
+    plt.subplot(1, 2, 1)
+    plt.plot(output)
+    plt.plot(targets)
+    plt.legend(['trained result', 'target'])
+
+    plt.subplot(1, 2, 2)
+    plt.plot(loss)
+    plt.xlabel('epochs')
+    plt.ylabel(error_name)
+    
+    plt.show()
+
+
+# reset parameters of web
+web.reset_parameters()
 
 # training
 loss1, params1 = web.train(train_data, targets, batch_size, max_epochs, lr=0.05)
 
-plt.figure()
-plt.plot(loss1)
-plt.xlabel('epochs')
-plt.ylabel('MSE')
-plt.title('training example with default settins')
+plot_results(loss1, params1, 'training example with default settings (Adam and MSE)', 'MSE')
 
-# reset parameters of we
-web.reset_parameters()
 
 # OPTIONAL: define custom optimizer,
 # see https://pytorch.org/docs/stable/optim.html#torch.optim.Optimizer
 optimizer = torch.optim.SGD
+web.reset_parameters()
 loss2, params2 = web.train(train_data, targets, batch_size, max_epochs, optimizer=optimizer, lr=0.01)
 
-plt.figure()
-plt.plot(loss2)
-plt.xlabel('epochs')
-plt.ylabel('MSE')
-plt.title('training example custom optimizer SGD')
+plot_results(loss2, params2, 'training example custom optimizer SGD', 'MSE')
 
-#web.reset_parameters()
 
 # OPTIONAL: define custom loss function
-targets = torch.ones(N,).long()
-torch_loss_fn = torch.nn.CrossEntropyLoss()
 def loss_fn(y_pred, y):
-    y_pred = torch.cat((y_pred, -y_pred), dim=1)
-    return torch_loss_fn(y_pred, y)
+    return torch.mean((y_pred-y)**4)
+
+web.reset_parameters()
 loss3, params3 = web.train(train_data, targets, batch_size, max_epochs, loss_fn=loss_fn, lr=0.05)
 
-
-
-plt.figure()
-plt.plot(loss2)
-plt.xlabel('epochs')
-plt.ylabel('CrossEntropyLoss')
-plt.title('training example custom loss function')
+plot_results(loss3, params3, 'training example custom loss function', '4th power loss')

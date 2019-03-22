@@ -20,7 +20,7 @@ from SkyNEt.modules.Nets.webNNet import webNNet
 import SkyNEt.experiments.boolean_logic.config_evolve_NN as config
 
 
-# ------------------------ configure ------------------------
+# ------------------------ START configure ------------------------
 cf = config.experiment_config()
 cf.generations = 50
 cf.mutationrate = 0.3
@@ -53,8 +53,6 @@ add_noise = False
 sigma = 0.01 # standard deviation of noise added to target
 
 # ------------------------ END configure ------------------------
-
-
 
 
 
@@ -105,11 +103,6 @@ if training_type == 'bin':
         y_pred = y_pred*10
         y_pred = torch.cat((-y_pred, y_pred), dim=1)
         return cross_fn(y_pred, y[:,0])
-    add_noise = False
-elif training_type=='softmargin':
-    loss_fn = torch.nn.SoftMarginLoss()
-    target_data -= 0.5
-    target_data *= 8.0
     add_noise = False
 elif training_type=='mse':
     loss_fn = mse_loss_fn
@@ -166,7 +159,7 @@ def print_gates():
         plt.subplot(2, 3 , 1 + i//2 + i%2*3)
         legend_list = ['target', 'network', 'cv_output']
         plt.plot(target_data[i].numpy())
-        web.reset_parameters(np.float32(store_cvs[i]))
+        web.reset_parameters(store_cvs[i])
         store_output[i] = web.forward(input_data).data[:,0]
         plt.plot(store_output[i])
         plt.plot(cv_data[i].data)
