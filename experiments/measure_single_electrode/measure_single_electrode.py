@@ -34,7 +34,7 @@ Q = [0, 0, 1, 1]
 for ii in range(cf.control_sequence.shape[0]):
     print(f'Now measuring control sequence {ii}')
     controlVoltages = cf.control_sequence[ii].copy()
-    input_output = np.zeros((4, 8))  # Each row is control sequence + measured current
+    input_output = np.zeros((4, 9))  # Each row is control sequence + measured current
     waveform = np.zeros((4, cf.N))
     for jj in range(4):
         # Prepare controlVoltages
@@ -47,10 +47,8 @@ for ii in range(cf.control_sequence.shape[0]):
         time.sleep(1)  # Wait after setting DACs
 
         # Apply Keithley input
-        if(cf.measure_electrode == 7):
-            keithley.volt.set(0)
-        else:
-            keithley.volt.set(controlVoltages[cf.measure_electrode]/1000-0.01)
+        print(controlVoltages)
+        keithley.volt.set(controlVoltages[cf.measure_electrode]/1000)
         keithley.output.set(1)
         
         time.sleep(1)
@@ -61,10 +59,10 @@ for ii in range(cf.control_sequence.shape[0]):
             time.sleep(cf.wait_time)
 
         # Store result in input_output
-        input_output[jj, :7] = controlVoltages
-        input_output[jj, 7] = np.mean(waveform[jj])
+        input_output[jj, :8] = controlVoltages
+        input_output[jj, 8] = np.mean(waveform[jj])
 
-    keithley.output.set(0)
+        keithley.output.set(0)
 
     # Save experiment
     saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name[ii])

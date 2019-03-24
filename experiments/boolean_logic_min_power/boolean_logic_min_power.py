@@ -29,6 +29,7 @@ target = cf.TargetGen()[1]  # Target signal
 # np arrays to save genePools, outputs and fitness
 geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
 outputArray = np.zeros((cf.generations, cf.genomes, 8, len(x[0])))
+inputArray = np.zeros((cf.generations, cf.genomes, 8, len(x[0])))
 fitnessArray = np.zeros((cf.generations, cf.genomes))
 
 # Temporary arrays, overwritten each generation
@@ -138,6 +139,7 @@ for i in range(cf.generations):
     SaveLib.saveExperiment(saveDirectory,
                      geneArray = geneArray,
                      outputArray = outputArray,
+                     inputArray = inputArray,
                      fitnessArray = fitnessArray,
                      t = t,
                      x = x,

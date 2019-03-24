@@ -71,9 +71,9 @@ class experiment_config(config_class):
 
         # Define experiment
         self.amplification = 10  # nA/V
-        self.TargetGen = self.AND
-        self.generations = 50
-        self.generange = [[-800,200], [-1100, 700], [-1100, 700], [-1100, 700], [-800, 200], [0.1, 0.7]]
+        self.TargetGen = self.XNOR
+        self.generations = 500
+        self.generange = [[-800,200], [-1000, 700], [-1000, 700], [-1000, 700], [-800, 200], [0.1, 0.7]]
         self.resistance = 1E3  # Ohm
         self.P_max = 10E-6  # W
         self.separation_treshold = 1E-9
@@ -87,7 +87,7 @@ class experiment_config(config_class):
 
         # Save settings
         self.filepath = r'D:\Data\BramdW\power_min_test\\'  #Important: end path with double backslash
-        self.name = 'AND'
+        self.name = 'NAND'
 
         ################################################
         ################# OFF-LIMITS ###################
@@ -176,9 +176,9 @@ class experiment_config(config_class):
         V_weighed = np.zeros((8, len(indices)))
         target_weighed = np.zeros(len(indices))
         for i in range(len(indices)):
-            I_weighed[:, i] = I[:, indices[i]]
-            V_weighed[:, i] = V[:, indices[i]]
-            target_weighed[i] = target[indices[i]]
+            I_weighed[:, i] = I[:, indices[i][0]]
+            V_weighed[:, i] = V[:, indices[i][0]]
+            target_weighed[i] = target[indices[i][0]]
 
         # Determine normalized separation
         indices1 = np.argwhere(target_weighed)  #all indices where target is nonzero
@@ -186,9 +186,9 @@ class experiment_config(config_class):
         x1 = np.empty(0)  #list of values where x should be 1
         for i in range(len(target_weighed)):
             if(i in indices1):
-                x1 = np.append(x1, x_weighed[i])
+                x1 = np.append(x1, I_weighed[7, i])
             else:
-                x0 = np.append(x0, x_weighed[i])
+                x0 = np.append(x0, I_weighed[7, i])
         Q = (min(x1) - max(x0)) / (self.separation_treshold)
 
         # Get average currents per input configuration

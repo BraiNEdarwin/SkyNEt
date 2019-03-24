@@ -40,7 +40,7 @@ for ii in range(cf.control_sequence.shape[0]):
         
         time.sleep(1)  # Wait after setting DACs
 
-        # Measure output with ADwin
+        # Measure output with nidaq
         currents = InstrumentImporter.nidaqIO.IO(np.zeros(cf.N), cf.fs, inputPorts = [1, 1, 1, 1, 1, 1, 1, 1]) 
         
         plt.figure()
@@ -70,15 +70,7 @@ SaveLib.saveExperiment(saveDirectory,
                        data = data,
                        )
 
-# Plot all gates 
-for ii in range(cf.control_sequence.shape[0]):
-    plt.figure()
-    for jj in range(8):
-        plt.plot(data[ii, jj, :, 1], label = f'{jj}')
-    plt.title(cf.gates[ii])
-    plt.legend()
-    
-plt.show()
+print(data[0, :, :, 1])
 
 InstrumentImporter.reset(0, 0)
 
