@@ -93,15 +93,16 @@ class webNNet(torch.nn.Module):
         assert max(input_gates)<D_in, "Gate number (%i) exceeds range (0-%i)" % (max(input_gates), D_in-1)
         
         control_gates = []
-        for i in range(network.D_in):
+        for i in range(D_in):
             if i not in input_gates:
                 control_gates.append(i)
         
         
         if voltage_bounds is None:
-            if hasattr(network, 'offset') and hasattr(network, 'amplitude'):
-                voltage_bounds = torch.cat((torch.FloatTensor(network.offset-network.amplitude),
-                                            torch.FloatTensor(network.offset+network.amplitude))).view(-1,D_in)
+            if hasattr(network, 'info') and 'offset' in network.info and 'amplitude' in network.info:
+                info = network.info
+                voltage_bounds = torch.cat((torch.FloatTensor(info['offset']-info['amplitude']),
+                                            torch.FloatTensor(info['offset']+info['amplitude']))).view(-1,D_in)
             else:
                 # default to [[zeros], [ones]]
                 voltage_bounds = torch.cat((torch.zeros(D_in), torch.ones(D_in))).view(-1,D_in)
