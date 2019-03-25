@@ -1,6 +1,8 @@
 """
 The function train() searches for the control voltages which matches the web output to the given target data.
 
+@author: ljknoll
+
 Arguments:
     train_data:
         shape (data size, # of inputs * # of vertices)
@@ -27,7 +29,10 @@ Arguments:
         default is no function and training is done for max_epochs
     **kwargs (optional):
         any keyword arguments remaining are passed to the optimizer function
-    
+
+returns:
+    error_list      (list) list of error values during training 
+    best_params     (dict) web parameters which gave smallest error
 """
 
 import torch
@@ -105,7 +110,7 @@ def train(self,
 
 def session_train(self, *args, nr_sessions=5, **kwargs):
     """
-    Initialize random and train for nr_sessions, returns only the results with the lowest error
+    Initialize random and train for nr_sessions, returns only the results of Train() with the lowest error
     """
     best_errors, error_list, best_params = [], [], []
     for session in range(nr_sessions):

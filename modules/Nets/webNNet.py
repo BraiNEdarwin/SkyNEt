@@ -62,7 +62,7 @@ class webNNet(torch.nn.Module):
         self.default_param = 0.8 # value to initialize control voltage parameters
         self.loss_fn = torch.nn.MSELoss() # loss function (besides regularization)
         self.custom_par = {} # keeps track of  custom parameters added
-        self.custom_reg = lambda : 0 # function which returns the regularization of custom parameters
+        self.custom_reg = lambda : torch.FloatTensor([0]) # function which returns the regularization of custom parameters
         self.optimizer = torch.optim.Adam # optimizer function
         self.transfer = torch.sigmoid # function which maps output to input [0,1]
     
@@ -74,24 +74,60 @@ class webNNet(torch.nn.Module):
     noveltyGA = GA.noveltyGA
 
     
-    def add_vertex(self, network, name, output=False, number_cv = 5, skip = False):
+    def add_vertex(self, network, name, output=False, input_gates=None, voltage_bounds=None):
         """Adds neural network as a vertex to the graph.
         Args:
-            network: vertex (object with attribute D_in and method output())
-            name: key of graph dictionary in which vertex is created (str)
-            output: wheter of not this vertex' output is output of complete graph (boolean)
-            number_cv: nr of control voltages, the parameters which are trained (can be unused when connected to arc)
+            network:        (object with attribute D_in and method output()) vertex
+            name:           (str) key of graph dictionary in which vertex is created (str)
+            output:         (bool) wheter of not this vertex' output is output of complete graph (boolean)
+            input_gates:    (list) numbers of gates which should be used as inputs
+            voltage_bounds: (2 by D_in tensor) first row are lower bounds of all control voltages, second row are upper bounds
         """
         
         assert not hasattr(self, name), "Name %s already in use, choose other name for vertex!" % name
         
+        D_in = network.D_in
+        
+        if input_gates is None:
+            input_gates = [0,1]
+        assert max(input_gates)<D_in, "Gate number (%i) exceeds range (0-%i)" % (max(input_gates), D_in-1)
+        
+        control_gates = []
+        for i in range(network.D_in):
+            if i not in input_gates:
+                control_gates.append(i)
+        
+        
+        if voltage_bounds is None:
+            if hasattr(network, 'offset') and hasattr(network, 'amplitude'):
+                voltage_bounds = torch.cat((torch.FloatTensor(network.offset-network.amplitude),
+                                            torch.FloatTensor(network.offset+network.amplitude))).view(-1,D_in)
+            else:
+                # default to [[zeros], [ones]]
+                voltage_bounds = torch.cat((torch.zeros(D_in), torch.ones(D_in))).view(-1,D_in)
+        else:
+            voltage_bounds = torch.tensor(voltage_bounds)
+        
+        assert voltage_bounds.shape == (2, D_in), "shape of voltage bounds (%s) does not match expected shape (%s)"
+        # keep only the values of control gates, input gate values are not used
+        voltage_bounds = voltage_bounds[:, control_gates]
+        
+        # add parameter to model
+        number_cv = len(control_gates)
         cv = self.default_param*torch.ones(number_cv)
         self.register_parameter(name, torch.nn.Parameter(cv))
         self.nr_of_params += number_cv
         self._params[0]['params'].append(getattr(self, name)) # add vertex parameter to first group
         
+        swapindices = [i for i in range(len(input_gates), D_in)]
+        for c,i in enumerate(input_gates):
+            swapindices.insert(i,c)
+        
         self.graph[name] = {  'network':network,
-                              'isoutput':output}
+                              'isoutput':output,
+                              'swapindices':swapindices,
+                              'voltage_bounds':voltage_bounds}
+        
         if output:
             self.nr_output_vertices  += 1
             
@@ -161,6 +197,8 @@ class webNNet(torch.nn.Module):
             cv_data = getattr(self, vertex).repeat(len(v['train_data']), 1)
             # concatenate input with control voltage data
             data = torch.cat((v['train_data'], cv_data), dim=1)
+            # swap columns according to input/control indices
+            data = data[:,self.graph[vertex]['swapindices']]
             
             # check dependencies of vertex by looping through all arcs
             for sink,source_name in self.arcs.items():
@@ -171,7 +209,7 @@ class webNNet(torch.nn.Module):
                     # first evaluate vertices on which this input depends
                     self._forward_vertex(source_name)
                     # insert data from arc into control voltage parameters
-                    data[:, sink_gate] = self.transfer(self.graph[source_name]['output'][:,0])            
+                    data[:, sink_gate] = self.transfer(self.graph[source_name]['output'][:,0])
             # feed through network
             v['output'] = v['network'].model(data)
     
@@ -181,7 +219,8 @@ class webNNet(torch.nn.Module):
         reg_loss = 0
         for name in self.graph.keys():
             x = getattr(self, name)
-            reg_loss += torch.sum(torch.relu(-x) + torch.relu(x-1.0))
+            voltage_bounds = self.graph[name]['voltage_bounds']
+            reg_loss += torch.sum(torch.relu(voltage_bounds[0] - x) + torch.relu(-voltage_bounds[1] + x))
         return self.loss_fn(y_pred, y) + beta*reg_loss + self.custom_reg()
     
     def _set_input_data(self, x, verbose=False):
@@ -224,7 +263,9 @@ class webNNet(torch.nn.Module):
             with torch.no_grad():
                 for name, param in self.named_parameters():
                     if name in self.graph.keys():
-                        param.data = torch.rand(len(param), device=self.cuda)
+                        voltage_bounds = self.graph[name]['voltage_bounds']
+                        diff = (voltage_bounds[1]-voltage_bounds[0])
+                        param.data = torch.rand(len(param), device=self.cuda)*diff + voltage_bounds[0]
                     else:
                         param.data = torch.tensor(self.custom_par[name].clone(), device=self.cuda)
         else:

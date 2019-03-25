@@ -23,13 +23,10 @@ web = webNNet()
 # network object, name of vertex
 web.add_vertex(net1, 'A', output=True)
 web.add_vertex(net1, 'B')
-web.add_vertex(net1, 'C')
 
 # connect vertices with arcs, source->sink
 # source vertex, sink vertex, sink gate index
 web.add_arc('B', 'A', 2)
-web.add_arc('C', 'A', 3)
-
 
 # Check if web is valid (and optionally plot)
 web.check_graph(print_graph=True)

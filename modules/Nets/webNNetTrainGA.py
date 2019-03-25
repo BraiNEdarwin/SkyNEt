@@ -2,6 +2,12 @@
 webNNet method definitions for everything GA related (including novelty search)
 
 @author: ljknoll
+
+
+returns 
+    geneArray       numpy array of genepools during training (generations, genomes, genes)
+    outputArray     device outputs (generations, genomes, data_size, output_size)
+    fitnessArray    fitness of each genepool (generations, genomes)
 """
 
 

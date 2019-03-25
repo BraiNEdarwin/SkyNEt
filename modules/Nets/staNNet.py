@@ -88,6 +88,14 @@ class staNNet(object):
             self.dim_cv = 5
             print("Warning: Could not load attribute dim_cv, set at default 2.")
         
+        attributes = ['noise_model', 'freq', 'amplitude', 'offset', 'fs', 'phase']
+        for att in attributes:
+            try:
+                setattr(self, att, state_dic[att])
+                state_dic.pop(att)
+            except KeyError:
+                print("WARN: attribute '%s' not found in model" % att)
+        
         print('NN loaded with activation ',self.activ,', loss ',self.loss_str, ' and cv dimension ', str(self.dim_cv))
         
         itms = list(state_dic.items())  
