@@ -23,7 +23,7 @@ pred_ring = False
 # Possible loss functions: mse, cor, cormse
 training_type = 'cormse'
 input_voltages = np.array([2,3])  # Determines which indices
-learning_rate,nr_epochs,batch_size = 3e-3, 500, 64
+learning_rate,nr_epochs,batch_size = 3e-3, 100, 64
 reg_scale = 40.0
 
 N = 100

@@ -21,17 +21,18 @@ class predNNet(staNNet):
     def _construct_predictor(self):
         model = self.model
         for param in model.parameters():
-            param.requires_grad = False
-        pred_layer = nn.Linear(self.pred_in,self.D_in)
-        self.dim_cv = self.D_in - self.pred_in
-        pred_layer.bias.data.uniform_(-1.0, 0.6) #\\ Why between 0 and 1? Probably because previously CVs were between 0 and 1. TODO: Change it to CV range
-#        print('Predictor Bias initialized with uniform: ',pred_layer.bias.data)
-        #set weights to zero to supress mixture of input and control voltages
+            param.requires_grad = False 
         self.CVs = [] # List of all control electrodes
         for i in range(self.D_in):
             if (i != self.inputs).all():
                 self.CVs += [i]
                 
+        pred_layer = nn.Linear(self.pred_in,self.D_in)
+        self.dim_cv = self.D_in - self.pred_in
+        pred_layer.bias.data.uniform_(self.offset[self.CVs][0] - self.amplitude[self.CVs][0] , self.offset[self.CVs][0] + self.amplitude[self.CVs][0]) 
+#        print('Predictor Bias initialized with uniform: ',pred_layer.bias.data)
+        #set weights to zero to supress mixture of input and control voltages
+        
         pred_layer.weight.data[self.CVs] = torch.zeros_like( 
                 pred_layer.weight.data[self.CVs]) # For the CV's the weights are set to zero (?))
         
