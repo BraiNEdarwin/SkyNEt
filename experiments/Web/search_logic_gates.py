@@ -17,14 +17,15 @@ I0 I1    AND NAND OR NOR XOR XNOR
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.predNNet import predNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 
 
 # ------------------------ configure ------------------------
 # load device simulation
-main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\2019_01_30_123621_characterization_20h_batch_25s_fs_500_f_2\100epoch\\'
-data_dir = 'TEST_NN.pt'
+main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_03_14_143310_characterization_7D_t_4days_f_0_1_fs_100\\'
+data_dir = 'NN_skip3_MSE_noisefit.pt'
 net1 = predNNet(main_dir+data_dir)
 
 # single device web
@@ -32,24 +33,23 @@ web = webNNet()
 web.add_vertex(net1, 'A', output=True)
 
 # hardcoded target values of logic gates with off->lower and on->upper
-target_hardcoded = True
 upper = 1.
 lower = 0.
 # if set to false, use output of known cv configurations as targets
 
 N = 100 # number of data points of one of four input cases, total 4*N
 
-batch_size = 100
-max_epochs = 100
+batch_size = 50
+max_epochs = 300
 lr = 0.05
-beta = 0.1
+beta = 10
 cv_reset = 'rand' #0.4*torch.ones(5)# None, 'rand', tensor(5)
 
 # None, mse, l1, bin, softmargin, binmse, cor, cormse
 training_type = 'cormse'
 
 add_noise = True # automatically set to false when using bin/softmargin
-sigma = 0.01 # standard deviation of added noise in target
+sigma = 0.1 # standard deviation of added noise in target
 
 # wether to train scale output and bias before returning
 bias=False
@@ -69,48 +69,35 @@ def stop_func(epoch, error_list, best_error):
 
 
 # input data for both I0 and I1
-input_data = torch.zeros(N*4,2)
+input_data = -0.5*torch.ones(N*4,2)
 
-input_data[N:2*N,   1] = 0.8
-input_data[2*N:3*N, 0] = 0.8
-input_data[3*N:,    0] = 0.8
-input_data[3*N:,    1] = 0.8
+input_data[N:2*N,   1] = 0.
+input_data[2*N:3*N, 0] = 0.
+input_data[3*N:,    0] = 0.
+input_data[3*N:,    1] = 0.
 
-list_cv = torch.FloatTensor(
-      [[387,-387,650,55,-892],[477,-234,-332,-358,827],
-       [9,183,714,-313,-416],[514,665,-64,855,846],
-       [-771,342,900,-655,-48],[480,149,-900,-2,-450]])
-list_cv += 900
-list_cv /=1800
 
 
 # target data for all gates
 gates = ['AND','NAND','OR','NOR','XOR','XNOR']
-if target_hardcoded:
-    target_data = upper*torch.ones(6, 4*N)
-    target_data[0, :3*N] = lower
-    target_data[1, 3*N:] = lower
-    target_data[2, :N] = lower
-    target_data[3, N:] = lower
-    target_data[4, :N] = lower
-    target_data[4, 3*N:] = lower
-    target_data[5, N:3*N] = lower
-    
-    w = torch.ones(6, 2)
-    for i in range(6):
-        temp = torch.sum(target_data[i].float())/4/N
-        weights = torch.bincount(target_data[i].long()).float()
-        weights = 1/weights
-        weights /= torch.sum(weights)
-        w[i] = weights
-else:
-    # use output of known cv configurations as targets
-    target_data = torch.ones(6,4*N)
-    for (i, cv) in enumerate(list_cv):
-        # set parameters of network to cv
-        web.reset_parameters(cv)
-        # evaluate network
-        target_data[i] = web.forward(input_data).data[:,0]
+
+target_data = upper*torch.ones(6, 4*N)
+target_data[0, :3*N] = lower
+target_data[1, 3*N:] = lower
+target_data[2, :N] = lower
+target_data[3, N:] = lower
+target_data[4, :N] = lower
+target_data[4, 3*N:] = lower
+target_data[5, N:3*N] = lower
+"""
+w = torch.ones(6, 2)
+for i in range(6):
+    temp = torch.sum(target_data[i].float())/4/N
+    weights = torch.bincount(target_data[i].long()).float()
+    weights = 1/weights
+    weights /= torch.sum(weights)
+    w[i] = weights
+"""
 
 optimizer = torch.optim.Adam
 def cor_loss_fn(x, y):
@@ -157,13 +144,13 @@ elif training_type=='cor':
     def loss_fn(x, y):
         return cor_loss_fn(x[:,0], y[:,0])
 elif training_type=='cormse':
-    alpha = 0.6
+    alpha = 0.8
     def loss_fn(x_in, y_in):
         x = x_in[:,0]
         y = y_in[:,0]
         cor = cor_loss_fn(x, y)
         mse = mse_loss_fn(x, y)
-        return alpha*cor+(1-alpha)*mse
+        return alpha*cor+(1-alpha)*mse/10
 
 
 if add_noise:
@@ -210,12 +197,6 @@ def print_gates():
     plt.figure()
     for i, gate in enumerate(gates):
         print(gate)
-        
-        # calculate errors
-        web.reset_parameters(list_cv[i])
-        cv_output = web.forward(input_data).data
-        cv_loss = web.error_fn(cv_output, target_data[i].view(-1,1), beta, loss_fn).item()
-        print("cv loss:", cv_loss)
     
         web.reset_parameters(trained_cv[i])
         output_data = web.forward(input_data).data 
@@ -242,7 +223,7 @@ def print_gates():
         
         plt.legend(legend_list)
 #        plt.title("%s, bias=%s, scale=%s" % (gate, round(web.bias.item(),3), round(web.scale.item()+1,3)))
-        plt.title("%s, cv:%s" % (gate, np.round(list_cv[i].numpy(), 3)))
+        plt.title("%s, cv:%s" % (gate, np.round(trained_cv[i]['A'].numpy(), 3)))
     # adjust margins
     plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
     # fullscreen plot (only available with matplotlib auto)

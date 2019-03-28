@@ -33,7 +33,7 @@ def removeClipping(currents, CV = 0):
     cleanCurrents = currents[abs(Imean) < 36] # TODO: find exact clipping value
     cleanCV = 0
     if CV != 0:     # CV data is optional
-        cleanCV = CV[abs(Imean) < 3.1]
+        cleanCV = CV[abs(Imean) < 36]
     return cleanCV, cleanCurrents
     
 def currentPlotter(data,fs):
@@ -166,17 +166,17 @@ def spreadPlotter(currents, name = ''):
     """
     _, currents = removeClipping(currents)
     Imean = np.mean(currents, axis = 1)
-    Ivar = np.var(currents, axis = 1)
-    [a, b] = np.polyfit(Imean, Ivar**.5, 1)
+    Istd = np.std(currents, axis = 1)
+    [a, b] = np.polyfit(Imean, Istd, 1)
     x = np.linspace(Imean[abs(Imean).argmin()], Imean[abs(Imean).argmax()], 100)    
     plt.figure(name)
-    plt.plot(Imean, Ivar**.5, '.')
+    plt.plot(Imean, Istd, '.')
     plt.plot(x, a * x + b, '--') 
     plt.xlabel('$I_\mu$ (nA)')
     plt.ylabel('$I_\sigma$')
     plt.title('Standard deviations of CV configurations')
     plt.tight_layout()     
-    return Ivar, a, b
+    return Istd, a, b
 
 def gaussFit(currents, n, m, bins = 100, CVname = ''):
     """

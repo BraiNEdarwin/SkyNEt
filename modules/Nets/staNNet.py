@@ -23,7 +23,7 @@ import torch
 import torch.nn as nn
 import numpy as np 
 #from matplotlib import pyplot as plt
-noisefit = True
+
 class staNNet(object):
     
     def __init__(self,*args,loss='MSE',C=1.0,activation='ReLU', dim_cv=5, BN=False):
@@ -61,11 +61,13 @@ class staNNet(object):
         elif len(args)==1 and type(args[0]) is str:
             self._load_model(args[0])
             
-        elif len(args) == 7:    #data,depth,width,freq,Vmax,fs,phase
+        elif len(args) == 9:    #data,depth,width,freq,Vmax,fs,phase
            print('Input waves will be generated during training') 
-           data,depth,width,self.freq,self.Vmax,self.fs,self.phase = args
+           data,depth,width,self.freq,self.amplitude,self.fs,self.offset,self.phase,self.noisefit = args
            self.x_train, self.y_train = data[0]
+           self.y_train = self.y_train/10 #\\
            self.x_val, self.y_val = data[1]
+           self.y_val = self.y_val/10 #\\
            self.D_in = self.freq.shape[0]     
            self.dim_cv = dim_cv
            #assert dim_cv < self.D_in, 'Total input dimension must be greater than cv dimension'
@@ -108,13 +110,38 @@ class staNNet(object):
         
         self.activ = state_dic['activation']
         state_dic.pop('activation')  
-        
+          
         try:
             self.dim_cv = state_dic['dim_cv']
             state_dic.pop('dim_cv')
         except KeyError:
             self.dim_cv = 5
             print("Warning: Could not load attribute dim_cv, set at default 2.")
+        try:
+            #make a loop
+            self.noisefit = state_dic['noise_model'] 
+            state_dic.pop('noise_model')
+            self.amplitude = state_dic['amplitude']
+            state_dic.pop('amplitude')
+            self.freq = state_dic['freq']
+            state_dic.pop('freq')
+            self.fs = state_dic['fs']
+            state_dic.pop('fs')
+            self.offset = state_dic['offset']
+            state_dic.pop('offset')
+            self.phase = state_dic['phase']
+            state_dic.pop('phase')
+        except KeyError:
+            self.noisefit = False
+            print("Sine wave input data not saved in model.")
+        if self.noisefit:
+            try:
+                self.a = state_dic['noisefit_a'] 
+                state_dic.pop('noisefit_a')
+                self.b = state_dic['noisefit_b'] 
+                state_dic.pop('noisefit_b')
+            except KeyError:
+                print('Noise fit parameters failed to load')
         
         print('NN loaded with activation ',self.activ,', loss ',self.loss_str, ' and cv dimension ', str(self.dim_cv))
         
@@ -186,25 +213,16 @@ class staNNet(object):
         
         print('Model constructed with modules: /n',modules)
         self.model = nn.Sequential(*modules)
-        if noisefit == False:
+        if self.noisefit == False:
             self.loss_fn = nn.MSELoss()
+        else:
+            # Fitting parameters for sigma = a*pred + b
+            self.a = torch.tensor([-0.01553690797247516, 0.010176319709654977])
+            self.b = torch.tensor([0.04678267320566001, 0.04678267320566001])
  
-    def loss_fn(self, pred, targets):
-        #a = torch.tensor([-0.0033915818901652465, 0.004080650538246971]) #f0.1
-        #b = torch.tensor([0.006117984943787791, 0.006686746890205169])
-        a = torch.tensor([-0.018952696965704424, 0.020460188581447363]) #f2
-        b = torch.tensor([0.1351742112771171, 0.10736291344545681]) 
-        
-        sign = torch.sign(targets)
-        # added weight of the form w = (c - (ay + b))/c
-        #w = ((sign-1)/2 * (-1.5 * self.ymax * a[0] + b[0]) +
-        #     (sign+1)/2 * (1.5 * self.ymax * a[1] + b[1]) - 
-        #     (sign-1)/2 * (a[0] * targets + b[0]) - 
-        #     (sign+1)/2 * (a[1] * targets + b[1])) \
-        #    /((sign-1)/2 * (-1.5 * self.ymax * a[0] + b[0]) +
-        #     (sign+1)/2 * (1.5 * self.ymax * a[1] + b[1]))
-        sigma = -1 * (sign-1)/2 * (abs(a[0] * pred) + b[0]) + (sign+1)/2 * (abs(a[1] * pred) + b[1])
-              
+    def loss_fn(self, pred, targets):   
+        sign = torch.sign(pred)
+        sigma = -1 * (sign-1)/2 * (abs(self.a[0] * pred) + self.b[0]) + (sign+1)/2 * (abs(self.a[1] * pred) + self.b[1])              
         r = torch.mean(((pred - targets) ** 2) / sigma ** 2 ) 
         return r
    
@@ -232,7 +250,7 @@ class staNNet(object):
                 # Forward pass: compute predicted y by passing x to the model.
                 indices = permutation[i:i+batch_size]
                 if self.x_train.shape[1] == 1:
-                    y_pred = self.model(self.generateSineWave(self.freq, self.x_train[indices], self.Vmax, self.fs, self.phase)) 
+                    y_pred = self.model(self.generateSineWave(self.freq, self.x_train[indices], self.amplitude, self.fs, self.offset, self.phase)) 
                 else:
                     y_pred = self.model(self.x_train[indices]) 
                 
@@ -260,7 +278,7 @@ class staNNet(object):
             self.model.eval()  
             
             if self.x_val.shape[1] == 1:
-                y = self.model(self.generateSineWave(self.freq, self.x_val, self.Vmax, self.fs, self.phase)) 
+                y = self.model(self.generateSineWave(self.freq, self.x_val, self.amplitude, self.fs, self.offset, self.phase)) 
             else:
                 y = self.model(self.x_val) 
             
@@ -286,18 +304,29 @@ class staNNet(object):
         state_dic['activation'] = self.activ
         state_dic['loss'] = self.loss_str
         state_dic['dim_cv'] = self.dim_cv
+        state_dic['noise_model'] = self.noisefit
+        state_dic['freq'] = self.freq
+        state_dic['amplitude'] = self.amplitude
+        state_dic['offset'] = self.offset
+        state_dic['fs'] = self.fs
+        state_dic['phase'] = self.phase
+        
+        if self.noisefit:
+            state_dic['noisefit_a'] = self.a
+            state_dic['noisefit_b'] = self.b
+        
         torch.save(state_dic,path)
 
     def outputs(self,inputs, *args):
-        if len(args) == 4:
-            freq,Vmax,fs,phase = args
+        if len(args) == 5:
+            freq,Vmax,fs,offset,phase = args
         if inputs.shape[1] == 1:
-            return self.model(self.generateSineWave(freq,inputs,Vmax,fs,phase)).data.cpu().numpy()[:,0]
+            return self.model(self.generateSineWave(freq,inputs,Vmax,fs,offset,phase)).data.cpu().numpy()[:,0]
         else:
             return self.model(inputs).data.cpu().numpy()[:,0]
 
       
-    def generateSineWave(self,freq, t, amplitude, fs, phase = np.zeros(7)):
+    def generateSineWave(self,freq, t, amplitude, fs, offset = np.zeros(7), phase = np.zeros(7)):
         '''
         Generates a sine wave that can be used for the input data.
 
@@ -308,6 +337,6 @@ class staNNet(object):
         phase:      (Optional) phase offset at t=0
         '''
         
-        waves = (np.sin((2 * np.pi * np.outer(t,freq) + phase)/ fs) * amplitude)
+        waves = amplitude * np.sin((2 * np.pi * np.outer(t,freq) + phase)/ fs)  + np.outer(np.ones(t.shape[0]),offset)
         waves = torch.from_numpy(waves).type(torch.float32)
         return  waves    

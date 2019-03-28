@@ -335,7 +335,7 @@ class webNNet(torch.nn.Module):
 #                reg_loss += torch.sum(torch.abs(x))                
                 pass
             else:
-                reg_loss += torch.sum(torch.relu(-x) + torch.relu(x-1.0))
+                reg_loss += torch.sum(torch.relu(-x - 1.1) + torch.relu(x )) #\\
         return loss(y_pred, y) + beta*reg_loss
     
     def set_input_data(self, x, verbose=False):
@@ -379,7 +379,7 @@ class webNNet(torch.nn.Module):
                     if 'bias' in name or 'scale' in name:
                         param.data = torch.zeros(len(param), device=self.cuda)
                     else:
-                        param.data = torch.rand(len(param), device=self.cuda)
+                        param.data = torch.rand(len(param), device=self.cuda) #\\ Make sure that you initialize in complete CV range
                 # dictionary => dict containing all parameters of web structure
                 elif isinstance(value, dict):
                     param.data = value[name]

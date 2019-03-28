@@ -44,9 +44,9 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
 
 # Initialize NN
-main_dir = r'../../test/NN_test/data4nn/Data_for_testing/'
-dtype = torch.cuda.FloatTensor
-net = staNNet(main_dir+'TEST_NN.pt')
+main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_03_14_143310_characterization_7D_t_4days_f_0_1_fs_100\\'
+dtype = torch.FloatTensor
+net = staNNet(main_dir+'NN_skip3_MSE.pt')
 
 # Initialize genepool
 genePool = Evolution.GenePool(cf)
@@ -117,10 +117,10 @@ for i in range(cf.generations):
 #                                       w)
 
     # Save generation
-    SaveLib.saveExperiment(saveDirectory,
-                           genes = geneArray,
-                           output = outputArray,
-                           fitness = fitnessArray)
+    #SaveLib.saveExperiment(saveDirectory,
+    #                       genes = geneArray,
+    #                       output = outputArray,
+    #                       fitness = fitnessArray)
 
     # Evolve to the next generation
     genePool.NextGen()
