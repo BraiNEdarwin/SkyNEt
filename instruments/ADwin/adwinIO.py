@@ -76,10 +76,10 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
 
     inputs = Input.copy()
     InputSize = inputs.shape[1]
-    for i in range(inputs.shape[0]):
-        inputs[i, :] = FloatToLong(list(inputs[i, :]), 10)
     x = np.zeros((8, InputSize), dtype = int)
     x[:inputs.shape[0], :] = inputs
+    for i in range(x.shape[0]):
+        x[i, :] = FloatToLong(list(x[i, :]), 10)
     outputs = [[], [], [], [], [], [], [], []]  # Eight empty output lists
     lastWrite = False
 
@@ -88,7 +88,7 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
             adw.Boot(str('adwin' + PROCESSORTYPE + '.btl'))
         else:
             adw.Boot('C:\\ADwin\\ADwin' + PROCESSORTYPE + '.btl')
-        adw.Load_Process('C:\\Users\\PNPNteam\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8Read_4Write.TB1')
+        adw.Load_Process('C:\\Users\\Darwin\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8Read_4Write.TB1')
         adw.Set_Processdelay(1, int(300e6 / Fs))  # delay in clock cycles
         adw.Start_Process(1)
 
@@ -187,7 +187,7 @@ def setControlVoltages(adw, x, Fs):
         else:
             adw.Boot('C:\\ADwin\\ADwin' + PROCESSORTYPE + '.btl')
         #proc = os.path.abspath(os.path.dirname(sys.argv[0])) + os.sep + 'intstruments' + os.sep + 'ADwin' + os.sep + PROCESS
-        adw.Load_Process('C:\\Users\\PNPNteam\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8write.TB1')
+        adw.Load_Process('C:\\Users\\Darwin\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8write.TB1')
         adw.Set_Processdelay(1, int(300e6 / Fs))  # delay in clock cycles
 
         # fill the write FIFO

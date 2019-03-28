@@ -26,6 +26,7 @@ from SkyNEt.modules.Nets.webNNet import webNNet
 # load device simulation
 main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_03_14_143310_characterization_7D_t_4days_f_0_1_fs_100\\'
 data_dir = 'NN_skip3_MSE_noisefit.pt'
+
 net1 = predNNet(main_dir+data_dir)
 
 # single device web
@@ -35,12 +36,14 @@ web.add_vertex(net1, 'A', output=True)
 # hardcoded target values of logic gates with off->lower and on->upper
 upper = 1.
 lower = 0.
+
 # if set to false, use output of known cv configurations as targets
 
 N = 100 # number of data points of one of four input cases, total 4*N
 
 batch_size = 50
 max_epochs = 300
+
 lr = 0.05
 beta = 10
 cv_reset = 'rand' #0.4*torch.ones(5)# None, 'rand', tensor(5)
@@ -48,8 +51,10 @@ cv_reset = 'rand' #0.4*torch.ones(5)# None, 'rand', tensor(5)
 # None, mse, l1, bin, softmargin, binmse, cor, cormse
 training_type = 'cormse'
 
+
 add_noise = True # automatically set to false when using bin/softmargin
 sigma = 0.1 # standard deviation of added noise in target
+
 
 # wether to train scale output and bias before returning
 bias=False
@@ -71,12 +76,11 @@ def stop_func(epoch, error_list, best_error):
 # input data for both I0 and I1
 input_data = -0.5*torch.ones(N*4,2)
 
-input_data[N:2*N,   1] = 0.
-input_data[2*N:3*N, 0] = 0.
-input_data[3*N:,    0] = 0.
-input_data[3*N:,    1] = 0.
 
-
+input_data[N:2*N,   1] = 0.8
+input_data[2*N:3*N, 0] = 0.8
+input_data[3*N:,    0] = 0.8
+input_data[3*N:,    1] = 0.8
 
 # target data for all gates
 gates = ['AND','NAND','OR','NOR','XOR','XNOR']
@@ -167,15 +171,18 @@ for (i,gate) in enumerate(gates):
     web.reset_parameters(cv_reset)
     if training_type == 'bin':
         cross_fn = torch.nn.CrossEntropyLoss(weight = w[i])
+
     loss_l, best_cv = web.train(input_data, target_data[i].view(-1,1), 
                      beta=beta,
                      batch_size=batch_size,
                      nr_epochs=max_epochs,
+
                      optimizer=optimizer,
                      loss_fn=loss_fn,
                      bias=bias,
                      scale=scale,
                      #stop_func = stop_func,
+
                      lr = lr)
     losslist.append(loss_l)
     trained_cv.append(best_cv)
@@ -218,8 +225,10 @@ def print_gates():
         else:
             plt.plot(output_data)
             legend_list.append('network '+str(round(loss, 3)))
+
         #plt.plot(cv_output.data)
         #legend_list.append('cv_output '+str(round(cv_loss, 3)))
+
         
         plt.legend(legend_list)
 #        plt.title("%s, bias=%s, scale=%s" % (gate, round(web.bias.item(),3), round(web.scale.item()+1,3)))

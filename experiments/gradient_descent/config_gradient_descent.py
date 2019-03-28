@@ -16,12 +16,13 @@ class experiment_config(config_class):
         self.controls = 5
         self.freq = np.array([3, 5, 7, 11, 13])  #
         self.fs = 5000
-        self.n = 20                 # Amount of iterations
+        self.n = 10                 # Amount of iterations
         self.amplification = 1000
         self.postgain = 100
         self.Vrange = [-0.9, 0.9]   # Maximum voltage for the inputs
         self.waveAmplitude = 0.1    # Amplitude of the waves used in the controls
-        self.rampT = 0.05           # time to ramp up and ramp down the voltages at start and end of a measurement.
+        self.rampT = 0.5           # time to ramp up and ramp down the voltages at start and end of a measurement.
+        self.targetGen = self.AND
         #                        Summing module S2d      Matrix module           device
         # For the first array: 7 is always the output, 0 corresponds to ao0, 1 to ao1 etc.
         self.electrodeSetup = [[0,1,2,3,4,5,6,7],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
