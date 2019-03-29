@@ -59,7 +59,7 @@ sigma = 0.01 # standard deviation of added noise in target
 def stop_fn(epoch, error_list, best_error):
     # if the error has not improved the last 50 epochs, reset parameters random
     if min(error_list[-50:]) > best_error:
-        print("INFO: No improvement after 50 iterations")
+#        print("INFO: No improvement after 50 iterations")
         return True
 
 # ------------------------ END configure ------------------------
@@ -79,6 +79,10 @@ input_data[3*N:,    1] = input_upper
 
 # target data for all gates
 gates = ['AND','NAND','OR','NOR','XOR','XNOR']
+
+if training_type == 'bin':
+    lower = 0
+    upper = 1
 target_data = upper*torch.ones(6, 4*N)
 target_data[0, :3*N] = lower
 target_data[1, 3*N:] = lower
@@ -100,8 +104,10 @@ for i in range(6):
 optimizer = torch.optim.Adam
 def cor_loss_fn(x, y):
     corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))
-    return 1-corr/torch.std(x)/torch.std(y)
+    return 1.0-corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-16)
 mse_loss_fn = torch.nn.MSELoss()
+def mse_norm_loss_fn(y_pred, y):
+    return mse_loss_fn(y_pred, y)/(upper-lower)**2
 
 # ------------- Different training types -------------
 # CrossEntropyLoss for 2 class classification
@@ -115,17 +121,15 @@ if training_type == 'bin':
         return cross_fn(y_pred, y[:,0]) # cross_fn is defined below, just before training
 # default mse loss
 elif training_type == 'mse' or training_type == None:
-    loss_fn = mse_loss_fn
+    loss_fn = mse_norm_loss_fn
 # combining binary and mse loss
 elif training_type=='binmse':
     def loss_fn(y_pred, y):
         # binary
-        loss_fn1 = torch.nn.CrossEntropyLoss()
         y_pred_cross = torch.cat((-y_pred, y_pred), dim=1)
-        loss_value1 = loss_fn1(y_pred_cross, y[:,0].long())
+        loss_value1 = cross_fn(y_pred_cross, y[:,0].long())
         # mse
-        loss_fn2 = torch.nn.MSELoss()
-        loss_value2 = loss_fn2(torch.sigmoid(y_pred), y)
+        loss_value2 = mse_norm_loss_fn(torch.sigmoid(y_pred), y)
         return 1*loss_value1 + 1*loss_value2
     add_noise = False
 # use default loss function
@@ -133,13 +137,12 @@ elif training_type=='cor':
     def loss_fn(x, y):
         return cor_loss_fn(x[:,0], y[:,0])
 elif training_type=='cormse':
-    alpha = 0.8 # fraction of cor and mse => 0:cor, 1: mse
+    alpha = 0.1 # fraction of cor and mse => 0:cor, 1: mse
     def loss_fn(x_in, y_in):
         x = x_in[:,0]
         y = y_in[:,0]
         cor = cor_loss_fn(x, y) # correlation 
-        # calculate normalized MSE (value in [0,1])
-        mse = mse_loss_fn(x, y)/(upper-lower)
+        mse = mse_norm_loss_fn(x, y)
         return alpha*cor+(1-alpha)*mse
 
 
@@ -189,11 +192,13 @@ def print_gates():
         print(gate)
     
         web.reset_parameters(trained_cv[i])
-        output_data = web.forward(input_data).data 
+        web.forward(input_data)
+        output_data = web.get_output()
+        
         loss = web.error_fn(output_data, target_data[i].view(-1,1), beta).item()
         print("loss:", loss)
         
-        mseloss = torch.nn.MSELoss()(output_data, target_data[i].view(-1,1).float()).item()
+        mseloss = mse_norm_loss_fn(output_data, target_data[i].view(-1,1).float()).item()
         print("mseloss: ", mseloss)
         
         # print output network and targets
@@ -210,7 +215,7 @@ def print_gates():
             legend_list.append('network '+str(round(loss, 3)))
         
         plt.legend(legend_list)
-        plt.title("%s, cv:%s" % (gate, np.round(trained_cv[0]['A'].numpy(), 3)))
+        plt.title("%s, cv:%s" % (gate, np.round(trained_cv[i]['A'].numpy(), 3)))
     # adjust margins
     plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
     # fullscreen plot (only available with matplotlib auto)

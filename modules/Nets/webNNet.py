@@ -54,12 +54,11 @@ class webNNet(torch.nn.Module):
         self.arcs = odict() # arcs of graph
         self.output_data = None # output data of graph
         self.nr_output_vertices = 0 # number of networks whose output data is used
-        self.nr_of_params = 0 # number of parameters of network which need to be trained
+        self.nr_of_params = 0 # number of parameters of network which need to be trained (excluding those set by add_parameters)
         self._params = [{'params':[]}] # attribute which builds the parameter groups, passed to optimizer
         
         # setting defaults
         self.cuda = 'cpu'
-        self.default_param = 0.8 # value to initialize control voltage parameters
         self.loss_fn = torch.nn.MSELoss() # loss function (besides regularization)
         self.custom_par = {} # keeps track of  custom parameters added
         self.custom_reg = lambda : torch.FloatTensor([0]) # function which returns the regularization of custom parameters
@@ -88,10 +87,12 @@ class webNNet(torch.nn.Module):
         
         D_in = network.D_in
         
+        # set default input_gates
         if input_gates is None:
             input_gates = [0,1]
-        assert max(input_gates)<D_in, "Gate number (%i) exceeds range (0-%i)" % (max(input_gates), D_in-1)
+        assert max(input_gates, default=0)<D_in, "Gate number (%i) exceeds range (0-%i)" % (max(input_gates), D_in-1)
         
+        # generate control_gates with remaining gates
         control_gates = []
         for i in range(D_in):
             if i not in input_gates:
@@ -100,6 +101,7 @@ class webNNet(torch.nn.Module):
         
         if voltage_bounds is None:
             if hasattr(network, 'info') and 'offset' in network.info and 'amplitude' in network.info:
+                # collect voltage bounds from info of network
                 info = network.info
                 voltage_bounds = torch.cat((torch.FloatTensor(info['offset']-info['amplitude']),
                                             torch.FloatTensor(info['offset']+info['amplitude']))).view(-1,D_in)
@@ -110,16 +112,22 @@ class webNNet(torch.nn.Module):
             voltage_bounds = torch.tensor(voltage_bounds)
         
         assert voltage_bounds.shape == (2, D_in), "shape of voltage bounds (%s) does not match expected shape (%s)"
+
+        # define full transfer functions for each gate (may not be used)
+        transfer = [lambda x: self.transfer(x)*(i[1]-i[0])+i[0] for i in voltage_bounds.t()]
+        
         # keep only the values of control gates, input gate values are not used
         voltage_bounds = voltage_bounds[:, control_gates]
-        
+
         # add parameter to model
-        number_cv = len(control_gates)
-        cv = self.default_param*torch.ones(number_cv)
-        self.register_parameter(name, torch.nn.Parameter(cv))
-        self.nr_of_params += number_cv
+        number_cv = len(control_gates) # nr of control voltages
+        cv = torch.rand(number_cv)*(voltage_bounds[1]-voltage_bounds[0]) + voltage_bounds[0] # initialize randomly
+        self.register_parameter(name, torch.nn.Parameter(cv)) # register parameter to object
+        self.nr_of_params += number_cv # update number of parameters in graph
         self._params[0]['params'].append(getattr(self, name)) # add vertex parameter to first group
         
+        # In forward_vertex inputs and controls are concatenated to e.g. [I,I,c,c,c,c] with gate numbers [2,3,0,1,4,5,6]
+        # here, I generate a list of indices such that can be swapped in correct order [0-7]
         swapindices = [i for i in range(len(input_gates), D_in)]
         for c,i in enumerate(input_gates):
             swapindices.insert(i,c)
@@ -127,7 +135,8 @@ class webNNet(torch.nn.Module):
         self.graph[name] = {  'network':network,
                               'isoutput':output,
                               'swapindices':swapindices,
-                              'voltage_bounds':voltage_bounds}
+                              'voltage_bounds':voltage_bounds,
+                              'transfer':transfer}
         
         if output:
             self.nr_output_vertices  += 1
@@ -142,7 +151,6 @@ class webNNet(torch.nn.Module):
         # check if gate is already in use, combination of sink gate and sink name must be unique!
         assert (sink_name, sink_gate) not in self.arcs, "Sink gate (%s, %s), already in use!" % (sink_name, sink_gate)
         self.arcs[(sink_name, sink_gate)] = source_name
-        self.nr_of_params -= 1
     
     def add_parameters(self, parameter_names, parameters, custom_reg = None, **kwargs):
         """Adds custom parameters to be trained to web
@@ -195,7 +203,7 @@ class webNNet(torch.nn.Module):
         # skip if vertex is already evaluated
         if 'output' not in v:
             # control voltages, repeated to match batch size of train_data
-            cv_data = getattr(self, vertex).repeat(len(v['train_data']), 1)
+            cv_data = getattr(self, vertex).repeat(self._batch_size, 1)
             # concatenate input with control voltage data
             data = torch.cat((v['train_data'], cv_data), dim=1)
             # swap columns according to input/control indices
@@ -210,7 +218,7 @@ class webNNet(torch.nn.Module):
                     # first evaluate vertices on which this input depends
                     self._forward_vertex(source_name)
                     # insert data from arc into control voltage parameters
-                    data[:, sink_gate] = self.transfer(self.graph[source_name]['output'][:,0])
+                    data[:, sink_gate] = v['transfer'][sink_gate](self.graph[source_name]['output'][:,0])
             # feed through network
             v['output'] = v['network'].model(data)
     
@@ -229,13 +237,15 @@ class webNNet(torch.nn.Module):
         # assumes each vertex has same number of parameters (could change in future)
         dim = x.shape[1]
         # if input data is provided for each network
-        if dim+self.nr_of_params+len(self.arcs) is 7*len(self.graph):
+        if dim+self.nr_of_params is 7*len(self.graph):
             i = 0
             for key,v in self.graph.items():
-                v['train_data'] = x[:,i:i+int(dim/len(self.graph))]
-                i += int(dim/len(self.graph))
+                nr_columns = v['network'].D_in-v['voltage_bounds'].shape[1] # nr of columns of x to be used for this vertex
+                v['train_data'] = x[:,i:i+nr_columns]
+                i += nr_columns
         else:
-            assert False, "Size of input data is incorrect, expected (%i), got (%i)" % (7*len(self.graph) - self.nr_of_params - len(self.arcs), dim)
+            assert False, "Size of input data is incorrect, expected (%i), got (%i)" % (7*len(self.graph) - self.nr_of_params, dim)
+        self._batch_size = x.shape[0]
 
     def get_parameters(self):
         """Returns a copy of all learnable parameters of object in dictionary"""
@@ -248,19 +258,11 @@ class webNNet(torch.nn.Module):
         """Sets the control voltage parameters of all devices.
         (custom parameters are set to their initial values)
         options for value are:
-            None        default values
-            'rand'      randomly generated values
-            dict        use values from dictionary, must include custom parametes
-            iterable    replace values one by one from single iterable
+            None or 'rand'  randomly generated values
+            dict            use values from dictionary, must include custom parametes
+            iterable        replace values one by one from single iterable
         """
-        if value is None:
-            value = self.default_param
-        elif isinstance(value, dict):
-            assert self.get_parameters().keys() == value.keys(), "Different keys in given dict"
-            with torch.no_grad():
-                for name, param in self.named_parameters():
-                     param.data = value[name]
-        elif isinstance(value, str) and value == 'rand':
+        if value is None or (isinstance(value, str) and value == 'rand'):
             with torch.no_grad():
                 for name, param in self.named_parameters():
                     if name in self.graph.keys():
@@ -269,6 +271,11 @@ class webNNet(torch.nn.Module):
                         param.data = torch.rand(len(param), device=self.cuda)*diff + voltage_bounds[0]
                     else:
                         param.data = torch.tensor(self.custom_par[name].clone(), device=self.cuda)
+        elif isinstance(value, dict):
+            assert self.get_parameters().keys() == value.keys(), "Different keys in given dict"
+            with torch.no_grad():
+                for name, param in self.named_parameters():
+                     param.data = value[name]
         else:
             try:
                 assert len(value) == self.nr_of_params, "length of given list of parameters (%i) does not match nr of parameters (%i)"% (len(value), self.nr_of_params)

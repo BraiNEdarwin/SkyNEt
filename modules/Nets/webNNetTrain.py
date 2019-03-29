@@ -120,6 +120,6 @@ def session_train(self, *args, nr_sessions=5, **kwargs):
         best_errors.append(best_error)
         error_list.append(temp_error_list)
         best_params.append(temp_best_params)
-        print("INFO: Best error of session %i/%i: %f" % (session+1, nr_sessions, best_error))
+        print("INFO: Session %i/%i, best error after %i iterations: %f" % (session+1, nr_sessions, len(temp_error_list), best_error))
     index_best = np.argmin(best_errors)
     return error_list[index_best], best_params[index_best]
