@@ -385,7 +385,7 @@ class webNNet(torch.nn.Module):
                 for i, vertex in enumerate(layer):
                     x = (i+offset)/width
                     y = j/height
-                    patches.append(mpatches.Polygon(np.array(((x,y), (x+boxw,y), (x+boxw/2.,y+boxh))), ec="none"))
+#                    patches.append(mpatches.Polygon(np.array(((x,y), (x+boxw,y), (x+boxw/2.,y+boxh))), ec="none"))
                     patches.append(mpatches.Rectangle((x,y), boxw, boxh, ec="none"))
                     plt.text(x+boxw/2, y+boxh/2, vertex, ha="center", family='sans-serif', size=14)
             collection = PatchCollection(patches, cmap=plt.cm.hsv, alpha=0.4)
