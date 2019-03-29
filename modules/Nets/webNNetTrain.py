@@ -36,8 +36,6 @@ returns:
 """
 
 import torch
-import numpy as np
-
 
 def train(self, 
           train_data,
@@ -121,5 +119,5 @@ def session_train(self, *args, nr_sessions=5, **kwargs):
         error_list.append(temp_error_list)
         best_params.append(temp_best_params)
         print("INFO: Session %i/%i, best error after %i iterations: %f" % (session+1, nr_sessions, len(temp_error_list), best_error))
-    index_best = np.argmin(best_errors)
+    index_best = min(enumerate(best_errors), key=lambda x:x[1])[0]
     return error_list[index_best], best_params[index_best]

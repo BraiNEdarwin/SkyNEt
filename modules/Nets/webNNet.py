@@ -4,7 +4,7 @@
 Created on Fri Oct  5 11:46:46 2018
 
 IMPORTANT: 
-    - for train function documentation, see webNNetTrain.py
+    - for documentation on train function, see webNNetTrain.py
     - functions starting with _ are meant for internal use only
 
 
@@ -12,33 +12,37 @@ Class to create a web of connected neural networks (device simulations),
  this web can be seen as a non-cyclic directed graph.
 The graph consists of vertices (networks) and arcs (connections between vertices).
 
+See Skynet/experiments/Web/webNN_template.py for example use.
+
+The structure of the web is layed out below.
+
 Vertices:
 Structure of self.graph (dictionary):
     keys: names of vertex, values: info of vertex
     vertex info (dictionary):
-        'network'   : neural network object
-        'input'     : input data which is added to control voltages (torch tensor)
-        'isoutput'  : wether vertex is output vertex (boolean)
-        'output'    : output data of vertex calculated by forward_vertex (torch tensor)
+        'network'       : neural network object which simulates a device
+        'train_data'    : input data which is automatically added to control voltages (torch tensor)
+        'isoutput'      : wether vertex is output vertex (boolean)
+        'output'        : output data of vertex calculated by _forward_vertex (torch tensor)
+        'swapindices'   : indices which are used to swap columns to correct gate positions before a vertex is evaluated
+        'voltage_bounds': first row contains minimum voltage values a gate can handle, second row are maxima
+        'transfer'      : list of transfer functions used to map the output of a network to correct voltage range of gate
 
 Arcs:
 Each arc consist of a source and sink, where the data flows from source to sink.
 Structure of self.arcs (dictionary):
     keys: tuple: (sink_name, sink_gate)
     values: source_name
-    
-See webNN_template.py for example use.
 
 @author: ljknoll
 """
 
 import torch
-import numpy as np
 from collections import OrderedDict as odict
 
 import SkyNEt.modules.Nets.webNNetTrain as webNNetTrain
 
-# import additional methods (search optional#1)
+# import additional methods (see 'optional#1' below)
 import SkyNEt.modules.Nets.webNNetTrainGA as GA
 
 
@@ -50,20 +54,20 @@ from matplotlib.collections import PatchCollection
 class webNNet(torch.nn.Module):
     def __init__(self):
         super(webNNet, self).__init__()
-        self.graph = odict() # vertices of graph
-        self.arcs = odict() # arcs of graph
-        self.output_data = None # output data of graph
-        self.nr_output_vertices = 0 # number of networks whose output data is used
-        self.nr_of_params = 0 # number of parameters of network which need to be trained (excluding those set by add_parameters)
-        self._params = [{'params':[]}] # attribute which builds the parameter groups, passed to optimizer
+        self.graph = odict()            # vertices of graph
+        self.arcs = odict()             # arcs of graph
+        self.output_data = None         # output data of graph
+        self.nr_output_vertices = 0     # number of networks whose output data is used
+        self.nr_of_params = 0           # number of parameters of network which need to be trained (excluding those set by add_parameters)
+        self._params = [{'params':[]}]  # attribute which builds the parameter groups, passed to optimizer
         
         # setting defaults
         self.cuda = 'cpu'
-        self.loss_fn = torch.nn.MSELoss() # loss function (besides regularization)
-        self.custom_par = {} # keeps track of  custom parameters added
-        self.custom_reg = lambda : torch.FloatTensor([0]) # function which returns the regularization of custom parameters
-        self.optimizer = torch.optim.Adam # optimizer function
-        self.transfer = torch.sigmoid # function which maps output to input [0,1]
+        self.loss_fn = torch.nn.MSELoss()                   # loss function (besides regularization)
+        self.custom_par = {}                                # keeps track of  custom parameters added
+        self.custom_reg = lambda : torch.FloatTensor([0])   # function which returns the regularization of custom parameters
+        self.optimizer = torch.optim.Adam                   # optimizer function
+        self.transfer = torch.sigmoid                       # function which maps output to input [0,1]
     
     #attach training function to class
     train, session_train = webNNetTrain.train, webNNetTrain.session_train
@@ -120,11 +124,11 @@ class webNNet(torch.nn.Module):
         voltage_bounds = voltage_bounds[:, control_gates]
 
         # add parameter to model
-        number_cv = len(control_gates) # nr of control voltages
+        number_cv = len(control_gates)                          # nr of control voltages
         cv = torch.rand(number_cv)*(voltage_bounds[1]-voltage_bounds[0]) + voltage_bounds[0] # initialize randomly
-        self.register_parameter(name, torch.nn.Parameter(cv)) # register parameter to object
-        self.nr_of_params += number_cv # update number of parameters in graph
-        self._params[0]['params'].append(getattr(self, name)) # add vertex parameter to first group
+        self.register_parameter(name, torch.nn.Parameter(cv))   # register parameter to object
+        self.nr_of_params += number_cv                          # update number of parameters in graph
+        self._params[0]['params'].append(getattr(self, name))   # add vertex parameter to first group
         
         # In forward_vertex inputs and controls are concatenated to e.g. [I,I,c,c,c,c] with gate numbers [2,3,0,1,4,5,6]
         # here, I generate a list of indices such that can be swapped in correct order [0-7]
@@ -217,7 +221,7 @@ class webNNet(torch.nn.Module):
                 if sink_name == vertex:
                     # first evaluate vertices on which this input depends
                     self._forward_vertex(source_name)
-                    # insert data from arc into control voltage parameters
+                    # insert data from arc into control voltage parameters with correct transfer function
                     data[:, sink_gate] = v['transfer'][sink_gate](self.graph[source_name]['output'][:,0])
             # feed through network
             v['output'] = v['network'].model(data)
@@ -385,7 +389,6 @@ class webNNet(torch.nn.Module):
                 for i, vertex in enumerate(layer):
                     x = (i+offset)/width
                     y = j/height
-#                    patches.append(mpatches.Polygon(np.array(((x,y), (x+boxw,y), (x+boxw/2.,y+boxh))), ec="none"))
                     patches.append(mpatches.Rectangle((x,y), boxw, boxh, ec="none"))
                     plt.text(x+boxw/2, y+boxh/2, vertex, ha="center", family='sans-serif', size=14)
             collection = PatchCollection(patches, cmap=plt.cm.hsv, alpha=0.4)
