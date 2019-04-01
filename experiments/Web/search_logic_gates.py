@@ -218,9 +218,6 @@ def print_gates():
         plt.title("%s, cv:%s" % (gate, np.round(trained_cv[i]['A'].numpy(), 3)))
     # adjust margins
     plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
-    # fullscreen plot (only available with matplotlib auto)
-    figManager = plt.get_current_fig_manager()
-    figManager.window.showMaximized()
     plt.show()
 
 print_gates()
