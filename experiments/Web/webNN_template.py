@@ -33,7 +33,7 @@ web.check_graph(print_graph=True)
 
 N = 100
 batch_size = 20
-max_epochs = 20
+max_epochs = 100
 
 # input data, size (N, 2 * nr of networks)
 train_data = torch.cat((torch.zeros(N), torch.linspace(-0.9, 0.9, N))).view(2, -1).t()
@@ -55,9 +55,9 @@ def plot_results(loss, params, title, error_name):
     fig.suptitle(title)
     
     plt.subplot(1, 2, 1)
-    plt.plot(output)
-    plt.plot(targets)
-    plt.legend(['trained result', 'target'])
+    plt.plot(output.numpy())
+    plt.plot(targets.numpy())
+    plt.legend(['output of trained web', 'target'])
 
     plt.subplot(1, 2, 2)
     plt.plot(loss)
@@ -71,7 +71,7 @@ def plot_results(loss, params, title, error_name):
 web.reset_parameters()
 
 # training
-loss1, params1 = web.train(train_data, targets, batch_size, max_epochs, lr=0.05)
+loss1, params1, param_hist1 = web.train(train_data, targets, batch_size, max_epochs, lr=0.05)
 
 plot_results(loss1, params1, 'training example with default settings (Adam and MSE)', 'MSE')
 
@@ -80,7 +80,7 @@ plot_results(loss1, params1, 'training example with default settings (Adam and M
 # see https://pytorch.org/docs/stable/optim.html#torch.optim.Optimizer
 optimizer = torch.optim.SGD
 web.reset_parameters()
-loss2, params2 = web.train(train_data, targets, batch_size, max_epochs, optimizer=optimizer, lr=0.01)
+loss2, params2, param_hist2 = web.train(train_data, targets, batch_size, max_epochs, optimizer=optimizer, lr=0.01)
 
 plot_results(loss2, params2, 'training example custom optimizer SGD', 'MSE')
 
@@ -90,6 +90,6 @@ def loss_fn(y_pred, y):
     return torch.mean((y_pred-y)**4)
 
 web.reset_parameters()
-loss3, params3 = web.train(train_data, targets, batch_size, max_epochs, loss_fn=loss_fn, lr=0.05)
+loss3, params3, param_hist3  = web.train(train_data, targets, batch_size, max_epochs, loss_fn=loss_fn, lr=0.05)
 
 plot_results(loss3, params3, 'training example custom loss function', '4th power loss')

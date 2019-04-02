@@ -48,13 +48,13 @@ plt.title('GA error')
 # plot best output
 plt.figure()
 plt.plot(outputArray[-1, 0])
-plt.plot(target)
+plt.plot(target.numpy())
 plt.legend(['web output', 'target'])
 plt.title('GA output')
 
 
 web.reset_parameters()
-loss, params = web.train(x, target, 1, 200, lr=0.05, beta=0.1)
+loss, params, param_history = web.train(x, target, batch_size=1, max_epochs=200, lr=0.05, beta=0.1, verbose=True)
 
 web.reset_parameters(params)
 web.forward(x)
@@ -65,7 +65,7 @@ plt.title('GD error')
 
 plt.figure()
 plt.plot(web.get_output().view(-1,1).numpy())
-plt.plot(target)
+plt.plot(target.numpy())
 plt.legend(['web output', 'target'])
 plt.title('GD output')
 
