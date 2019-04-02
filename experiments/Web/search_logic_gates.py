@@ -17,49 +17,49 @@ I0 I1    AND NAND OR NOR XOR XNOR
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from SkyNEt.modules.Nets.predNNet import predNNet
+from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 
 
 # ------------------------ configure ------------------------
 # load device simulation
 main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
-data_dir = 'lr2e-4_eps400_mb512_20180807CP.pt'
-net1 = predNNet(main_dir+data_dir)
+#data_dir = 'lr2e-4_eps400_mb512_20180807CP.pt'
+data_dir = 'NN_skip3_MSE.pt'
+net1 = staNNet(main_dir+data_dir)
 
 # single device web
 web = webNNet()
-web.add_vertex(net1, 'A', output=True)
+web.add_vertex(net1, 'A', output=True, input_gates=[2,3])
+
+# input voltages of boolean inputs (on/upper, off/lower)
+input_lower = -0.7
+input_upper = 0.1
 
 # hardcoded target values of logic gates with off->lower and on->upper
-target_hardcoded = True
-upper = 1.0
+upper = 10.0
 lower = 0.0
 # if set to false, use output of known cv configurations as targets
 
 N = 100 # number of data points of one of four input cases, total 4*N
 
 batch_size = 100
-max_epochs = 500
+max_epochs = 300
 lr = 0.05
-beta = 0.1
-cv_reset = 'rand' #0.4*torch.ones(5)# None, 'rand', tensor(5)
+beta = 10
+cv_reset = 'rand'
 
-# None, mse, l1, bin, softmargin, binmse, cor, cormse
-training_type = 'cormse'
+training_type = 'cormse' # options: None, mse, bin, binmse, cor, cormse
 
-add_noise = False # automatically set to false when using bin/softmargin
+add_noise = False # automatically set to false when using bin
 sigma = 0.01 # standard deviation of added noise in target
 
-# wether to train scale output and bias before returning
-bias=False
-scale=False
 
 # define custom stopping criteria
-def stop_func(epoch, error_list, best_error):
+def stop_fn(epoch, error_list, best_error):
     # if the error has not improved the last 50 epochs, reset parameters random
     if min(error_list[-50:]) > best_error:
-        print("INFO: No improvement after 50 iterations")
+#        print("INFO: No improvement after 50 iterations")
         return True
 
 # ------------------------ END configure ------------------------
@@ -69,54 +69,45 @@ def stop_func(epoch, error_list, best_error):
 
 
 # input data for both I0 and I1
-input_data = torch.zeros(N*4,2)
+input_data = input_lower*torch.ones(N*4,2)
 
-input_data[N:2*N,   1] = 0.9
-input_data[2*N:3*N, 0] = 0.9
-input_data[3*N:,    0] = 0.9
-input_data[3*N:,    1] = 0.9
-
-list_cv = torch.FloatTensor(
-      [[387,-387,650,55,-892],[477,-234,-332,-358,827],
-       [9,183,714,-313,-416],[514,665,-64,855,846],
-       [-771,342,900,-655,-48],[480,149,-900,-2,-450]])
-list_cv += 900
-list_cv /=1800
+input_data[N:2*N,   1] = input_upper
+input_data[2*N:3*N, 0] = input_upper
+input_data[3*N:,    0] = input_upper
+input_data[3*N:,    1] = input_upper
 
 
 # target data for all gates
 gates = ['AND','NAND','OR','NOR','XOR','XNOR']
-if target_hardcoded:
-    target_data = upper*torch.ones(6, 4*N)
-    target_data[0, :3*N] = lower
-    target_data[1, 3*N:] = lower
-    target_data[2, :N] = lower
-    target_data[3, N:] = lower
-    target_data[4, :N] = lower
-    target_data[4, 3*N:] = lower
-    target_data[5, N:3*N] = lower
-    
-    w = torch.ones(6, 2)
-    for i in range(6):
-        temp = torch.sum(target_data[i].float())/4/N
-        weights = torch.bincount(target_data[i].long()).float()
-        weights = 1/weights
-        weights /= torch.sum(weights)
-        w[i] = weights
-else:
-    # use output of known cv configurations as targets
-    target_data = torch.ones(6,4*N)
-    for (i, cv) in enumerate(list_cv):
-        # set parameters of network to cv
-        web.reset_parameters(cv)
-        # evaluate network
-        target_data[i] = web.forward(input_data).data[:,0]
+
+if training_type == 'bin':
+    lower = 0
+    upper = 1
+target_data = upper*torch.ones(6, 4*N)
+target_data[0, :3*N] = lower
+target_data[1, 3*N:] = lower
+target_data[2, :N] = lower
+target_data[3, N:] = lower
+target_data[4, :N] = lower
+target_data[4, 3*N:] = lower
+target_data[5, N:3*N] = lower
+
+w = torch.ones(6, 2)
+for i in range(6):
+    temp = torch.sum(target_data[i].float())/4/N
+    weights = torch.bincount(target_data[i].long())
+    weights = weights[weights != 0].float()
+    weights = 1/weights
+    weights /= torch.sum(weights)
+    w[i] = weights
 
 optimizer = torch.optim.Adam
 def cor_loss_fn(x, y):
     corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))
-    return 1-corr/torch.std(x)/torch.std(y)
+    return 1.0-corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-16)
 mse_loss_fn = torch.nn.MSELoss()
+def mse_norm_loss_fn(y_pred, y):
+    return mse_loss_fn(y_pred, y)/(upper-lower)**2
 
 # ------------- Different training types -------------
 # CrossEntropyLoss for 2 class classification
@@ -128,28 +119,17 @@ if training_type == 'bin':
         y_pred = y_pred*10
         y_pred = torch.cat((-y_pred, y_pred), dim=1)
         return cross_fn(y_pred, y[:,0]) # cross_fn is defined below, just before training
-# L1 norm loss
-elif training_type == 'l1':
-    loss_fn = torch.nn.L1Loss()
 # default mse loss
 elif training_type == 'mse' or training_type == None:
-    loss_fn = mse_loss_fn
-# two-class classification logistic loss
-elif training_type=='softmargin':
-    loss_fn = torch.nn.SoftMarginLoss()
-    target_data -= 0.5
-    target_data *= 2.0
-    add_noise = False
+    loss_fn = mse_norm_loss_fn
 # combining binary and mse loss
 elif training_type=='binmse':
     def loss_fn(y_pred, y):
         # binary
-        loss_fn1 = torch.nn.CrossEntropyLoss()
         y_pred_cross = torch.cat((-y_pred, y_pred), dim=1)
-        loss_value1 = loss_fn1(y_pred_cross, y[:,0].long())
+        loss_value1 = cross_fn(y_pred_cross, y[:,0].long())
         # mse
-        loss_fn2 = torch.nn.MSELoss()
-        loss_value2 = loss_fn2(torch.sigmoid(y_pred), y)
+        loss_value2 = mse_norm_loss_fn(torch.sigmoid(y_pred), y)
         return 1*loss_value1 + 1*loss_value2
     add_noise = False
 # use default loss function
@@ -157,12 +137,12 @@ elif training_type=='cor':
     def loss_fn(x, y):
         return cor_loss_fn(x[:,0], y[:,0])
 elif training_type=='cormse':
-    alpha = 0.6
+    alpha = 0.1 # fraction of cor and mse => 0:cor, 1: mse
     def loss_fn(x_in, y_in):
         x = x_in[:,0]
         y = y_in[:,0]
-        cor = cor_loss_fn(x, y)
-        mse = mse_loss_fn(x, y)
+        cor = cor_loss_fn(x, y) # correlation 
+        mse = mse_norm_loss_fn(x, y)
         return alpha*cor+(1-alpha)*mse
 
 
@@ -186,10 +166,10 @@ for (i,gate) in enumerate(gates):
                      max_epochs=max_epochs,
                      optimizer=optimizer,
                      loss_fn=loss_fn,
-                     bias=bias,
-                     scale=scale,
-                     stop_func = stop_func,
-                     lr = lr)
+                     stop_fn = stop_fn,
+                     lr = lr,
+                     nr_sessions=5,
+                     verbose=False)
     losslist.append(loss_l)
     trained_cv.append(best_cv)
 
@@ -210,19 +190,15 @@ def print_gates():
     plt.figure()
     for i, gate in enumerate(gates):
         print(gate)
-        
-        # calculate errors
-        web.reset_parameters(list_cv[i])
-        cv_output = web.forward(input_data).data
-        cv_loss = web.error_fn(cv_output, target_data[i].view(-1,1), beta, loss_fn).item()
-        print("cv loss:", cv_loss)
     
         web.reset_parameters(trained_cv[i])
-        output_data = web.forward(input_data).data 
-        loss = web.error_fn(output_data, target_data[i].view(-1,1), beta, loss_fn).item()
+        web.forward(input_data)
+        output_data = web.get_output()
+        
+        loss = web.error_fn(output_data, target_data[i].view(-1,1), beta).item()
         print("loss:", loss)
         
-        mseloss = torch.nn.MSELoss()(output_data, target_data[i].view(-1,1).float()).item()
+        mseloss = mse_norm_loss_fn(output_data, target_data[i].view(-1,1).float()).item()
         print("mseloss: ", mseloss)
         
         # print output network and targets
@@ -237,12 +213,9 @@ def print_gates():
         else:
             plt.plot(output_data)
             legend_list.append('network '+str(round(loss, 3)))
-        plt.plot(cv_output.data)
-        legend_list.append('cv_output '+str(round(cv_loss, 3)))
         
         plt.legend(legend_list)
-#        plt.title("%s, bias=%s, scale=%s" % (gate, round(web.bias.item(),3), round(web.scale.item()+1,3)))
-        plt.title("%s, cv:%s" % (gate, np.round(list_cv[i].numpy(), 3)))
+        plt.title("%s, cv:%s" % (gate, np.round(trained_cv[i]['A'].numpy(), 3)))
     # adjust margins
     plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
     # fullscreen plot (only available with matplotlib auto)

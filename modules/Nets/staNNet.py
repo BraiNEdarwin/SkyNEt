@@ -33,15 +33,11 @@ class staNNet(object):
            self.x_train, self.y_train = data[0]
            self.x_val, self.y_val = data[1]
            self.D_in = self.x_train.size()[1]
-           # how many of the inputs are control voltages
-           self.dim_cv = dim_cv
-           assert dim_cv < self.D_in, 'Total input dimension must be greater than cv dimension'
            self.D_out = self.y_train.size()[1]
            self._BN = BN
            self.depth = depth
            self.width = width
-           self.loss_str = loss
-           self.activ = activation
+           self.info = {'activation':activation, 'loss':loss}
            self._tests()
         
            ################### DEFINE MODEL ######################################
@@ -71,21 +67,24 @@ class staNNet(object):
             self._BN = True
         else:
             self._BN = False
-            
-        self.loss_str = state_dic['loss']
-        state_dic.pop('loss') #Remove entrie of OrderedDict
         
-        self.activ = state_dic['activation']
-        state_dic.pop('activation')  
         
-        try:
-            self.dim_cv = state_dic['dim_cv']
-            state_dic.pop('dim_cv')
-        except KeyError:
-            self.dim_cv = 5
-            print("Warning: Could not load attribute dim_cv, set at default 2.")
-        
-        print('NN loaded with activation ',self.activ,', loss ',self.loss_str, ' and cv dimension ', str(self.dim_cv))
+        # move info key from state_dic to self
+        if state_dic.get('info') is not None:
+            self.info = state_dic['info']
+            state_dic.pop('info')
+        else:
+            # for backwards compatibility with objects where information is stored directly in state_dic
+            # TODO: this should be removed, because it assumes all parameters in network have either weight or bias in their name
+            #       which might not always be the case in the future
+            self.info = {}
+            for key, item in list(state_dic.items()):
+                # remove all keys in state_dic not containing bias or weight and store them as attributes of self
+                if 'bias' not in key and 'weight' not in key:
+                    self.info[key] = item
+                    state_dic.pop(key)
+
+        print('NN loaded with activation %s and loss %s' % (self.info['activation'], self.info['loss']))
         
         itms = list(state_dic.items())  
         layers = list(filter(lambda x: ('weight' in x[0]) and (len(x[1].shape)==2),itms))
@@ -123,16 +122,17 @@ class staNNet(object):
             print('BN tracking average: ',track_running_stats)
             self.bn_layer = nn.BatchNorm1d(self.width,track_running_stats=track_running_stats)
        
-        if self.activ == 'tanh':
+        activation = self.info['activation']
+        if activation == 'tanh':
             activ_func = nn.Tanh()
             print('Activation is tanh')            
-        elif self.activ == 'ReLU':
+        elif activation == 'ReLU':
             activ_func = nn.ReLU()
             print('Activation is ReLU')
-        elif self.activ == None:
+        elif activation is None:
             activ_func = None
         else:
-            assert False, 'Activation Function Not Recognized!'
+            assert False, "Activation function ('%s') not recognized!" % activation
         
         
         if self._BN: 
@@ -201,13 +201,16 @@ class staNNet(object):
                 nr_minibatches += 1
         
             
-            self.model.eval()  
+            
+            self.model.eval()
+            y_training = self.model(self.x_val)
+            loss_training = self.loss_fn(y_training,self.y_train)
             y = self.model(self.x_val)
             loss = self.loss_fn(y, self.y_val)
             self.model.train()  
             self.L_val[epoch] = loss.item()
             self.L_train[epoch] = running_loss/nr_minibatches
-            print('Epoch:',epoch,'Val. Error:', loss.item(),'Training Error:',running_loss/nr_minibatches)
+            print('Epoch:',epoch,'Val. Error:', loss.item(),'Training Error:',loss_training)
             
         print('Finished Training')
 #        plt.figure()
@@ -218,12 +221,13 @@ class staNNet(object):
         if not self.x_train.size()[0] == self.y_train.size()[0]: 
             raise NameError('Input and Output Batch Sizes do not match!')
     
-    def save_model(self,path):
+    def save_model(self, path):
+        """
+        Saves the model in given path, all other attributes are saved under the 'info' key as a new dictionary.
+        """
         self.model.eval()
         state_dic = self.model.state_dict()
-        state_dic['activation'] = self.activ
-        state_dic['loss'] = self.loss_str
-        state_dic['dim_cv'] = self.dim_cv
+        state_dic['info'] = self.info
         torch.save(state_dic,path)
 
     def outputs(self,inputs):

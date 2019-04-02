@@ -16,9 +16,9 @@ from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 ###############################################################################
 ########################### LOAD DATA  ########################################
 ###############################################################################
-main_dir = r'../../test/NN_test/data4nn/Data_for_testing/'
-file_name = 'data_for_training.npz'
-data, baseline_var = dl(main_dir, file_name, test_set=True)
+main_dir = r'D:\UTWENTE\PROJECTS\DARWIN\Data\Mark\\'
+file_name = 'data_with_inputs.npz'
+data = dl(main_dir, file_name, syst='cpu', test_set=False)
 
 #%%
 ###############################################################################
@@ -34,9 +34,6 @@ for i in range(runs):
     net.train_nn(learning_rate,nr_epochs,batch_size,betas=(0.9, 0.75))
     valerror[i] = net.L_val
     print('Run nr. ',i)
-
-print('Baseline Var. is ', baseline_var)
-norm_valerror = valerror/baseline_var
 
 #%%
 ###############################################################################
@@ -62,7 +59,7 @@ prediction = net.outputs(inputs)
 
 ### Training profile
 plt.figure()
-plt.plot(np.arange(nr_epochs),norm_valerror.T)
+plt.plot(np.arange(nr_epochs),valerror.T)
 plt.title('Norm. Validation MSE Profile while Training')
 plt.xlabel('Epochs')
 plt.show()
@@ -79,7 +76,7 @@ max_out = np.max(np.concatenate((targets[subsample],prediction[subsample,np.newa
 plt.plot(np.linspace(min_out,max_out),np.linspace(min_out,max_out),'k')
 plt.title('Predicted vs True values')
 
-error = (targets[:,0]-prediction.T).T/np.sqrt(baseline_var)
+error = (targets[:,0]-prediction.T).T
 plt.subplot(1,2,2)
 plt.hist(error,100)
 plt.title('Scaled error histogram')
