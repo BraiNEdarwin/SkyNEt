@@ -73,7 +73,7 @@ def train(self,
     error_list = []
     best_error = 1e5
     best_params = self.get_parameters()
-    all_params = []
+    all_params = torch.zeros(max_epochs, self.nr_of_params+self.nr_of_custom_params)
     for epoch in range(max_epochs):
         # train on complete data set in batches
         permutation = torch.randperm(len(train_data))
@@ -89,7 +89,7 @@ def train(self,
         predictions = self.forward(train_data)
         error_value = self.error_fn(predictions, target_data, beta)
         
-        all_params.append(self.get_parameters())
+        all_params[epoch] = torch.cat(tuple(self.get_parameters().values()))
         
         if torch.isnan(error_value):
             print("WARN: Error is nan, stopping training.")
@@ -114,15 +114,21 @@ def session_train(self, *args, nr_sessions=5, **kwargs):
     """
     Initialize random and train for nr_sessions, returns only the results of Train() with the lowest error
     """
-    best_errors, error_list, best_params, all_params = [[],]*4
+    best_errors, error_list, best_params = [[],[],[]]
+    try:
+         epoch_size = kwargs['max_epochs']
+    except KeyError:
+         # if max epochs is not given, use default value of self.train
+         epoch_size = 100
+    history_params = torch.zeros(nr_sessions, epoch_size, self.nr_of_params+self.nr_of_custom_params)
     for session in range(nr_sessions):
         self.reset_parameters('rand')
-        temp_error_list, temp_best_params, temp_all_params = self.train(*args, **kwargs)
+        temp_error_list, temp_best_params, temp_history_params = self.train(*args, **kwargs)
         best_error = min(temp_error_list)
         best_errors.append(best_error)
         error_list.append(temp_error_list)
         best_params.append(temp_best_params)
-        all_params.append(temp_all_params)
+        history_params[session] = temp_history_params
         print("INFO: Session %i/%i, best error after %i iterations: %f" % (session+1, nr_sessions, len(temp_error_list), best_error))
     index_best = min(enumerate(best_errors), key=lambda x:x[1])[0]
-    return error_list[index_best], best_params[index_best], all_params[index_best]
+    return error_list[index_best], best_params[index_best], history_params[index_best]

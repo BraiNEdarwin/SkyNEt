@@ -65,6 +65,7 @@ class webNNet(torch.nn.Module):
         self.cuda = 'cpu'
         self.loss_fn = torch.nn.MSELoss()                   # loss function (besides regularization)
         self.custom_par = {}                                # keeps track of  custom parameters added
+        self.nr_of_custom_params = 0
         self.custom_reg = lambda : torch.FloatTensor([0])   # function which returns the regularization of custom parameters
         self.optimizer = torch.optim.Adam                   # optimizer function
         self.transfer = torch.sigmoid                       # function which maps output to input [0,1]
@@ -169,6 +170,7 @@ class webNNet(torch.nn.Module):
         for i, name in enumerate(parameter_names):
             self.register_parameter(name, torch.nn.Parameter(parameters[i]))
             self.custom_par[name] = parameters[i].clone()
+            self.nr_of_custom_par += len(parameters[i])
         
         # add parameters as new group to be passed in optimizer
         self._params.append({'params':[getattr(self, name) for name in parameter_names], **kwargs})

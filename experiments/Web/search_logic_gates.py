@@ -160,7 +160,7 @@ for (i,gate) in enumerate(gates):
     web.reset_parameters(cv_reset)
     if training_type == 'bin':
         cross_fn = torch.nn.CrossEntropyLoss(weight = w[i])
-    loss_l, best_cv = web.session_train(input_data, target_data[i].view(-1,1), 
+    loss_l, best_cv, param_history = web.session_train(input_data, target_data[i].view(-1,1), 
                      beta=beta,
                      batch_size=batch_size,
                      max_epochs=max_epochs,
@@ -203,7 +203,7 @@ def print_gates():
         
         # print output network and targets
         plt.subplot(2, 3 , 1 + i//2 + i%2*3)
-        plt.plot(target_data[i])
+        plt.plot(target_data[i].numpy())
         legend_list = ['target']
         if False: #training_type == 'bin':
             plt.plot(torch.sigmoid(output_data))
@@ -211,7 +211,7 @@ def print_gates():
             plt.plot(torch.round(torch.sigmoid(output_data)))
             legend_list.append('classification')
         else:
-            plt.plot(output_data)
+            plt.plot(output_data.numpy())
             legend_list.append('network '+str(round(loss, 3)))
         
         plt.legend(legend_list)
