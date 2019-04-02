@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Sep 28 09:51:58 2018
-DataHandlers contains functions to preprocess and load the data needed for the neural net training:
+DataHandlers contains functions to pre-process and load the data needed for the neural net training:
     1. DataLoader(data_dir, file_name, **kwargs)
     2. GetData(dir_file, syst = 'cuda')
-    3. PrepData(main_dir, list_dirs, threshold = 1000)
+    3. PrepData(main_dir, list_dirs, threshold = [-np.inf,np.inf])
 @author: hruiz
 """
 import sys
@@ -15,7 +15,102 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
-#%%
+def loader(data_path):
+    meta = {}
+    with np.load(data_path) as data:
+    for key in data:
+        if key not in ['output', 'input']:
+            meta[key] = data[key]
+        else:
+            exec(key+f' = data[\'{key}\']')
+            
+    data = locals()
+    return data
+
+#%% 1. STEP: Clean data for further analysis
+def PrepData(main_dir, list_dirs=[], threshold = [-np.inf,np.inf]):
+    '''Pre-process data, cleans clipping, generates input arrays if non existent (when sine-sampling
+    was involved) and merges data sets if needed. The data arrays are merged into a single array and
+    cropped given the thresholds.
+    Arguments:
+        - a string with path to main directory
+    kwdargs:
+        - A list of strings indicating directories with training_NN_data.npz containing 'data'. 
+        - A lower and upper threshold to crop data; default is [-np.inf,np.inf]
+    
+    NOTE:
+        -The data is saved in main_dir+'/data4nn/ to a .npz file with keyes: inputs, outputs, 
+        list_dirs and info; the info key has a dictionary as value containing metadata of the 
+        sampling procedure, i.e sine, sawtooth, grid, random.
+        -The inputs are on ALL electrodes in Volts and the output in nA.
+        - Data does not undergo any transformation, this is left to the user.
+        - Data structure of output and input are arrays of Nxd, where N is the number of voltage 
+        configurations probed and d is the number of output samples or the input dimension.
+    '''
+    # Merge data if list_dir is not empty
+    if list_dirs:
+        out_list = []
+        inp_list = []
+        meta_list = []
+        for dir_file in list_dirs:
+            #loader loads data and makes decisions on how to handle different possible input modalities
+            _buff = loader(main_dir+dir_file+'training_NN_data.npz')
+            out_list.append(_buff['output']) 
+            meta_list.append(_buff['meta'])
+            if 'input' in _buff.keys():
+                inp_list.append(_buff['input'])
+        output = np.concatenate(tuple(out_list))
+        if inp_list:
+            inputs = np.concatenate(tuple(inp_list))
+    else:
+        _buff = loader(main_dir+'training_NN_data.npz')
+        for key in _buff:
+            exec(key+f' = _buff[\'{key}\']')
+    
+    #Crop data    
+    mean_output = np.mean(output,axis=1) 
+    if len(threshold)=2:
+        cropping_mask = (mean_output<threshold[1])*(mean_output>threshold[0])
+    elif type(threshold) is float:
+        cropping_mask = np.abs(mean_output)<threshold
+    
+    cropped_data = data[cropping_mask,:]
+    print('% of points cropped: ',(1-len(cropped_data)/len(data))*100)
+    
+    outputs = mean_output[cropping_mask]
+    # Rescale to Volts
+    inputs = cropped_data[:,:nr_electrodes-1]/scale_volts 
+    # Shift and rescale CVs to [0,1]
+    shift = np.min(inputs[:,2:])
+    cv_range = np.max(inputs[:,2:])-np.min(inputs[:,2:])
+    inputs[:,2:] = (inputs[:,2:]-shift)/cv_range
+    cv_trafo = [shift,cv_range]
+#    # merge to data array
+#    data = np.concatenate((inputs,outputs),axis=1)
+#    assert data.shape[1]==nr_electrodes, 'Data has less than '+str(nr_electrodes)+' electrodes!'
+    
+    # save with timestamp
+    now = datetime.datetime.now()
+    dirName = main_dir+'data4nn/'    
+    try:
+        # Create target Directory
+        os.mkdir(dirName)
+        print("Directory " , dirName ,  " Created ") 
+    except FileExistsError:
+        print("Directory " , dirName ,  " already exists")
+    
+    dirName += now.strftime("%Y_%m_%d")+'/'
+    try:
+        os.mkdir(dirName)
+    except FileExistsError:
+        print("Directory " , dirName ,  " already exists")
+        
+    save_to = dirName+'data_for_training'
+    print('Cleaned data saved to \n',save_to)
+    np.savez(save_to, inputs = inputs, cv_trafo = cv_trafo,
+         outputs = outputs, list_dirs = list_dirs)
+    
+#%% STEP 2: Load Data, prepare for NN and return as torch tensors
 def DataLoader(data_dir, file_name,
                val_size = 0.1, test_size = 0.1, 
                syst = 'cuda', batch_size = 4*512,
@@ -121,7 +216,7 @@ def DataLoader(data_dir, file_name,
 
     return [(x_train,y_train),(x_val,y_val)], baseline_var
 
-#%%
+#%% EXTRA: Just load data and return as torch.tensor
 def GetData(dir_file, syst = 'cuda'):
     '''Get data from dir_file. Returns the inputs as torch Variables and targets as numpy-arrays. 
     dtype of inputs is defined with kwarg syst. Default is 'cuda'.
@@ -147,63 +242,6 @@ def GetData(dir_file, syst = 'cuda'):
     inputs = Variable(x.type(dtype))
     
     return inputs, targets
-
-#%%
-def PrepData(main_dir, list_dirs, threshold = 1000, scale_volts=1000, nr_electrodes=8):
-    '''Preprocess data to feed NN. It gets as arguments a string with path to main directory and
-    a list of strings indicating directories with training_NN_data.npz containing 'data'. A kwarg threshold is given to crop data.
-    The data arrays are merged into a single array, cropped given a threshold and the CVs are shifted & rescaled to be in [0,1]. This trafo is done with the [shift,range] of the data.
-    NOTE:
-        -The data is saved in main_dir+'/data4nn/ to a .npz file with keyes: inputs, cv_trafo, outputs, var_output,list_dirs
-        -The convention of the inputs for the NN is [x_inp,CVs]. First dimension is the number of samples. Second dimension has length = # electrodes-1
-        -The inputs are in range [-1,1] Volts, the CVs rescaled to [0,1] and the outputs in nA.
-    '''
-    data_list = []
-    for dir_file in list_dirs:
-        data_buff = np.load(main_dir+dir_file+'training_NN_data.npz')['data']
-        data_list.append(data_buff)  
-    data = np.concatenate(tuple(data_list))
-    
-    mean_output = np.mean(data[:,nr_electrodes-1:],axis=1) 
-    cropping_mask = np.abs(mean_output)<threshold
-    var_output = np.var(data[:,nr_electrodes-1:],axis=1)
-    print('Max variance of output given inputs is ',np.max(var_output))
-    
-    cropped_data = data[cropping_mask,:]
-    print('% of points cropped: ',(1-len(cropped_data)/len(data))*100)
-    
-    outputs = mean_output[cropping_mask]
-    # Rescale to Volts
-    inputs = cropped_data[:,:nr_electrodes-1]/scale_volts 
-    # Shift and rescale CVs to [0,1]
-    shift = np.min(inputs[:,2:])
-    cv_range = np.max(inputs[:,2:])-np.min(inputs[:,2:])
-    inputs[:,2:] = (inputs[:,2:]-shift)/cv_range
-    cv_trafo = [shift,cv_range]
-#    # merge to data array
-#    data = np.concatenate((inputs,outputs),axis=1)
-#    assert data.shape[1]==nr_electrodes, 'Data has less than '+str(nr_electrodes)+' electrodes!'
-    
-    # save with timestamp
-    now = datetime.datetime.now()
-    dirName = main_dir+'data4nn/'    
-    try:
-        # Create target Directory
-        os.mkdir(dirName)
-        print("Directory " , dirName ,  " Created ") 
-    except FileExistsError:
-        print("Directory " , dirName ,  " already exists")
-    
-    dirName += now.strftime("%Y_%m_%d")+'/'
-    try:
-        os.mkdir(dirName)
-    except FileExistsError:
-        print("Directory " , dirName ,  " already exists")
-        
-    save_to = dirName+'data_for_training'
-    print('Cleaned data saved to \n',save_to)
-    np.savez(save_to, inputs = inputs, cv_trafo = cv_trafo,
-         outputs = outputs, var_output = var_output, list_dirs = list_dirs)
 
 #%%
 ####################################################################################################
