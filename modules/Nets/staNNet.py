@@ -201,13 +201,16 @@ class staNNet(object):
                 nr_minibatches += 1
         
             
-            self.model.eval()  
+            
+            self.model.eval()
+            y_training = self.model(self.x_val)
+            loss_training = self.loss_fn(y_training,self.y_train)
             y = self.model(self.x_val)
             loss = self.loss_fn(y, self.y_val)
             self.model.train()  
             self.L_val[epoch] = loss.item()
             self.L_train[epoch] = running_loss/nr_minibatches
-            print('Epoch:',epoch,'Val. Error:', loss.item(),'Training Error:',running_loss/nr_minibatches)
+            print('Epoch:',epoch,'Val. Error:', loss.item(),'Training Error:',loss_training)
             
         print('Finished Training')
 #        plt.figure()
