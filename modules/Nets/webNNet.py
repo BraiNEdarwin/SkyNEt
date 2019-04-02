@@ -170,7 +170,7 @@ class webNNet(torch.nn.Module):
         for i, name in enumerate(parameter_names):
             self.register_parameter(name, torch.nn.Parameter(parameters[i]))
             self.custom_par[name] = parameters[i].clone()
-            self.nr_of_custom_par += len(parameters[i])
+            self.nr_of_custom_params += len(parameters[i])
         
         # add parameters as new group to be passed in optimizer
         self._params.append({'params':[getattr(self, name) for name in parameter_names], **kwargs})
@@ -266,7 +266,7 @@ class webNNet(torch.nn.Module):
         options for value are:
             None or 'rand'  randomly generated values
             dict            use values from dictionary, must include custom parametes
-            iterable        replace values one by one from single iterable
+            iterable        replace values one by one from single iterable (e.g. from param_history)
         """
         if value is None or (isinstance(value, str) and value == 'rand'):
             with torch.no_grad():
@@ -284,7 +284,7 @@ class webNNet(torch.nn.Module):
                      param.data = value[name]
         else:
             try:
-                assert len(value) == self.nr_of_params, "length of given list of parameters (%i) does not match nr of parameters (%i)"% (len(value), self.nr_of_params)
+                assert len(value) == self.nr_of_params+self.nr_of_custom_params, "length of given list of parameters (%i) does not match nr of parameters (%i)"% (len(value), self.nr_of_params)
                 with torch.no_grad():
                     c = 0
                     for name, param in self.named_parameters():
