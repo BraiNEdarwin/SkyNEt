@@ -22,12 +22,12 @@ class experiment_config(object):
 
 
         #define where you want to save the data.
-        self.filepath = r'D:\data\BramdW\DNB8_BdW1\safety\\'
-        self.name = 'range7_long'
+        self.filepath = r'D:\data\BramdW\D9\opposite_IV\\'
+        self.name = '7_12'
         
         #define the IV you want to take in volts.
-        self.v_low = -1
-        self.v_high = 1
+        self.v_low = -3
+        self.v_high = 2
         self.n_points = 100000
         self.direction = 'up'
 
