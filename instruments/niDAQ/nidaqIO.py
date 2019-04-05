@@ -47,9 +47,9 @@ def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
         for i in range(len(inputPorts)):
             if(inputPorts[i] == 1 and i!=7):
                 input_task.ai_channels.add_ai_voltage_chan('Dev1/ai'+str(i)+'', 'ai'+str(i)+'', min_val=-5, max_val=5)
-                input_task.ai_channels[f'ai{i}'].ai_rng_low = -1
-                input_task.ai_channels[f'ai{i}'].ai_rng_high = 1
-                input_task.ai_channels[f'ai{i}'].ai_term_cfg = nidaqmx.constants.TerminalConfiguration.DIFFERENTIAL
+                input_task.ai_channels[f'ai{i}'].ai_rng_low = -5
+                input_task.ai_channels[f'ai{i}'].ai_rng_high = 5
+                input_task.ai_channels[f'ai{i}'].ai_term_cfg = nidaqmx.constants.TerminalConfiguration.RSE
             elif(inputPorts[i] == 1):
                 input_task.ai_channels.add_ai_voltage_chan('Dev1/ai'+str(i)+'', 'ai'+str(i)+'', min_val=-5, max_val=5)
 

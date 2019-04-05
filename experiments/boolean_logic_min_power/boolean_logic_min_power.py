@@ -43,7 +43,8 @@ controlVoltages = np.zeros(cf.genes)
 saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
 # Initialize main figure
-mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
+if(cf.plot_flag):
+    mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
 
 # Initialize instruments
 ivvi = InstrumentImporter.IVVIrack.initInstrument()
@@ -90,7 +91,8 @@ for i in range(cf.generations):
             output[7] = output[7]*cf.amplification/1E9
 
             # Plot genome
-            PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
+            if(cf.plot_flag):
+                PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
 
             # Train output
             outputAvg[avgIndex] = output
@@ -100,15 +102,16 @@ for i in range(cf.generations):
                                                  V,
                                                  target,
                                                  w,
-                                                 cf.P_max)
+                                                 )
 
             # Plot output
-            PlotBuilder.currentOutputEvolution(mainFig,
-                                               t,
-                                               target,
-                                               output[7],
-                                               j + 1, i + 1,
-                                               fitnessTemp[j, avgIndex])
+            if(cf.plot_flag):
+                PlotBuilder.currentOutputEvolution(mainFig,
+                                                   t,
+                                                   target,
+                                                   output[7],
+                                                   j + 1, i + 1,
+                                                   fitnessTemp[j, avgIndex])
 
         outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
 
@@ -125,15 +128,16 @@ for i in range(cf.generations):
     fitnessArray[i, :] = genePool.fitness
 
     # Update main figure
-    PlotBuilder.updateMainFigEvolution(mainFig,
-                                       geneArray,
-                                       fitnessArray,
-                                       outputArray[:, :, 7],
-                                       i + 1,
-                                       t,
-                                       cf.amplification*target,
-                                       output,
-                                       w)
+    if(cf.plot_flag):
+        PlotBuilder.updateMainFigEvolution(mainFig,
+                                           geneArray,
+                                           fitnessArray,
+                                           outputArray[:, :, 7],
+                                           i + 1,
+                                           t,
+                                           cf.amplification*target,
+                                           output,
+                                           w)
 
     # Save generation
     SaveLib.saveExperiment(saveDirectory,
@@ -148,7 +152,8 @@ for i in range(cf.generations):
     # Evolve to the next generation
     genePool.NextGen()
 
-PlotBuilder.finalMain(mainFig)
+if(cf.plot_flag):
+    PlotBuilder.finalMain(mainFig)
 
 InstrumentImporter.reset(0, 0)
 

@@ -50,7 +50,9 @@ for ii in range(cf.control_sequence.shape[0]):
         
         # Convert voltages to currents
         for kk in range(7):
+            print(f'DAC voltage: {controlVoltages[kk]/1E3}, measured: {np.mean(currents[kk])}')
             currents[kk] = (controlVoltages[kk]/1E3 - currents[kk])/cf.resistance
+        
            
         # Convert output current to A
         currents[-1] = currents[-1]*cf.amplification*1E-9
@@ -71,6 +73,6 @@ SaveLib.saveExperiment(saveDirectory,
                        )
 
 print(data[0, :, :, 1])
-
+plt.show()
 InstrumentImporter.reset(0, 0)
 

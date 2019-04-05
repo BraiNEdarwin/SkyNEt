@@ -71,24 +71,30 @@ class experiment_config(config_class):
 
         # Define experiment
         self.amplification = 10  # nA/V
-        self.TargetGen = self.XNOR
-        self.generations = 500
-        self.generange = [[-800,200], [-1000, 700], [-1000, 700], [-1000, 700], [-800, 200], [0.1, 0.7]]
-        self.resistance = 1E3  # Ohm
-        self.P_target = 1E-6  # W
-        self.separation_treshold = 1E-9
-        self.pcc_treshold = 0.8
+        self.TargetGen = self.OR
+        self.generations = 100
+        self.generange = [[-1000,500], [-1300, 900], [-1300, 900], [-1300, 900], [-1000, 500], [0.01, 1]]
+        self.resistance = 150E3  # Ohm
+        self.P_target = 1E-7  # W
+        self.P_max = 35E-6
+        self.separation_treshold = 2E-9
+        self.pcc_treshold = 0.75
+        self.current_resolution = 10E-9
+        self.edgelength = 0.2
+        self.signallength = 1
+        self.plot_flag = False
+        self.fitnessavg = 3
 
         # Specify either partition or genomes
         #self.partition = [5, 5, 5, 5, 5]
         self.genomes = 25
-        self.Fitness = self.FitnessPower3
+        self.Fitness = self.FitnessPower5
         # Documentation
         self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
 
         # Save settings
-        self.filepath = r'D:\Data\BramdW\power_min_test\\'  #Important: end path with double backslash
-        self.name = 'XNOR'
+        self.filepath = r'D:\Data\BramdW\D9\power_min_multiply_fitness\\'  #Important: end path with double backslash
+        self.name = 'OR_150e3'
 
         ################################################
         ################# OFF-LIMITS ###################
@@ -221,7 +227,7 @@ class experiment_config(config_class):
         else:
             return 1 + 1/P_avg
 
-    def FitnessPower3(self, I, V, target, w, P_max):
+    def FitnessPower3(self, I, V, target, w):
         '''
         This fitness function attempts to minimize total power consumption.
 
@@ -249,7 +255,7 @@ class experiment_config(config_class):
             target_weighed[i] = target[indices[i][0]]
 
         # Determine PCC
-        pcc = np.corrcoef(I_weighed[7], target_weighed)
+        pcc = np.corrcoef(I_weighed[7], target_weighed)[0, 1]
 
         # Determine normalized separation
         indices1 = np.argwhere(target_weighed)  #all indices where target is nonzero
@@ -269,6 +275,13 @@ class experiment_config(config_class):
         for i in range(4):
             I_avg[:, i] = np.mean(I_weighed[:, i*blocksize:(i+1)*blocksize], axis=1)
             V_avg[:, i] = np.mean(V_weighed[:, i*blocksize:(i+1)*blocksize], axis=1)
+            
+        # Cap current if it is within current resolution
+        for i in range(7):
+            for j in range(4):
+                if(abs(I_avg[i, j]) < self.current_resolution):
+                    I_avg[i, j] = np.sign(I_avg[i, j]) * self.current_resolution
+                    
 
         # Calculate power for each input configuration
         P = np.zeros(4)
@@ -292,6 +305,171 @@ class experiment_config(config_class):
             return Q
         else:
             return 1 + self.P_target/P_avg
+            
+    def FitnessPower4(self, I, V, target, w):
+        '''
+        This fitness function attempts to minimize total power consumption.
+
+        It is a three stage fitness, using correlation, separation
+        and power consumption:
+
+        Stage 1: PCC-3:  number between -4 and -2
+        Stage 2: Separation/range-1:  number between -2 and 0,
+        Stage 3: P_target/P_avg
+
+        Return stage 1 if PCC < pcc_treshold
+        Return stage 2 if separation < separation_treshold
+        Return stage 3 
+        
+        Some indicators:
+        F > -2; target correlation achieved
+        F > 0; target separation achieved, i.e. valid gate
+        F > 1; valid gate with target power consumption
+        '''
+        # Apply weights w
+        indices = np.argwhere(w)  #indices where w is nonzero (i.e. 1)
+
+        I_weighed = np.zeros((8, len(indices)))
+        V_weighed = np.zeros((8, len(indices)))
+        target_weighed = np.zeros(len(indices))
+        for i in range(len(indices)):
+            I_weighed[:, i] = I[:, indices[i][0]]
+            V_weighed[:, i] = V[:, indices[i][0]]
+            target_weighed[i] = target[indices[i][0]]
+
+        # Determine PCC
+        pcc = np.corrcoef(I_weighed[7], target_weighed)[0, 1]
+
+        # Determine normalized separation
+        indices1 = np.argwhere(target_weighed)  #all indices where target is nonzero
+        x0 = np.empty(0)  #list of values where x should be 0
+        x1 = np.empty(0)  #list of values where x should be 1
+        for i in range(len(target_weighed)):
+            if(i in indices1):
+                x1 = np.append(x1, I_weighed[7, i])
+            else:
+                x0 = np.append(x0, I_weighed[7, i])
+        Q = (min(x1) - max(x0))
+
+        # Get average currents per input configuration
+        I_avg = np.zeros((8, 4))
+        V_avg = np.zeros((8, 4))
+        blocksize = len(target_weighed)//4
+        for i in range(4):
+            I_avg[:, i] = np.mean(I_weighed[:, i*blocksize:(i+1)*blocksize], axis=1)
+            V_avg[:, i] = np.mean(V_weighed[:, i*blocksize:(i+1)*blocksize], axis=1)
+            
+        # Cap current if it is within current resolution
+        for i in range(7):
+            for j in range(4):
+                if(abs(I_avg[i, j]) < self.current_resolution):
+                    I_avg[i, j] = np.sign(I_avg[i, j]) * self.current_resolution
+                    
+
+        # Calculate power for each input configuration
+        P = np.zeros(4)
+        for i in range(4):
+            P[i] = np.sum(I_avg[:7, i]*V_avg[:7, i])
+
+        # Calculate average power
+        P_avg = np.abs(np.mean(P))
+
+        # Check for clipping
+        clipped = False
+        for i in range(len(indices)):
+            if(abs(I_weighed[7,i]) > 3.3E-9*self.amplification):
+                clipped = True
+                return -100
+
+        # Return final fitness
+        if(pcc < self.pcc_treshold):
+            return pcc-3
+        elif(Q < self.separation_treshold):
+            return Q/(6.6E-9*self.amplification) - 1
+        else:
+            return self.P_target/P_avg
+            
+    def FitnessPower5(self, I, V, target, w):
+        '''
+        This fitness function attempts to minimize total power consumption.
+
+        It is a three stage fitness, using correlation, separation
+        and power consumption:
+
+        Stage 1: PCC-3:  number between -4 and -2
+        Stage 2: Separation/range-1:  number between -2 and 0,
+        Stage 3: P_target/P_avg
+
+        Return stage 1 if PCC < pcc_treshold
+        Return stage 2 if separation < separation_treshold
+        Return stage 3 
+        
+        Some indicators:
+        F > -2; target correlation achieved
+        F > 0; target separation achieved, i.e. valid gate
+        F > 1; valid gate with target power consumption
+        '''
+        # Apply weights w
+        indices = np.argwhere(w)  #indices where w is nonzero (i.e. 1)
+
+        I_weighed = np.zeros((8, len(indices)))
+        V_weighed = np.zeros((8, len(indices)))
+        target_weighed = np.zeros(len(indices))
+        for i in range(len(indices)):
+            I_weighed[:, i] = I[:, indices[i][0]]
+            V_weighed[:, i] = V[:, indices[i][0]]
+            target_weighed[i] = target[indices[i][0]]
+
+        # Determine PCC
+        pcc = np.corrcoef(I_weighed[7], target_weighed)[0, 1]
+
+        # Determine normalized separation
+        indices1 = np.argwhere(target_weighed)  #all indices where target is nonzero
+        x0 = np.empty(0)  #list of values where x should be 0
+        x1 = np.empty(0)  #list of values where x should be 1
+        for i in range(len(target_weighed)):
+            if(i in indices1):
+                x1 = np.append(x1, I_weighed[7, i])
+            else:
+                x0 = np.append(x0, I_weighed[7, i])
+        Q = (min(x1) - max(x0))
+
+        # Get average currents per input configuration
+        I_avg = np.zeros((8, 4))
+        V_avg = np.zeros((8, 4))
+        blocksize = len(target_weighed)//4
+        for i in range(4):
+            I_avg[:, i] = np.mean(I_weighed[:, i*blocksize:(i+1)*blocksize], axis=1)
+            V_avg[:, i] = np.mean(V_weighed[:, i*blocksize:(i+1)*blocksize], axis=1)
+            
+        # Cap current if it is within current resolution
+        for i in range(7):
+            for j in range(4):
+                if(abs(I_avg[i, j]) < self.current_resolution):
+                    I_avg[i, j] = np.sign(I_avg[i, j]) * self.current_resolution
+                    
+
+        # Calculate power for each input configuration
+        P = np.zeros(4)
+        for i in range(4):
+            P[i] = np.sum(I_avg[:7, i]*V_avg[:7, i])
+
+        # Calculate average power
+        P_avg = np.abs(np.mean(P))
+
+        # Check for clipping
+        clipped = False
+        for i in range(len(indices)):
+            if(abs(I_weighed[7,i]) > 3.3E-9*self.amplification):
+                clipped = True
+                return -100
+
+        # Return final fitness
+        if(pcc < 0):
+            return pcc
+        else:
+            return (1 - P_avg/self.P_max)**3*pcc
+
 
     def FitnessEvolution(self, x, target, W):
         '''

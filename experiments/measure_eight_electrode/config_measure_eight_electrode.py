@@ -38,12 +38,12 @@ class experiment_config(config_class):
         ######### SPECIFY PARAMETERS ###################
         ################################################
         self.comport = 'COM3'  # COM port for the ivvi rack
-        self.measure_electrode = 6  # 0-6
+        self.measure_electrode = 0  # 0-6
         
-        self.control_sequence = np.zeros((1, 8))
-        self.control_sequence[0] = [611.5,611.5,-217,-206,166,146,148, 0]
+        self.control_sequence = np.zeros((4, 8))
+        self.control_sequence[0] = [543,543,162,364,272,136,-172, 0]
         
-        self.resistance = 1E3  # Resistors in resistor box
+        self.resistance = 13E3  # Resistors in resistor box
         self.amplification = 10  # nA/V
         
         # Measure N points with interval wait_time
@@ -51,9 +51,9 @@ class experiment_config(config_class):
         self.fs = 1000
 
         # Save settings
-        self.filepath = r'D:\Data\BramdW\D9\measure_eight_electrode_test\\'  #Important: end path with double backslash
-        self.gates = ['XOR']
-        self.name = 'Test'
+        self.filepath = r'D:\Data\BramdW\D9\measure_eight_electrode\\'  #Important: end path with double backslash
+        self.gates = ['AND', 'OR', 'NAND', 'NOR']
+        self.name = f'AND_OR_NAND_NOR_electrode{self.measure_electrode}'
 
         ################################################
         ################# OFF-LIMITS ###################

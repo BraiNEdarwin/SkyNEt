@@ -34,8 +34,8 @@ Q = [0, 0, 1, 1]
 for ii in range(cf.control_sequence.shape[0]):
     print(f'Now measuring control sequence {ii}')
     controlVoltages = cf.control_sequence[ii].copy()
-    input_output = np.zeros((4, 9))  # Each row is control sequence + measured current
-    waveform = np.zeros((4, cf.N))
+    input_voltages = np.zeros((4, 8))  # Each row is control sequence
+    output_current = np.zeros((4, cf.N))
     for jj in range(4):
         # Prepare controlVoltages
         controlVoltages[0] = P[jj]*cf.control_sequence[ii, 0]
@@ -55,20 +55,20 @@ for ii in range(cf.control_sequence.shape[0]):
 
         # Measure N datapoints
         for kk in range(cf.N):
-            waveform[jj, kk] = keithley.curr()
+            output_current[jj, kk] = keithley.curr()
             time.sleep(cf.wait_time)
 
-        # Store result in input_output
-        input_output[jj, :8] = controlVoltages
-        input_output[jj, 8] = np.mean(waveform[jj])
+        # Store control voltages
+        input_voltages[jj] = controlVoltages
 
         keithley.output.set(0)
 
     # Save experiment
     saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name[ii])
     SaveLib.saveExperiment(saveDirectory,
-                           input_output = input_output,
-                           waveform = waveform,
+                           gate = cf.name[ii],
+                           input_voltages = input_voltages,
+                           output_current = output_current,
                            measure_electrode = cf.measure_electrode
                            )
 
