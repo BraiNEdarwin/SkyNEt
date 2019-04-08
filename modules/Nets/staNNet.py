@@ -42,13 +42,13 @@ class staNNet(object):
         
            ################### DEFINE MODEL ######################################
            self._contruct_model()
-           if isinstance(self.x_train.data,torch.cuda.FloatTensor): 
+           if isinstance(self.x_train.data,torch.FloatTensor): 
+               self.itype = torch.LongTensor
+           else:
                self.itype = torch.cuda.LongTensor
                self.model.cuda()
                self.loss_fn.cuda()
                print('Sent to GPU')
-           else: 
-               self.itype = torch.LongTensor
             
         elif len(args)==1 and type(args[0]) is str:
             self._load_model(args[0])
@@ -172,7 +172,6 @@ class staNNet(object):
         for epoch in range(nr_epochs):
     
             permutation = torch.randperm(self.x_train.size()[0]).type(self.itype) # Permute indices 
-            running_loss = 0.0 
             nr_minibatches = 0
 
             for i in range(0,len(permutation),batch_size):
@@ -182,8 +181,7 @@ class staNNet(object):
                 y_pred = self.model(self.x_train[indices])
                 
                 # Compute and print loss.
-                loss = self.loss_fn(y_pred, self.y_train[indices])
-                running_loss += loss.item()      
+                loss_training = self.loss_fn(y_pred, self.y_train[indices])
                 # Before the backward pass, use the optimizer object to zero all of the
                 # gradients for the variables it will update (which are the learnable
                 # weights of the model). This is because by default, gradients are
@@ -193,7 +191,7 @@ class staNNet(object):
                 
                 # Backward pass: compute gradient of the loss with respect to model
                 # parameters
-                loss.backward()
+                loss_training.backward()
                 
                 # Calling the step function on an Optimizer makes an update to its
                 # parameters
@@ -203,14 +201,22 @@ class staNNet(object):
             
             
             self.model.eval()
-            y_training = self.model(self.x_val)
-            loss_training = self.loss_fn(y_training,self.y_train)
+            
+            # Evaluate training error
+            get_indices = torch.randperm(self.x_train.size()[0]).type(self.itype)[:10000]
+            x = self.x_train[get_indices]
+            y = self.model(x)
+            y_subset = self.y_train[get_indices]
+            loss = self.loss_fn(y,y_subset).item()
+            self.L_train[epoch] = loss
+            #Evaluate Validation error
             y = self.model(self.x_val)
-            loss = self.loss_fn(y, self.y_val)
-            self.model.train()  
-            self.L_val[epoch] = loss.item()
-            self.L_train[epoch] = running_loss/nr_minibatches
-            print('Epoch:',epoch,'Val. Error:', loss.item(),'Training Error:',loss_training)
+            loss = self.loss_fn(y, self.y_val).item()
+            self.L_val[epoch] = loss
+            
+            print('Epoch:', epoch, 'Val. Error:', self.L_val[epoch],
+                  'Training Error:', self.L_train[epoch])
+            self.model.train()
             
         print('Finished Training')
 #        plt.figure()

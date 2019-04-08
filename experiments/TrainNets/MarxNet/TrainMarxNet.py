@@ -17,9 +17,9 @@ from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 ###############################################################################
 ########################### LOAD DATA  ########################################
 ###############################################################################
-main_dir = r'D:\UTWENTE\PROJECTS\DARWIN\Data\Mark\\'
-file_name = 'data_with_inputs.npz'
-data = dl(main_dir, file_name, test_size = 0.1)
+main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/NN_data_Mark/7D_train_data/data4nn/2019_04_08/'
+file_name = 'data_for_training.npz'
+data = dl(main_dir, file_name, syst='cpu', steps=3)
 
 #%%
 ###############################################################################
@@ -27,33 +27,39 @@ data = dl(main_dir, file_name, test_size = 0.1)
 ###############################################################################
 depth = 5
 width = 90
-learning_rate,nr_epochs,batch_size = 3e-4, 100, 512
-beta1, beta2 = 0.9, 0.75
+learning_rate,nr_epochs,batch_size = 3e-4, 5, 64
+beta1,beta2 = 0.9, 0.75
 runs = 1
 valerror = np.zeros((runs,nr_epochs))
+trainerror = np.zeros((runs,nr_epochs))
 for i in range(runs):
     net = staNNet(data,depth,width)
     net.train_nn(learning_rate,nr_epochs,batch_size,betas=(beta1,beta2))
     valerror[i] = net.L_val
+    trainerror[i] = net.L_train
     print('Run nr. ',i)
+
 
 ### Training profile
 plt.figure()
-plt.plot(np.arange(nr_epochs),valerror.T)
+plt.plot(np.arange(nr_epochs),valerror.T, label='Val. Error')
+plt.plot(np.arange(nr_epochs),trainerror.T, label='Train. Error')
 plt.title('Norm. Validation MSE Profile while Training')
 plt.xlabel('Epochs')
+plt.legend()
 plt.show()
 
 now = datetime.datetime.now()
-nowstr = now.strftime('%Y-%m-%d-%H%M')
+nowstr = now.strftime('%d-%m-%Hh%Mm')
 
 plt.savefig(main_dir+f'{nowstr}-Error_lr{learning_rate}-eps{nr_epochs}-mb{batch_size}-b1{beta1}-b2{beta2}.png')
+
 #%%
 ###############################################################################
 ############################## SAVE NN ########################################
 ###############################################################################
-path = main_dir+f'TEST_NN_{nowstr}.pt'
-net.save_model(main_dir+f'TEST_NN_{nowstr}.pt')
+path = main_dir+f'{nowstr}_NN.pt'
+net.save_model(path)
 #Then later: net = staNNet(path)
 # Save other stuff? e.g. generalization/test error...
 
@@ -63,10 +69,14 @@ net.save_model(main_dir+f'TEST_NN_{nowstr}.pt')
 ###############################################################################
 net = staNNet(path)
 
+
 ########################## TEST GENERALIZATION  ###############################
-file_dir = main_dir+'test_set_from_trainbatch.npz'
-inputs, targets = gtd(file_dir) #function to load data returning torch Variable with correct form and dtype 
+file_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/NN_data_Mark/7D_test_sets/2019_03_19_084109_rand_test_set_100ms/data4nn/2019_04_08/'
+inputs, targets = gtd(file_dir+'data_for_test.npz', syst='cpu') #function to load data returning torch Variable with correct form and dtype 
 prediction = net.outputs(inputs)
+ 
+
+###################### ------- Basic Plotting ------- #######################
 
 ### Test Error
 subsample = np.random.permutation(len(prediction))[:30000]

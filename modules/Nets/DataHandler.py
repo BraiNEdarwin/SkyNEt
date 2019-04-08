@@ -16,26 +16,33 @@ import torch
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import math 
+import pdb
 
 def loader(data_path):
+    print('Loading data from: \n',data_path)
     meta = {}
+    data_dic = {} 
     with np.load(data_path) as data:
+        print('with keys: \n',list(data.keys()))
+        assert any('output' in s for s in list(data.keys())), 'Keyvalue \'output(s)\' is missing! Make sure you included the outputs in the data.'
         for key in data:
-            if key not in ['output', 'input']:
-                meta[key] = data[key]
+            if key in 'outputs':
+                data_dic['outputs'] = data[key]
+                meta['nr_raw_samples'] = len(data_dic['outputs'])
+            elif key in 'inputs':
+                data_dic['inputs'] = data[key]
             else:
-                exec(key+f' = data[\'{key}\']')
-                if key in 'output':
-                    meta['nr_raw_samples'] = len(data[key])
+                meta[key] = data[key]
+                    
         ### Check if inputs available, otherwise generate them ###
-        if 'input' not in list(data.keys()):
+        if 'inputs' not in list(data_dic.keys()):
             print('Input generated as sine waves!')
-            inputs = generate_inpsines(meta)
-    data = locals()
-    data.pop('key')
-    data.pop('data')
-    print('Data loaded with keys: \n',list(data.keys()))
-    return data
+            data_dic['inputs'] = generate_inpsines(meta)
+            
+    data_dic['meta'] = meta        
+    print('Data loaded with keys: \n',list(data_dic.keys()))
+    print('meta key is dict with keys:\n', list(data_dic['meta'].keys()))
+    return data_dic
 
 def generate_inpsines(info):
     nr_raw_samples = info['nr_raw_samples']
@@ -51,7 +58,7 @@ def generate_inpsines(info):
     
 #%% 1. STEP: Clean data for further analysis
 def PrepData(main_dir, data_filename = 'training_NN_data.npz',
-             list_dirs=[], threshold = [-np.inf,np.inf]):
+             list_dirs=[], threshold = [-np.inf,np.inf], plot=False):
     '''Pre-process data, cleans clipping, generates input arrays if non existent (e.g. when sine-sampling
     was involved) and merges data sets if needed. The data arrays are merged into a single array and
     cropped given the thresholds.
@@ -59,11 +66,14 @@ def PrepData(main_dir, data_filename = 'training_NN_data.npz',
         - a string with path to main directory
     kwdargs:
         - data_filename: the name of the .npz file containing the data. It is assumend that this file 
-            contains at least the key 'output'. Besides the keys 'output' and 'inputs', all other keys are 
+            contains at least the key 'outputs'. Besides the keys 'outputs' and 'inputs', all other keys are 
             bundled into a dictionary called meta. If the key 'inputs' is non-existent, it generates the
-            inputs assuming sine waves and using the information in meta. 
+            inputs assuming sine waves and using the information in meta. The data_filename is also used 
+            to name the file in which the pre-processed data is saved; it assumes that the use of the data is specified
+            in the first word of the file name and words are separated by underscore, e.g. training_data or test_data.
         - list_dirs: A list of strings indicating directories with training_NN_data.npz containing 'data'. 
         - threshold: A lower and upper threshold to crop data; default is [-np.inf,np.inf]
+        - plot: if set to True, it plots the first 1000 samples of the inputs and outputs
     
     NOTE:
         -The data is saved in main_dir+'/data4nn/ to a .npz file with keyes: inputs, outputs, 
@@ -82,28 +92,23 @@ def PrepData(main_dir, data_filename = 'training_NN_data.npz',
         meta_list = []
         datapth_list = []
         for dir_file in list_dirs:
-            #loader loads data into a 
             _databuff = loader(main_dir+dir_file+data_filename)
-            out_list.append(_databuff['output']) 
+            out_list.append(_databuff['outputs']) 
             meta_list.append(_databuff['meta'])
             datapth_list.append(_databuff['data_path'])
-            ### Check if inputs available, otherwise generate them ###
-            if 'input' in _databuff.keys():
-                inp_list.append(_databuff['input'])
-            else:
-                inputs = generate_inpsines(_databuff['meta'])
-                inp_list.append(inputs)
+            inp_list.append(_databuff['inputs'])
         #Generate numpy arrays out of the lists
-        raw_data['output'] = np.concatenate(tuple(out_list))
-        raw_data['input'] = np.concatenate(tuple(inp_list))
+        raw_data['outputs'] = np.concatenate(tuple(out_list))
+        raw_data['inputs'] = np.concatenate(tuple(inp_list))
         raw_data['meta'] = meta_list
         raw_data['data_path'] = datapth_list
     else:
         raw_data = loader(main_dir+data_filename)
+        raw_data['data_path'] = raw_data['meta']['filename']
     
     ### Crop data ###
     nr_raw_samples = raw_data['meta']['nr_raw_samples']
-    mean_output = np.mean(raw_data['output'],axis=1) 
+    mean_output = np.mean(raw_data['outputs'],axis=1) 
     if type(threshold) is list:
         cropping_mask = (mean_output<threshold[1])*(mean_output>threshold[0])
     elif type(threshold) is float:
@@ -111,20 +116,21 @@ def PrepData(main_dir, data_filename = 'training_NN_data.npz',
     else:
         assert False, "Threshold not recognized! Must be list with lower and upper bound or float."
     
-    output = raw_data['output'][cropping_mask]
+    outputs = raw_data['outputs'][cropping_mask]
     inputs = raw_data['inputs'][cropping_mask,:]
     print('Number of raw samples: ', nr_raw_samples)
-    print('% of points cropped: ',(1-len(output)/nr_raw_samples)*100)
+    print('% of points cropped: ',(1-len(outputs)/nr_raw_samples)*100)
     
-    plt.figure()
-    plt.suptitle('Data for NN training')
-    plt.subplot(211)
-    plt.plot(inputs[:1000])
-    plt.ylabel('inputs')
-    plt.subplot(212)
-    plt.plot(output[:1000])
-    plt.ylabel('output')
-    plt.show()
+    if plot:
+        plt.figure()
+        plt.suptitle('Data for NN training')
+        plt.subplot(211)
+        plt.plot(inputs[:1000])
+        plt.ylabel('inputs')
+        plt.subplot(212)
+        plt.plot(outputs[:1000])
+        plt.ylabel('outputs')
+        plt.show()
     
     # save with timestamp
     now = datetime.datetime.now()
@@ -136,16 +142,16 @@ def PrepData(main_dir, data_filename = 'training_NN_data.npz',
     except FileExistsError:
         print("Directory " , dirName ,  " already exists")
     
-    dirName += now.strftime("%Y_%m_%d")+'/'
+    dirName += now.strftime("%d_%m_%Y")+'/'
     try:
         os.mkdir(dirName)
     except FileExistsError:
         print("Directory " , dirName ,  " already exists")
-        
-    save_to = dirName+'data_for_training'
+    target_file = data_filename.split('_')[0]
+    save_to = dirName+f'data_for_{target_file}'
     print(f'Cleaned data saved to \n {save_to}.npz')
     
-    np.savez(save_to, inputs = inputs, output = output,
+    np.savez(save_to, inputs = inputs, outputs = outputs,
          meta=raw_data['meta'], data_path = raw_data['data_path'])
     
 #%% STEP 2: Load Data, prepare for NN and return as torch tensors
@@ -175,7 +181,7 @@ def DataLoader(data_dir, file_name,
 #        print(type(meta))
         print('Metainfo about data:\n',meta)
         bf_inp = data['inputs'][::steps] # shape: Nx#electrodes
-        bf_out = data['output'][::steps] #Outputs need dim Nx1
+        bf_out = data['outputs'][::steps] #Outputs need dim Nx1
         print(f'Shape of outputs: {bf_out.shape}; shape of inputs: {bf_inp.shape}')
     #Shuffle data
     shuffler = np.random.permutation(len(bf_out))
@@ -226,30 +232,12 @@ def DataLoader(data_dir, file_name,
         raise ValueError('Input and Output Batch Sizes do not match!')
     
     ### Define Data Type for PyTorch ###
-    if syst is 'cuda':
-        print('Train with CUDA')
+    if syst is 'gpu':
+        print('Train with GPU')
         dtype = torch.cuda.FloatTensor
-#        itype = torch.cuda.LongTensor
     else: 
         print('Train with CPU')
         dtype = torch.FloatTensor
-#        itype = torch.LongTensor
-    
-    # Create Tensors to hold inputs and outputs, and wrap them in Variables.
-    # From Numpy to Pytorch b = torch.from_numpy(a)    
-#    x = torch.from_numpy(inputs_train).type(dtype)
-#    y = torch.from_numpy(outputs_train).type(dtype)
-#    
-#    x = Variable(x)
-#    y = Variable(y)
-
-#    permutation = torch.randperm(int(nr_samples-n_test)).type(itype) # Permute indices 
-#    train_indices = permutation[n_val:]
-#    val_indices = permutation[:n_val]
-#    x_train = x[train_indices]
-#    y_train = y[train_indices]
-#    x_val = x[val_indices]
-#    y_val = y[val_indices]
     
     x_train = torch.from_numpy(inputs_train).type(dtype)
     y_train = torch.from_numpy(outputs_train).type(dtype)
@@ -260,13 +248,11 @@ def DataLoader(data_dir, file_name,
 
 #%% EXTRA: Just load data and return as torch.tensor
 def GetData(dir_file, syst = 'cuda'):
-    '''Get data from dir_file. Returns the inputs as torch Variables and targets as numpy-arrays. 
+    '''Get data from dir_file. Returns the inputs as torch.Tensor and targets/outputs as numpy-arrays. 
     dtype of inputs is defined with kwarg syst. Default is 'cuda'.
     NOTES:
-        -The data must be in a .npz file with keys 'inputs' & 'outputs'
-        -This function assumes that inputs are already scaled s.t. inputs[:,2:] are in [0,1]
-            and inputs[:,:2] are in Volts (thay are the task defined inputs to the device), 
-            so no scaling is performed in this function; to clean and scale the data use PrepData.
+        -The data must be in a .npz file with keys 'inputs' & 'outputs' and NxD-structure.
+        -This function assumes that data is cleaned; to clean the data use PrepData.
     '''
     
     targets = np.load(dir_file)['outputs']
@@ -280,8 +266,7 @@ def GetData(dir_file, syst = 'cuda'):
         print('Inputs dtype defined for CPU')
         dtype = torch.FloatTensor
            
-    x = torch.tensor(inputs)
-    inputs = Variable(x.type(dtype))
+    inputs = torch.from_numpy(inputs).type(dtype)
     
     return inputs, targets
 
@@ -299,7 +284,7 @@ if __name__ == '__main__':
             data_dir = main_dir+dir_data    
         file_name = 'data_for_training.npz'
         print('Loading data...')
-        data = DataLoader(data_dir, file_name,steps=3)
+        data = DataLoader(data_dir, file_name, syst='cpu',steps=3)
     
     elif sys.argv[1] == '-pd': 
         print('Cleaning and preparing data...')
