@@ -7,13 +7,14 @@ This script is an example on how to construct and train a web of multiple neural
 """
 import torch
 import matplotlib.pyplot as plt
-from SkyNEt.modules.Nets.predNNet import predNNet
+from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 
 # create nn object from which the web is made
+
 main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\setup2\2019_02_09_091323_device2_speedTest_1G_factor_0.1_T_86400s_batch_50s_fs_1000Hz\\'
 data_dir = 'TEST_NN.pt'
-net1 = predNNet(main_dir+data_dir)
+net1 = staNNet(main_dir+data_dir)
 
 
 # Initialize web object
@@ -28,42 +29,72 @@ web.add_vertex(net1, 'A', output=True)
 # source vertex, sink vertex, sink gate index
 #web.add_arc('B', 'A', 2)
 
-
 # Check if web is valid (and optionally plot)
-#web.check_graph(print_graph=True)
+web.check_graph(print_graph=True)
 
-N = 400
-batch_size = 2
+
+N = 100
+batch_size = 20
 max_epochs = 100
 
-# explicitly set traindata for each network:
-train_data = torch.zeros(N, 2)
-train_data[200:,0] = 1
-train_data[100:200,1] = 1
-train_data[300:,1] = 1
+# input data, size (N, 2 * nr of networks)
+train_data = torch.cat((torch.zeros(N), torch.linspace(-0.9, 0.9, N))).view(2, -1).t()
 
 
-# use same train data for all vertices:
-#train_data = torch.zeros(N, 2)
-#train_data[:,1] = 0.9
+# duplicate train_data for each network
+train_data = torch.cat((train_data,)*len(web.graph), dim=1)
 
-# target data 
-targets = torch.ones(N, 1)
-targets[100:300] = 0
+# target data, size (N, nr output vertices)
+targets = torch.linspace(0, 0.5, N).view(-1,1)
+
+
+# create plot function
+def plot_results(loss, params, title, error_name):
+    web.reset_parameters(params)
+    web.forward(train_data)
+    output = web.get_output()
+
+    fig = plt.figure()
+    fig.suptitle(title)
+    
+    plt.subplot(1, 2, 1)
+    plt.plot(output.numpy())
+    plt.plot(targets.numpy())
+    plt.legend(['output of trained web', 'target'])
+
+    plt.subplot(1, 2, 2)
+    plt.plot(loss)
+    plt.xlabel('epochs')
+    plt.ylabel(error_name)
+    
+    plt.show()
+
+
+# reset parameters of web
+web.reset_parameters()
 
 # training
-loss1, params1 = web.train(train_data, targets, batch_size, max_epochs, lr=0.05)
+loss1, params1, param_hist1 = web.train(train_data, targets, batch_size, max_epochs, lr=0.05)
 
-plt.figure()
-plt.plot(loss1)
-plt.xlabel('epochs')
-plt.ylabel('MSE')
-plt.title('training example with default settins')
+plot_results(loss1, params1, 'training example with default settings (Adam and MSE)', 'MSE')
 
-# reset parameters of we
-web.reset_parameters()
 
 # OPTIONAL: define custom optimizer,
 # see https://pytorch.org/docs/stable/optim.html#torch.optim.Optimizer
-#optimizer = torch.optim.SGD
-#loss2, params2 = web.train(train_data, targets, batch_size, nr_epochs, optimizer=optimizer, lr=0.01)
+
+optimizer = torch.optim.SGD
+web.reset_parameters()
+loss2, params2, param_hist2 = web.train(train_data, targets, batch_size, max_epochs, optimizer=optimizer, lr=0.01)
+
+plot_results(loss2, params2, 'training example custom optimizer SGD', 'MSE')
+
+
+# OPTIONAL: define custom loss function
+def loss_fn(y_pred, y):
+    return torch.mean((y_pred-y)**4)
+
+web.reset_parameters()
+loss3, params3, param_hist3  = web.train(train_data, targets, batch_size, max_epochs, loss_fn=loss_fn, lr=0.05)
+
+plot_results(loss3, params3, 'training example custom loss function', '4th power loss')
+

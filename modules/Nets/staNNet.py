@@ -26,7 +26,7 @@ import numpy as np
 
 class staNNet(object):
     
-    def __init__(self,*args,loss='MSE',C=1.0,activation='ReLU', dim_cv=5, BN=False):
+    def __init__(self,*args,loss='MSE',C=1.0,activation='ReLU', BN=False):
         
         self.ymax = 36 # Maximum value that the output can have (clipping value)
         self.C = torch.FloatTensor([C])
@@ -36,15 +36,11 @@ class staNNet(object):
            self.x_train, self.y_train = data[0]
            self.x_val, self.y_val = data[1]
            self.D_in = self.x_train.size()[1]
-           # how many of the inputs are control voltages
-           self.dim_cv = dim_cv
-           assert dim_cv < self.D_in, 'Total input dimension must be greater than cv dimension'
            self.D_out = self.y_train.size()[1]
            self._BN = BN
            self.depth = depth
            self.width = width
-           self.loss_str = loss
-           self.activ = activation
+           self.info = {'activation':activation, 'loss':loss}
            self._tests()
         
            ################### DEFINE MODEL ######################################
@@ -69,12 +65,15 @@ class staNNet(object):
            self.x_val, self.y_val = data[1]
            self.y_val = self.y_val/10 #\\
            self.D_in = self.freq.shape[0]     
-           self.dim_cv = dim_cv
-           #assert dim_cv < self.D_in, 'Total input dimension must be greater than cv dimension'
+
            self.D_out = self.y_train.size()[1]
            self._BN = BN
            self.depth = depth
            self.width = width
+           self.info = {'activation':activation, 'loss':loss, 'freq':self.freq,
+                        'amplitude':self.amplitude, 'fs':self.fs, 'offset':self.offset,
+                        'phase':self.phase, 'noisefit':self.noisefit,
+                        'conversion':10}    # Conversion means '1' from the NN means ... nA in the experiment.
            self.loss_str = loss
            self.activ = activation
            self._tests()
@@ -104,7 +103,8 @@ class staNNet(object):
             self._BN = True
         else:
             self._BN = False
-            
+
+         #TODO: Add all parameters to state dic 'info'   
         self.loss_str = state_dic['loss']
         state_dic.pop('loss') #Remove entrie of OrderedDict
         
@@ -112,15 +112,9 @@ class staNNet(object):
         state_dic.pop('activation')  
           
         try:
-            self.dim_cv = state_dic['dim_cv']
-            state_dic.pop('dim_cv')
-        except KeyError:
-            self.dim_cv = 5
-            print("Warning: Could not load attribute dim_cv, set at default 2.")
-        try:
             #make a loop
-            self.noisefit = state_dic['noise_model'] 
-            state_dic.pop('noise_model')
+            self.noisefit = state_dic['noise_fit'] 
+            state_dic.pop('noise_fit')
             self.amplitude = state_dic['amplitude']
             state_dic.pop('amplitude')
             self.freq = state_dic['freq']
@@ -142,8 +136,24 @@ class staNNet(object):
                 state_dic.pop('noisefit_b')
             except KeyError:
                 print('Noise fit parameters failed to load')
+
         
-        print('NN loaded with activation ',self.activ,', loss ',self.loss_str, ' and cv dimension ', str(self.dim_cv))
+        # move info key from state_dic to self
+        if state_dic.get('info') is not None:
+            self.info = state_dic['info']
+            state_dic.pop('info')
+        else:
+            # for backwards compatibility with objects where information is stored directly in state_dic
+            # TODO: this should be removed, because it assumes all parameters in network have either weight or bias in their name
+            #       which might not always be the case in the future
+            self.info = {}
+            for key, item in list(state_dic.items()):
+                # remove all keys in state_dic not containing bias or weight and store them as attributes of self
+                if 'bias' not in key and 'weight' not in key:
+                    self.info[key] = item
+                    state_dic.pop(key)
+
+        print('NN loaded with activation %s and loss %s' % (self.info['activation'], self.info['loss']))
         
         itms = list(state_dic.items())  
         layers = list(filter(lambda x: ('weight' in x[0]) and (len(x[1].shape)==2),itms))
@@ -182,16 +192,17 @@ class staNNet(object):
             print('BN tracking average: ',track_running_stats)
             self.bn_layer = nn.BatchNorm1d(self.width,track_running_stats=track_running_stats)
        
-        if self.activ == 'tanh':
+        activation = self.info['activation']
+        if activation == 'tanh':
             activ_func = nn.Tanh()
             print('Activation is tanh')            
-        elif self.activ == 'ReLU':
+        elif activation == 'ReLU':
             activ_func = nn.ReLU()
             print('Activation is ReLU')
-        elif self.activ == None:
+        elif activation is None:
             activ_func = None
         else:
-            assert False, 'Activation Function Not Recognized!'
+            assert False, "Activation function ('%s') not recognized!" % activation
         
         
         if self._BN: 
@@ -304,13 +315,17 @@ class staNNet(object):
         if not self.x_train.size()[0] == self.y_train.size()[0]: 
             raise NameError('Input and Output Batch Sizes do not match!')
     
-    def save_model(self,path):
+    def save_model(self, path):
+        """
+        Saves the model in given path, all other attributes are saved under the 'info' key as a new dictionary.
+        """
         self.model.eval()
         state_dic = self.model.state_dict()
+
+        #TODO: Remove this if the 'info' state dic is tested
         state_dic['activation'] = self.activ
         state_dic['loss'] = self.loss_str
-        state_dic['dim_cv'] = self.dim_cv
-        state_dic['noise_model'] = self.noisefit
+        state_dic['noise_fit'] = self.noisefit
         state_dic['freq'] = self.freq
         state_dic['amplitude'] = self.amplitude
         state_dic['offset'] = self.offset
@@ -320,7 +335,12 @@ class staNNet(object):
         if self.noisefit:
             state_dic['noisefit_a'] = self.a
             state_dic['noisefit_b'] = self.b
+            self.info['noisefit_a'] = self.a
+            self.info['noisefit_b'] = self.b
         
+        
+        state_dic['info'] = self.info
+
         torch.save(state_dic,path)
 
     def outputs(self,inputs, *args):
