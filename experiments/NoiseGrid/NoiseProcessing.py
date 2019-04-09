@@ -17,7 +17,7 @@ from scipy.signal import welch
 
 
 
-def removeClipping(currents, CV = 0):
+def removeClipping(currents, clip_cut = 36, CV = 0):
     '''
     Removes clipped data from the measured data.
     
@@ -30,10 +30,10 @@ def removeClipping(currents, CV = 0):
     '''
     
     Imean = np.mean(currents, axis = 1)
-    cleanCurrents = currents[abs(Imean) < 36] # TODO: find exact clipping value
+    cleanCurrents = currents[abs(Imean) < clip_cut] # TODO: find exact clipping value
     cleanCV = 0
     if CV != 0:     # CV data is optional
-        cleanCV = CV[abs(Imean) < 36]
+        cleanCV = CV[abs(Imean) < clip_cut]
     return cleanCV, cleanCurrents
     
 def currentPlotter(data,fs):
@@ -164,19 +164,45 @@ def spreadPlotter(currents, name = ''):
         a: slope of the fit
         b: offset of the fit
     """
-    _, currents = removeClipping(currents)
-    Imean = np.mean(currents, axis = 1)
-    Istd = np.std(currents, axis = 1)
-    [a, b] = np.polyfit(Imean, Istd, 1)
-    x = np.linspace(Imean[abs(Imean).argmin()], Imean[abs(Imean).argmax()], 100)    
-    plt.figure(name)
-    plt.plot(Imean, Istd, '.')
-    plt.plot(x, a * x + b, '--') 
+    font = {'font.size': 16}
+    
+    _, currents = removeClipping(currents,clip_cut=3.4)
+    Imean_pos = np.mean(currents[np.mean(currents, axis = 1) > 0,:], axis = 1)
+    Istd_pos = np.std(currents[np.mean(currents, axis = 1) > 0,:], axis = 1)
+    Imean_neg = np.mean(currents[np.mean(currents, axis = 1) < 0,:], axis = 1)
+    Istd_neg = np.std(currents[np.mean(currents, axis = 1) < 0,:], axis = 1)
+    
+    b = np.mean(np.std(currents[abs(np.mean(currents, axis = 1))<1.1],axis=1))
+   
+    #Istd_neg = 0
+    #Imean_neg = 0
+    a_pos = 0
+    a_neg = 0
+    #[a_pos,_] =  np.polyfit(Imean_pos, Istd_pos - b, 1)
+    #[a_neg,_] = np.polyfit(Imean_neg, Istd_neg - b, 1)
+    
+    
+    #x_pos = np.linspace(Imean_pos[abs(Imean_pos).argmin()], Imean_pos[abs(Imean_pos).argmax()], 100)    
+    #x_neg = np.linspace(Imean_neg[abs(Imean_neg).argmin()], Imean_neg[abs(Imean_neg).argmax()], 100)    
+    plt.figure(name + ' pos')
+    plt.plot(Imean_pos, Istd_pos, '.')
+    #plt.plot(x_pos, a_pos * x_pos + b, '--') 
     plt.xlabel('$I_\mu$ (nA)')
     plt.ylabel('$I_\sigma$')
-    plt.title('Standard deviations of CV configurations')
-    plt.tight_layout()     
-    return Istd, a, b
+    #plt.title('Standard deviations of CV configurations')
+    plt.rcParams.update(font)
+    plt.tight_layout()  
+    
+    plt.figure(name + ' neg')
+    plt.plot(Imean_neg, Istd_neg, '.')
+    #plt.plot(x_neg, a_neg * x_neg + b, '--') 
+    plt.xlabel('$I_\mu$ (nA)')
+    plt.ylabel('$I_\sigma$')
+    #plt.title('Standard deviations of CV configurations')
+    plt.rcParams.update(font)
+    plt.tight_layout()
+    
+    return Istd_pos, Istd_neg, a_pos, a_neg, b
 
 def gaussFit(currents, n, m, bins = 100, CVname = ''):
     """
@@ -211,8 +237,8 @@ def CVPlotter(controlVoltages, electrodes, variance):
     """
     fig = plt.figure('CV dependency plot on electrodes ' + str(electrodes[0]) + ' and ' + str(electrodes[1]))
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(controlVoltages[:,electrodes[0]], controlVoltages[:,electrodes[1]], variance) #color = '#ff7f0e'
-    ax.set_xlabel('CV ' + str(electrodes[0]))
-    ax.set_ylabel('CV ' + str(electrodes[1]))
-    ax.set_zlabel('$\sigma_I$')
+    ax.scatter(controlVoltages[:,electrodes[0]], controlVoltages[:,electrodes[1]], variance,color='red', marker='P') #color = '#ff7f0e'
+    ax.set_xlabel('CV ' + str(electrodes[0]) + ' (mV)')
+    ax.set_ylabel('CV ' + str(electrodes[1]) + ' (mV)')
+    ax.set_zlabel('$\sigma_I$ (nA)')
     

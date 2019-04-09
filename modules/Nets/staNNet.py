@@ -217,8 +217,8 @@ class staNNet(object):
             self.loss_fn = nn.MSELoss()
         else:
             # Fitting parameters for sigma = a*pred + b
-            self.a = torch.tensor([-0.01553690797247516, 0.010176319709654977])
-            self.b = torch.tensor([0.04678267320566001, 0.04678267320566001])
+            self.a = torch.tensor([-0.01453690797247516, 0.010176319709654977])
+            self.b = torch.tensor([0.05450740839199429, 0.05450740839199429])
  
     def loss_fn(self, pred, targets):   
         sign = torch.sign(pred)
@@ -282,12 +282,18 @@ class staNNet(object):
             else:
                 y = self.model(self.x_val) 
             
+            #if self.x_train.shape[1] == 1:
+            #    y_t = self.model(self.generateSineWave(self.freq, self.x_train, self.amplitude, self.fs, self.offset, self.phase)) 
+            #else:
+            #    y_t = self.model(self.x_train)
             
-            loss = self.loss_fn(y, self.y_val)
+            loss_val = self.loss_fn(y, self.y_val)
+            #loss_train = self.loss_fn(y_t, self.y_train)
+            
             self.model.train()  
-            self.L_val[epoch] = loss.item()
+            self.L_val[epoch] = loss_val.item()
             self.L_train[epoch] = running_loss/nr_minibatches
-            print('Epoch:',epoch,'Val. Error:', loss.item(),'Training Error:',running_loss/nr_minibatches)
+            print('Epoch:',epoch,'Val. Error:', loss_val.item(),'Training Error:',running_loss/nr_minibatches)
             
         print('Finished Training')
 #        plt.figure()
@@ -337,6 +343,6 @@ class staNNet(object):
         phase:      (Optional) phase offset at t=0
         '''
         
-        waves = amplitude * np.sin((2 * np.pi * np.outer(t,freq) + phase)/ fs)  + np.outer(np.ones(t.shape[0]),offset)
+        waves = amplitude * np.sin((2 * np.pi * np.outer(t,freq))/ fs + phase) + np.outer(np.ones(t.shape[0]),offset)
         waves = torch.from_numpy(waves).type(torch.float32)
         return  waves    
