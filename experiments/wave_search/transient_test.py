@@ -23,7 +23,7 @@ def transient_test(waves, data, fs, sampleTime, n):
         start_wave = time.time()
 
         wavesRamped = np.zeros((waves.shape[0], T*fs)) # 1.5 second to ramp up to desired input, T-3 seconds measuring, 1.5 second to ramp input down to zero
-        dataRamped = np.zeros((1,wavesRamped.shape[1]))
+        dataRamped = np.zeros(wavesRamped.shape[1])
         for j in range(wavesRamped.shape[0]):
             # Ramp up linearly (starting from value CV/2 since at CV=0V nothing happens anyway) and ramp back down to 0
             wavesRamped[j,0:rampT] = np.linspace(0,waves[j,test_cases[0,i]], rampT) 
@@ -31,7 +31,7 @@ def transient_test(waves, data, fs, sampleTime, n):
             wavesRamped[j,rampT + (T*fs-2*rampT):] = np.linspace(waves[j,test_cases[0,i]], 0, rampT)
 
         dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, fs)
-        testdata[i,:] = dataRamped[0, rampT: rampT + (T*fs-2*rampT)]
+        testdata[i,:] = dataRamped[0,rampT: rampT + (T*fs-2*rampT)]
         #testdata[i,:] = dataRamped[0, :]
 
         difference[i,0] = np.mean(testdata[i,:]) - data[test_cases[0,i]] 

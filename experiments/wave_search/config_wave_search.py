@@ -26,14 +26,14 @@ class experiment_config(config_class):
         super().__init__() 
 
         self.waveElectrodes = 7
-        self.factor = 0.1
+        self.factor = 0.05
         self.freq2 = np.array([2,np.pi,5,7,13,17,19]) 
         self.freq = np.sqrt(self.freq2[:self.waveElectrodes])*self.factor
-        self.phase = np.ones(self.waveElectrodes)
-        self.sampleTime = 100 # Sample time of the sine waves for one grid point (in seconds)
-        self.fs = 100
-        self.transientTest = True
-        self.n = 100 # Amount of test points for the transient test
+        self.phase = np.zeros(self.waveElectrodes)
+        self.sampleTime = 50 # Sample time of the sine waves for one grid point (in seconds)
+        self.fs = 50
+        self.transientTest = False
+        self.n = 2 # Amount of test points for the transient test
         self.samplePoints = int(50*self.fs) # Amount of sample points per batch measurement (sampleTime*fs/samplePoints batches)
         self.amplification = 10
         self.postgain = 1
@@ -46,7 +46,7 @@ class experiment_config(config_class):
         # Save settings
         self.filepath = r'D:\\data\\Mark\\wave_search\\champ_chip\\'
         
-        self.name = 'testset_check_7D_t_50s_f_0_1_fs_100' 
+        self.name = 'consistency_check_50s_f_0_05_fs_50' 
         #self.name = 'speed_CV_Test_factor_' + str(self.factor) + '_T_' + str(self.sampleTime) + 's_batch_' + str(int(self.samplePoints/self.fs)) + 's'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
         
@@ -65,4 +65,4 @@ class experiment_config(config_class):
         phase:      (Optional) phase offset at t=0
         '''
 
-        return np.sin((2 * np.pi * freq[:, np.newaxis] * t + phase[:,np.newaxis])/ fs) * amplitude[:,np.newaxis]
+        return np.sin((2 * np.pi * freq[:, np.newaxis] * t)/ fs + phase[:,np.newaxis]) * amplitude[:,np.newaxis]

@@ -62,7 +62,7 @@ else:
 # Initialize data container and save directory
 if config.T_test:
     saveDirectoryT = SaveLib.createSaveDirectory(config.filepath, config.name_T)
-    Tcurrents = np.zeros((samples * controlVoltages.shape[0], int(fs * T + 12*config.rampT)))
+    Tcurrents = np.zeros((samples * controlVoltages.shape[0], int(fs * T)))
 if config.S_test:
     saveDirectoryS = SaveLib.createSaveDirectory(config.filepath, config.name_S)
     Scurrents = np.zeros((samples * controlVoltages.shape[0], int(fs * T)))
