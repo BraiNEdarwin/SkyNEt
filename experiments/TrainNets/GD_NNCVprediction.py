@@ -14,24 +14,24 @@ from matplotlib import pyplot as plt
 ########################### LOAD DATA  ########################################
 ###############################################################################
 #Load all_wfms.txt (outputs), fitness.tx (genes) and input_wfms.txt
-main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_03_14_143310_characterization_7D_t_4days_f_0_1_fs_100\\'
+main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\nets\MSE_n_d10\\'
 data_dir = main_dir+'' #'2018_08_07_164652_CP_FullSwipe/'
-net = predNNet( data_dir + 'NN_skip3_MSE_noisefit.pt' )
+net = predNNet( data_dir + 'MSE_n_d10w90_50ep_lr3e-3_b1024_b1b2_0.90.75_seed.pt' )
 pred_logic = True
 pred_ring = False
 
 # Possible loss functions: mse, cor, cormse
 training_type = 'cormse'
-input_voltages = np.array([2,3])  # Determines which indices
-learning_rate,nr_epochs,batch_size = 3e-3, 100, 64
+input_voltages = np.array([0,1])  # Determines which indices
+learning_rate,nr_epochs,batch_size = 3e-3, 400, 64
 reg_scale = 40.0
 
 N = 100
-x_inp = -0.2*np.ones((2,N*4))
-x_inp[1, N:2*N] = 0.4
-x_inp[0, 2*N:3*N] = 0.4
-x_inp[0, 3*N:] = 0.4
-x_inp[1, 3*N:] = 0.4
+x_inp = -0.5*np.ones((2,N*4))
+x_inp[1, N:2*N] = 0.
+x_inp[0, 2*N:3*N] = 0.
+x_inp[0, 3*N:] = 0.
+x_inp[1, 3*N:] = 0.
 
 syst = 'cpu' # 'cpu' #
 if syst is 'cuda':
@@ -67,7 +67,8 @@ y_augm = y_target
 ###############################################################################
 if pred_ring:
     datafile = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_03_14_143310_characterization_7D_t_4days_f_0_1_fs_100\ring_dataset\Ring_class_data_0.40_many.npz'       
-    x_augm = np.load(datafile)['inp_wvfrm']*0.7 +0.2
+    x_augm = np.load(datafile)['inp_wvfrm']*0.8 - 0.2
+    #plt.plot(x_augm[:,0],x_augm[:,1],'.')
     y_augm = np.load(datafile)['target'][np.newaxis,:]*10 + 1
     
 
@@ -125,7 +126,7 @@ elif training_type=='cormse':
         cor = cor_loss_fn(x, y)
         mse = mse_loss_fn(x, y)
         #print (str(cor) + '   ' + str(mse))
-        return alpha*cor+(1-alpha)*mse/100
+        return alpha*cor+(1-alpha)*mse/(upper-lower)**2
 
 ###############################################################################
 ###################### PREDICT CONTROL VOLTAGES ###############################
@@ -144,7 +145,7 @@ for i in range(len(y_pred)):
     pred_voltages[i], valErr_pred[:,i] = net.predict(data, learning_rate,
                  nr_epochs, batch_size, reg_scale = reg_scale) #reg_scale=20 works! 
     #how to make a function that I call with data but uses also net?
-    y_pred[i] = net.predictor(x).data.numpy()[:,0]
+    y_pred[i] = 10*net.predictor(x).data.numpy()[:,0] # network is trained on tens of nanoamps!
 
 plt.figure()
 for i in range(len(y_pred)): 
