@@ -65,29 +65,33 @@ class experiment_config(config_class):
         ######### SPECIFY PARAMETERS ###################
         ################################################
         self.comport = 'COM3'  # COM port for the ivvi rack
-        self.device = 'cDAQ'  # Either nidaq or adwin
+        self.device = 'nidaq'  # Either nidaq or adwin
 
         self.cv_amplification = 1
-        self.controlVoltages = [-774.362, -680.593, -1017.35, -663.765, -508.381] # AND
+        #self.controlVoltages = np.load(r'D:\data\Mark\predict\MSE_n_adap_200ep\gates\results_gates3.npz')['trained_cv'] # given in volts
+
+        #[-774.362, -680.593, -1017.35, -663.765, -508.381] # AND
         #[-372.121, -1087.715, -746.049, -1003.28, -524.232] # XNOR
         #[449.768, 137.156, 519.327, 390.888, 326.843] # NOR
         #[459.102, -665.898, 418.019, -186.33, -479.847] # OR
         #[251.832, -232, -397.058, 579.829, 401.14] # NAND
         #[-181.56,254.977,356.816, -261.699,-247.675]  # XOR
-        self.controlVoltages = [cv/self.cv_amplification for cv in self.controlVoltages]
+        #self.controlVoltages = [cv/self.cv_amplification for cv in self.controlVoltages]
+        self.controlVoltages = np.array([0.69251, 0.65566, -0.25120, 0.50996, 0.69392])
 
-        self.inputScaling = 0.5
-        self.inputOffset = -0.5
+        self.inputScaling = 0.7
+        self.inputOffset = -0.1
 
         #self.x = np.asarray(self.InputGen()[1:3])  * self.inputScaling + self.inputOffset# Array with P and Q signal
-        #self.x = np.load(r'D:\data\Mark\ring_data\Ring_class_data_0.40_many.npz')['inp_wvfrm'].T * self.inputScaling + self.inputOffset
-        self.x = np.array([[0,0,1,1],[0,1,0,1]])* self.inputScaling + self.inputOffset
+        #self.x = np.load(r'D:\data\Mark\predict\MSE_n_adap_200ep\ring\results.npz')['x_inp'].T # * self.inputScaling + self.inputOffset
+        #self.x = np.array([[0,0,1,1],[0,1,0,1]])* self.inputScaling + self.inputOffset
+        self.x = np.load(r'D:\data\Mark\ring_data\Ring_class_data_0.40.npz')['inp_wvfrm'].T * self.inputScaling + self.inputOffset
         # Define experiment
         self.postgain = 1
         self.amplification = 10  # nA/V
 
         self.fs = 1000
-        self.pointlength = 125   # Amount of datapoints for a single sample
+        self.pointlength = 100   # Amount of datapoints for a single sample
         self.rampT = int(self.fs/100)    # datapoints to ramp from one datapoint to the next
 
         ################################################
@@ -99,8 +103,10 @@ class experiment_config(config_class):
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
 
         #                       Summing module S2d              Matrix module       on chip
+        self.input_electrodes = [0,1]
         self.electrodeSetup = [['inp0',1,3,5,4,2,'inp1','out'],[11,12,13,15,16,7,8,10],[5,6,7,8,1,2,3,4]]
-        self.name = 'NOR'
+        #self.electrodeSetup = [[1,3,'inp0',5,'inp1',4,2,'out'],[11,12,13,15,16,7,8,10],[5,6,7,8,1,2,3,4]]
+        self.name = 'ring_less_points'
 
         ################################################
         ################# OFF-LIMITS ###################
