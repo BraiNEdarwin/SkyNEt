@@ -99,7 +99,7 @@ elif training_type=='cor':
     loss_fn = cor_loss_fn
 elif training_type=='cormse':
     def loss_fn(x, y):
-        alpha = 0.6
+        alpha = 0.1
         mse = mse_norm_loss_fn(x, y)
         cor = cor_loss_fn(x, y)
         return alpha*cor+(1-alpha)*mse
@@ -155,9 +155,6 @@ def print_gates():
         plt.title("%s, cv:%s" % (gate, np.round(store_cvs[i], 3)))
     # adjust margins 
     plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
-    # fullscreen plot   
-    figManager = plt.get_current_fig_manager()
-    figManager.window.showMaximized()
     plt.show()
 
 print_gates()
