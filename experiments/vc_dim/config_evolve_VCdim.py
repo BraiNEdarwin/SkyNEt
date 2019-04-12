@@ -67,7 +67,7 @@ class experiment_config(config_class):
         self.comport = 'COM3'  # COM port for the ivvi rack
 
         # Define experiment
-        self.lengths, self.slopes = [125], [10] # in 1/fs
+        self.lengths, self.slopes = [80], [10] # in 1/fs
         self.InputGen = self.input_waveform(inputs)
         self.amplification = 1
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
@@ -76,7 +76,7 @@ class experiment_config(config_class):
         self.input_scaling = 1.0
         print('INPUT will be SCALED with',self.input_scaling)  
 
-#        self.Fitness = self.corr_fit
+        self.Fitness = self.corr_fit
 #        self.fitnessparameters = [1, 0, 0, 1]
 
         # Specify either partition or genomes
@@ -142,10 +142,14 @@ class experiment_config(config_class):
         corr = np.corrcoef(X)[0,1]
         return acc*corr
     
-    def corr_fit(self, output, target, w):
-        x = output[w][:,np.newaxis]
-        y = target[w][:,np.newaxis]
-        X = np.stack((x, y), axis=0)[:,:,0]
-        corr = np.corrcoef(X)[0,1]
-#        print('corr_fit')
+    def corr_fit(self, output, target, w,clpval=3.55):
+        if np.any(np.abs(output)>clpval):
+            print('Clipping value set at {clpval}')
+            corr = -1
+        else:
+            x = output[w][:,np.newaxis]
+            y = target[w][:,np.newaxis]
+            X = np.stack((x, y), axis=0)[:,:,0]
+            corr = np.corrcoef(X)[0,1]
+    #        print('corr_fit')
         return corr

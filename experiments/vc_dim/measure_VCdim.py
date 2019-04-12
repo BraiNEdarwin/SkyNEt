@@ -3,26 +3,35 @@ This is a template for evolving the NN based on the boolean_logic experiment.
 The only difference to the measurement scripts are on lines where the device is called.
 
 '''
+# General imports
+import signal
+import sys
+import time
+import numpy as np
+import pdb
+import logging
 # SkyNEt imports
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
 import SkyNEt.modules.PlotBuilder as PlotBuilder
 import config_evolve_VCdim as config
 try:
+    from SkyNEt.instruments import InstrumentImporter
     from SkyNEt.instruments.DAC import IVVIrack
-    from SkyNEt.instruments.niDAQ import nidaqIO
-except:
-    pass    
+    from SkyNEt.instruments.ADwin import adwinIO
+    importerror = []
+except ImportError as error:
+    print('############################################')
+    print('WARNING:',error,'!!')
+    print('WARNING: Random output will be generated!!')
+    importerror = error
+    print('############################################')
 from SkyNEt.modules.Classifiers import perceptron
-# Other imports
-import signal
-import sys
-import time
-import numpy as np
-import pdb
+
 
 #%%
-def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_testing/', hush=True):
+def evolve(inputs, binary_labels,
+           filepath = r'D:/data/Hans/evolution_test/VCdim_testing/', hush=True):
     signal.signal(signal.SIGINT, reset)
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
@@ -50,12 +59,15 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
     # Initialize main figure
     if not hush:
         mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
-    
+    else:
+        print('WARNING: Plot is hushed; change hush flag to True for plotting...')
     # Initialize instruments
-    try:
-        ivvi = IVVIrack.initInstrument()
-    except:
-        pass
+    if not importerror:
+        try:
+            ivvi = InstrumentImporter.IVVIrack.initInstrument()
+            adw = InstrumentImporter.adwinIO.initInstrument()
+        except:
+            print('WARNING! ivvi rack and adwinIO already initialized, this might cause problems!')
     # Initialize genepool
     genePool = Evolution.GenePool(cf)
     
@@ -67,28 +79,30 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
             for k in range(cf.genes-1):
                 controlVoltages[k] = genePool.MapGenes(
                                         cf.generange[k], genePool.pool[j, k])
-            try:
+            if not importerror:
                 IVVIrack.setControlVoltages(ivvi, controlVoltages)
                 time.sleep(1)  # Wait after setting DACs
-            except:
-                pass
+
             # Set the input scaling
             x_scaled = x * genePool.config_obj.input_scaling
-    
             # Measure cf.fitnessavg times the current configuration
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
-                try:
-                    output = nidaqIO.IO_2D(x_scaled, cf.fs)
-                    output = np.array(output)
-                except:
-                    output = np.random.standard_normal(len(x[0]))
+                if not importerror:
+                    output = adwinIO.IO(adw, x_scaled, cf.fs)
+                    output = np.array(output[0,:])
+                else:
+                    output = 0.1*np.random.standard_normal(len(x[0]))
+                    if j == 0:
+                        print('WARNING: Debug mode active; output is white noise!!')
     
                 # Plot genome
                 try:
-                    PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
+                    if not hush: PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
                 except:
-                    pass
+                    if j == 0:
+                        logging.exception('PlotBuilder.currentGenomeEvolution FAILED!')
+                        print('Gene pool shape is ',genePool.pool.shape)
     
                 # Train output
                 outputAvg[avgIndex] = cf.amplification * output
@@ -96,17 +110,16 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
                 fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],
                                                          target,
                                                          w)
-    
                 # Plot output
                 try:
-                    PlotBuilder.currentOutputEvolution(mainFig,
+                    if not hush:PlotBuilder.currentOutputEvolution(mainFig,
                                                        t,
                                                        target,
                                                        output,
                                                        j + 1, i + 1,
                                                        fitnessTemp[j, avgIndex])
                 except:
-                    pass
+                    if j == 0: logging.exception('PlotBuilder.currentOutputEvolution FAILED!')
                 
             outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
     
@@ -114,13 +127,14 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
         end = time.time()
         # Status print
         print("Generation nr. " + str(i + 1) + " completed; took "+str(end-start)+" sec.")
-        print("Highest fitness: " + str(max(genePool.fitness)))
-    
+        max_fit = max(genePool.fitness)
+        print("Highest fitness: " + str(max_fit))
+        
         # Save generation data
         geneArray[i, :, :] = genePool.pool
         outputArray[i, :, :] = outputTemp
         fitnessArray[i, :] = genePool.fitness
-    
+        
         # Update main figure
         try:
             PlotBuilder.updateMainFigEvolution(mainFig,
@@ -133,21 +147,24 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
                                                output,
                                                w)
         except:
-            pass
+            if not hush: logging.exception('PlotBuilder.updateMainFigEvolution FAILED!')
         # Save generation
         SaveLib.saveExperiment(saveDirectory,
                                genes = geneArray,
                                output = outputArray,
                                fitness = fitnessArray,
                                target = target[w][:,np.newaxis])
-    
+        fitthr=0.95
+        if True: #max_fit>=fitthr:
+            print('Very high fitness achieved already, evolution will stop (fitness threshold set to {fitthr})')
+            break
         # Evolve to the next generation
         genePool.NextGen()
     
     try:
         PlotBuilder.finalMain(mainFig)
     except:
-        pass
+        if not hush: logging.exception('WARNING: PlotBuilder.finalMain FAILED!')
     
     #Get best results
     max_fitness = np.max(fitnessArray)
@@ -197,6 +214,6 @@ def reset(signum, frame):
         sys.exit()         
 #%% MAIN
 if __name__=='__main__':
-    inputs = [[-0.9,0.9,-0.9,0.9],[-0.9,-0.9,0.9,0.9]]
-    binary_labels = [0,1,1,0]
-    _,_,_,_ = evolve(inputs,binary_labels)
+    inputs = [[-0.7,0.7,0.7,-0.7],[-0.7,-0.7,0.7,0.7]]
+    binary_labels = [0,0,1,1]
+    _,_,_,_ = evolve(inputs,binary_labels,hush=False)

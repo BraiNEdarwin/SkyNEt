@@ -8,6 +8,8 @@ If successful (measured by a threshold on the correlation and by the perceptron 
 @author: hruiz
 """
 from create_binary import bintarget
+import instruments.InstrumentImporter
+import time
 #import evolve_VCdim as vcd
 import measure_VCdim as vcd
 import numpy as np
@@ -15,11 +17,12 @@ from matplotlib import pyplot as plt
 import time
 import os
 
-inputs = [[-0.9,0.9,-0.9,0.9],[-0.9,-0.9,0.9,0.9]] ## MATBE NEEDS TO BE ADAPTED!!
+inputs = [[-0.7,0.7,0.7,-0.7],[-0.7,-0.7,0.7,0.7]]
+#[[-0.7,0.7,0.7,-0.7,-0.35],[-0.7,-0.7,0.7,0.7,0]] ## MAYBE NEEDS TO BE ADAPTED!!
 #[[-0.9,0.9,-0.9,0.9,0,0],[-0.9,-0.9,0.9,0.9,-0.6,0.6]]
 N=len(inputs[0])
 #Create save directory
-filepath0 = r'../../results/VC_dim' # r'../../test/evolution_test/VCdim_testing'#
+filepath0 = r'D:/data/Hans/evolution_test/VCdim_testing'#/Results/VC_dim' #
 filepath1 = filepath0+'/Capacity_N'+str(N)
 date = time.strftime('%Y_%m_%d_%H-%M')
 dirname = filepath1+'/'+date+'/'
@@ -29,7 +32,8 @@ else:
     assert 1==0, 'No directory created. Parent target directory '+filepath0+' does not exist'
     
 # Create binary labels for N samples
-binary_labels = bintarget(N).tolist()  
+bad_gates = [2,3,4,5,9,10,11,12, 13,14,15]
+binary_labels = bintarget(N)[bad_gates].tolist()  
 threshold = 1-(0.65/N)*(1+1.0/N)
 print('Threshold for acceptance is set at: ',threshold)
 #Initialize container variables
@@ -40,14 +44,14 @@ accuracy_classifier = []
 found_classifier = []
     
 for bl in binary_labels:
-    
     if len(set(bl))==1:
         print('Label ',bl,' ignored')
         genes, output, fitness, accuracy = np.nan, np.nan, np.nan, np.nan
         found_classifier.append(1)
     else:
         print('Finding classifier ',bl)
-        genes, output, fitness, accuracy = vcd.evolve(inputs,bl, filepath=dirname)
+        
+        genes, output, fitness, accuracy = vcd.evolve(inputs,bl, filepath=dirname, hush=False)
         if accuracy>threshold:
             found_classifier.append(1)
         else:
