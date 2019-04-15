@@ -42,11 +42,11 @@ This is the directory where you should place a path configuration file named 'sk
 
 
     1. Go to the directory ~/anaconda3/envs/skynet/lib/python3.6/site-packages
-    2. Make a file named 'skynet.pth' containing a line with the absolute path to your SkyNEt repo
+    2. Make a file named 'skynet.pth' containing a line with the absolute path to the directory containing your SkyNEt repo
     3. Start your python and check sys.path; you should see the path to the repo there
   
 
-Note: by convention, you should import SkyNEt explicitly, i.e. in the path to the repo do not include the SkyNEt directory, only include the directory a level higher. Since Python will look for scripts on that path, we recommend you keep it separated from all your other scripts to avoid interference.
+Note: by convention, you should import SkyNEt explicitly, i.e. in the python sys.path do not include the SkyNEt directory, only include the directory a level higher. Since Python will look for scripts on that path, we recommend you keep it separated from all your other scripts to avoid interference.
 
 To finish off the installation process, there is one package left to install. Activate the skynet environment again and run the following command:
 
@@ -86,13 +86,17 @@ python <your_script>.py
 Probably at some point you wish to write your own measurement scripts. There are a few instructions that you should follow in order to keep things coherent with the rest of the repository:
 
 * Follow the file structure conventions (i.e. see https://github.com/BraiNEdarwin/SkyNEt/wiki/File-structure)
+* Follow the conventions for the data structures in (here)[https://github.com/BraiNEdarwin/SkyNEt/wiki/Data-Structures]
 * The boolean_logic experiment serves as a template file. Please have a look at both boolean_logic.py and config_boolean_logic.py to see how we would like files to be structured. 
+* If you work with NNets, take the TrainNets.py as template to train and/or load your networks. 
 
-And please make sure you only work on your own branch, but feel free to suggest any experiments you think should go into the dev branch!
+And please make sure you only work on your own branch, but feel free to suggest any experiments you think should go into the dev branch! 
 
 ## Code contribution
 
 If you wish to contribute to the code you are more than welcome to do so. If you see any bugs or come across issues you think need improvement, please raise an issue on this repository [here](https://github.com/BraiNEdarwin/SkyNEt/issues). If you want to know more about writing pieces of code to aid development, please refer to the [wiki](https://github.com/BraiNEdarwin/SkyNEt/wiki).
+
+Please be pro-active and discuss with the code maintainers if you think some code you wrote can be valuable to imporve this repo; for example, if you work on an improved sampling procedure, an optimized code or found a better way to implement a function, do contact us to discuss the adaptation into our code.  
 
 ## Code maintainers
 Currently the users with admin rights on this repo are:
