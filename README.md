@@ -1,6 +1,6 @@
 # SkyNEt
 
-This repository houses a collection of functions and scripts used by the Darwin team of the [NanoElectronics](https://www.utwente.nl/en/eemcs/ne/) group at the University of Twente. This README serves to outline the structure of the repo and its files. Additionally it gives some notes about how to contribute. For more details, please refer to the [wiki](https://github.com/BraiNEdarwin/SkyNEt/wiki). Before you start with your experiments, make sure you reads and understand [how we handle data](https://github.com/BraiNEdarwin/SkyNEt/wiki/Data-Structures).
+This repository houses a collection of functions and scripts used by the Darwin team of the [NanoElectronics](https://www.utwente.nl/en/eemcs/ne/) group at the University of Twente. This README serves to outline the structure of the repo and its files. Additionally it gives some notes about how to contribute. For more details, please refer to the [wiki](https://github.com/BraiNEdarwin/SkyNEt/wiki). Before you start with your experiments, please read and understand [how we handle data](https://github.com/BraiNEdarwin/SkyNEt/wiki/Data-Structures).
 
 ## Installation
 
