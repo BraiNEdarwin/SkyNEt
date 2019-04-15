@@ -86,7 +86,7 @@ python <your_script>.py
 Probably at some point you wish to write your own measurement scripts. There are a few instructions that you should follow in order to keep things coherent with the rest of the repository:
 
 * Follow the file structure conventions (i.e. see https://github.com/BraiNEdarwin/SkyNEt/wiki/File-structure)
-* Follow the conventions for the data structures in (here)[https://github.com/BraiNEdarwin/SkyNEt/wiki/Data-Structures]
+* Follow the conventions for the data structures in https://github.com/BraiNEdarwin/SkyNEt/wiki/Data-Structures
 * The boolean_logic experiment serves as a template file. Please have a look at both boolean_logic.py and config_boolean_logic.py to see how we would like files to be structured. 
 * If you work with NNets, take the TrainNets.py as template to train and/or load your networks. 
 
