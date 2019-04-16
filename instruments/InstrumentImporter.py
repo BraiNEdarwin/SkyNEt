@@ -6,6 +6,7 @@
 from SkyNEt.instruments.ADwin import adwinIO
 from SkyNEt.instruments.niDAQ import nidaqIO
 from SkyNEt.instruments.DAC import IVVIrack
+from SkyNEt.intruments.cDAQ import cdaqIO
 import signal
 import sys
 
@@ -35,6 +36,12 @@ def reset(signum, frame):
             print('adwin has been reset')
         except:
             print('adwin was not initialized, so also not reset')
+
+        try:
+            cdaqIO.reset_device()
+            print('cdaq has been reset')
+        except:
+            print('This is not the, so also not reset')
 
         # Finally stop the script execution
         sys.exit()
