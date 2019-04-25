@@ -67,16 +67,16 @@ class experiment_config(config_class):
         self.comport = 'COM3'  # COM port for the ivvi rack
 
         # Define experiment
-        self.lengths, self.slopes = [80], [10] # in 1/fs
+        self.lengths, self.slopes = [100], [10] # in 1/fs
         self.InputGen = self.input_waveform(inputs)
-        self.amplification = 1
+        self.amplification = 10
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 100
+        self.generations = 60
         self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]
         self.input_scaling = 1.0
         print('INPUT will be SCALED with',self.input_scaling)  
 
-        self.Fitness = self.corr_fit
+        self.Fitness = self.marx_fit#self.corr_fit
 #        self.fitnessparameters = [1, 0, 0, 1]
 
         # Specify either partition or genomes
@@ -143,8 +143,8 @@ class experiment_config(config_class):
         return acc*corr
     
     def corr_fit(self, output, target, w,clpval=3.55):
-        if np.any(np.abs(output)>clpval):
-            print('Clipping value set at {clpval}')
+        if np.any(np.abs(output)>clpval*self.amplification):
+            #print(f'Clipping value set at {clpval}')
             corr = -1
         else:
             x = output[w][:,np.newaxis]
@@ -153,3 +153,28 @@ class experiment_config(config_class):
             corr = np.corrcoef(X)[0,1]
     #        print('corr_fit')
         return corr
+        
+    def marx_fit(self, output, target, w, clpval = 3.55):
+        if np.any(np.abs(output)>clpval*self.amplification):
+            #print(f'Clipping value set at {clpval}')
+            return -1
+            
+        corr = self.corr_fit(output, target, w)
+         # Apply weights w
+        indices = np.argwhere(w)  #indices where w is nonzero (i.e. 1)
+        target_weighed = np.zeros(len(indices))
+        output_weighed = np.zeros(len(indices))
+        for i in range(len(indices)):
+            target_weighed[i] = target[indices[i][0]]
+            output_weighed[i] = output[indices[i][0]]
+        # Determine normalized separation
+        indices1 = np.argwhere(target_weighed)  #all indices where target is nonzero
+        x0 = np.empty(0)  #list of values where x should be 0
+        x1 = np.empty(0)  #list of values where x should be 1
+        for i in range(len(target_weighed)):
+            if(i in indices1):
+                x1 = np.append(x1, output_weighed[i])
+            else:
+                x0 = np.append(x0, output_weighed[ i])
+        Q = np.abs(min(x1) - max(x0))/2
+        return corr*np.sqrt(Q)/(1-corr)

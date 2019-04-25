@@ -19,6 +19,7 @@ try:
     from SkyNEt.instruments import InstrumentImporter
     from SkyNEt.instruments.DAC import IVVIrack
     from SkyNEt.instruments.ADwin import adwinIO
+    from SkyNEt.instruments.niDAQ import nidaqIO
     importerror = []
 except ImportError as error:
     print('############################################')
@@ -28,9 +29,13 @@ except ImportError as error:
     print('############################################')
 from SkyNEt.modules.Classifiers import perceptron
 
+# Initialize instruments
+if not importerror:
+    ivvi = InstrumentImporter.IVVIrack.initInstrument()
+    adw = InstrumentImporter.adwinIO.initInstrument()
 
 #%%
-def evolve(inputs, binary_labels,
+def evolve(inputs, binary_labels, fitthr=0.9,
            filepath = r'D:/data/Hans/evolution_test/VCdim_testing/', hush=True):
     signal.signal(signal.SIGINT, reset)
     # Initialize config object
@@ -40,7 +45,7 @@ def evolve(inputs, binary_labels,
     t = cf.InputGen[0]  # Time array
     x = cf.InputGen[1]  # Array with P and Q signal
     w = cf.InputGen[2]  # Weight array
-    target = cf.TargetGen  # Target signal
+    target = cf.amplification*cf.TargetGen  # Target signal
     
     # np arrays to save genePools, outputs and fitness
     geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
@@ -62,12 +67,10 @@ def evolve(inputs, binary_labels,
     else:
         print('WARNING: Plot is hushed; change hush flag to True for plotting...')
     # Initialize instruments
-    if not importerror:
-        try:
-            ivvi = InstrumentImporter.IVVIrack.initInstrument()
-            adw = InstrumentImporter.adwinIO.initInstrument()
-        except:
-            print('WARNING! ivvi rack and adwinIO already initialized, this might cause problems!')
+    #if not importerror:
+    #        ivvi = InstrumentImporter.IVVIrack.initInstrument()
+    #        adw = InstrumentImporter.adwinIO.initInstrument()
+
     # Initialize genepool
     genePool = Evolution.GenePool(cf)
     
@@ -89,7 +92,8 @@ def evolve(inputs, binary_labels,
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
                 if not importerror:
-                    output = adwinIO.IO(adw, x_scaled, cf.fs)
+                    #print('x_scaled: ',x_scaled.shape)
+                    output = cf.amplification * nidaqIO.IO(x_scaled, cf.fs)
                     output = np.array(output[0,:])
                 else:
                     output = 0.1*np.random.standard_normal(len(x[0]))
@@ -105,7 +109,7 @@ def evolve(inputs, binary_labels,
                         print('Gene pool shape is ',genePool.pool.shape)
     
                 # Train output
-                outputAvg[avgIndex] = cf.amplification * output
+                outputAvg[avgIndex] = output
                 # Calculate fitness
                 fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],
                                                          target,
@@ -143,7 +147,7 @@ def evolve(inputs, binary_labels,
                                                outputArray,
                                                i + 1,
                                                t,
-                                               cf.amplification*target,
+                                               target,
                                                output,
                                                w)
         except:
@@ -154,9 +158,14 @@ def evolve(inputs, binary_labels,
                                output = outputArray,
                                fitness = fitnessArray,
                                target = target[w][:,np.newaxis])
-        fitthr=0.95
-        if True: #max_fit>=fitthr:
-            print('Very high fitness achieved already, evolution will stop (fitness threshold set to {fitthr})')
+        
+        x_inp = outputTemp[genePool.fitness==max_fit,w][:,np.newaxis]
+        y = target[w][:,np.newaxis]
+        X = np.stack((x_inp, y), axis=0)[:,:,0]
+        corr = np.corrcoef(X)[0,1]
+        print(f"Correlation of fittest genome: {corr}")
+        if corr >= fitthr:
+            print(f'Very high fitness achieved already, evolution will stop (correlaton threshold set to {fitthr})')
             break
         # Evolve to the next generation
         genePool.NextGen()
@@ -173,8 +182,8 @@ def evolve(inputs, binary_labels,
     assert fitnessArray[ind]==max_fitness,'Indices do not give value'
     best_genome = geneArray[ind]
     best_output = outputArray[ind]
-    y = best_output[w][:,np.newaxis]
-    trgt = target[w][:,np.newaxis]
+    y = best_output[w][:,np.newaxis]/cf.amplification
+    trgt = target[w][:,np.newaxis]/cf.amplification
     accuracy, _, _ = perceptron(y,trgt)
     print('Max. Fitness: ', max_fitness)
     print('Best genome: ', best_genome)
@@ -190,10 +199,9 @@ def reset(signum, frame):
         - Apply zero signal to the ADwin
         '''
         try:
-            global ivvi
-            ivvi.set_dacs_zero()
+            ivviReset = IVVIrack.initInstrument(name='ivviReset')
+            ivviReset.set_dacs_zero()
             print('ivvi DACs set to zero')
-            del ivvi  # Test if this works!
         except:
             print('ivvi was not initialized, so also not reset')
 			
@@ -204,14 +212,12 @@ def reset(signum, frame):
             print('nidaq not connected to PC, so also not reset')
 
         try:
-            global adw
-            reset_signal = np.zeros((2, 40003))
-            adwinIO.IO_2D(adw, reset_signal, 1000)
+            adw = adwinIO.initInstrument()
+            adwinIO.reset(adw)
+            print('adwin has been reset')
         except:
             print('adwin was not initialized, so also not reset')
-
-        # Finally stop the script execution
-        sys.exit()         
+        
 #%% MAIN
 if __name__=='__main__':
     inputs = [[-0.7,0.7,0.7,-0.7],[-0.7,-0.7,0.7,0.7]]
