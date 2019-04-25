@@ -58,7 +58,16 @@ def switch(ser, matrix):
     time.sleep(0.2)
 
     ser.write('>'.encode())
+
+def read_serial_out(ser):
+    #watch out scary code ahead
     time.sleep(0.2)
+    while ser.inWaiting()!=0:
+        #bytesToRead = ser.inWaiting()
+        bytesToRead =ser.read(140)
+        print(bytesToRead)
+        ser.flushInput()
+        time.sleep(0.2)
 
 def connect_single_device(ser, device_number):
     '''
@@ -68,3 +77,4 @@ def connect_single_device(ser, device_number):
     matrix = np.zeros((8, 8))
     matrix[:, device_number] = 1
     switch(ser, matrix)
+    read_serial_out(ser)
