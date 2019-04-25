@@ -44,14 +44,14 @@ class staNNet(object):
         
            ################### DEFINE MODEL ######################################
            self._contruct_model()
-           if isinstance(self.x_train.data,torch.cuda.FloatTensor): 
+           if isinstance(self.x_train.data,torch.FloatTensor): 
+               self.itype = torch.LongTensor
+           else:
                self.itype = torch.cuda.LongTensor
                self.C.cuda()
                self.model.cuda()
                self.loss_fn.cuda()
                print('Sent to GPU')
-           else: 
-               self.itype = torch.LongTensor
             
         elif len(args)==1 and type(args[0]) is str:
             self._load_model(args[0])
