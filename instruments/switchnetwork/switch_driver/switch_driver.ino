@@ -98,40 +98,29 @@ void parseData() {      // split the data into its parts
 //============
 
 void showParsedData() {
-    //Serial.print("Number:");
-    Serial.print(String(switcharray[0]));
-    Serial.print(" ");
-    //Serial.print("Number:");
-    Serial.print(String(switcharray[1]));
-    Serial.print(" ");
-    //Serial.print("Number:");
-    Serial.print(String(switcharray[2]));
-    Serial.print(" ");
-    //Serial.print("Number:");
-    Serial.print(String(switcharray[3]));
-    Serial.print(" ");
-    //Serial.print("Number:");
-    Serial.print(String(switcharray[4]));
-    Serial.print(" ");
-    //Serial.print("Number:");
-    Serial.print(String(switcharray[5]));
-    Serial.print(" ");
-    //Serial.print("Number:");
-    Serial.print(String(switcharray[6]));
-    Serial.print(" ");
-    //Serial.print("Number:");
-    Serial.println(String(switcharray[7]));
+    Serial.print("switch configs for each switch:\n");  
+    Serial.print("c1\t\tc2\t\tc3\t\tc4\t\tc5\t\tc6\t\tc7\t\tc8\n");   
+    for (int j = 0; j<8; j++){
+      for (int i = 7; i >= 0; i--)
+      {
+         bool b = bitRead(switcharray[j], i);
+         Serial.print(b);
+      }
+      Serial.print("\t");
+    }
 }
 
 void SendSignal(){
   if(newData == true && flag == true){
     digitalWrite(CSPin, LOW);
     delay(10);
-    for (int k = 0; k < 8; k++){
-      SPI.transfer(switcharray[i]);
+    //reverse order in which the bytes are sent, so that the last byte will be pushed to the last switch
+    for (int k = 7; k >= 0; k--){
+      SPI.transfer(switcharray[k]);
       i++;
       }
     if(i == 8){
+      Serial.write("\ndone");
       digitalWrite(CSPin, HIGH);
       i = 0;
       newData = false;
