@@ -15,12 +15,12 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
-from SkyNEt.modules.Nets.predNNet import predNNet
+from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 import SkyNEt.experiments.boolean_logic.config_evolve_NN as config
 
 
-# ------------------------ configure ------------------------
+# ------------------------ START configure ------------------------
 cf = config.experiment_config()
 cf.generations = 50
 cf.mutationrate = 0.3
@@ -31,9 +31,9 @@ cf.filepath = r'../../test/evolution_test/NN_testing/'
 cf.name = 'lineartest'
 
 # Initialize NN
-main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
-data_dir = 'lr2e-4_eps400_mb512_20180807CP.pt'
-net = predNNet(main_dir+data_dir)
+main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\nets\MSE_n_adap_200ep\\'
+data_dir = 'MSE_n_adap_d10w90_200ep_lr3e-3_b1024_b1b2_0.90.75_seed.pt'
+net = staNNet(main_dir+data_dir)
 
 web = webNNet()
 web.add_vertex(net, 'A', output=True)
@@ -44,7 +44,7 @@ training_type = 'cormse'
 
 # hardcoded target values of logic gates with off->lower and on->upper
 target_hardcoded = True
-upper = 1.0
+upper = 5.0
 lower = 0.0
 # if set to false, use output of known cv configurations as targets
 
@@ -57,46 +57,33 @@ sigma = 0.01 # standard deviation of noise added to target
 
 
 
-
-
 # input data for both I0 and I1
-input_data = torch.zeros(N*4,2)
-input_data[N:2*N,   1] = 0.9
-input_data[2*N:3*N, 0] = 0.9
-input_data[3*N:,    0] = 0.9
-input_data[3*N:,    1] = 0.9
+input_data = -0.5*torch.zeros(N*4,2)
+input_data[N:2*N,   1] = 0.0
+input_data[2*N:3*N, 0] = 0.0
+input_data[3*N:,    0] = 0.0
+input_data[3*N:,    1] = 0.0
 
 gates = ['AND','NAND','OR','NOR','XOR','XNOR']
 
-list_cv = torch.FloatTensor(
-      [[387,-387,650,55,-892],[477,-234,-332,-358,827],
-       [9,183,714,-313,-416],[514,665,-64,855,846],
-       [-771,342,900,-655,-48],[480,149,-900,-2,-450]])
-list_cv += 900
-list_cv /=1800
-cv_data = torch.ones(6,4*N)
-for (i, cv) in enumerate(list_cv):
-    # set parameters of network to cv
-    web.reset_parameters(cv)
-    # evaluate network
-    cv_data[i] = web.forward(input_data).data[:,0]
-
-if target_hardcoded:
-    target_data = upper*torch.ones(6, 4*N)
-    target_data[0, :3*N] = lower
-    target_data[1, 3*N:] = lower
-    target_data[2, :N] = lower
-    target_data[3, N:] = lower
-    target_data[4, :N] = lower
-    target_data[4, 3*N:] = lower
-    target_data[5, N:3*N] = lower
-else:
-    target_data = torch.tensor(cv_data)
+if training_type == 'bin':
+    upper = 1
+    lower = 0
+target_data = upper*torch.ones(6, 4*N)
+target_data[0, :3*N] = lower
+target_data[1, 3*N:] = lower
+target_data[2, :N] = lower
+target_data[3, N:] = lower
+target_data[4, :N] = lower
+target_data[4, 3*N:] = lower
+target_data[5, N:3*N] = lower
 
 def cor_loss_fn(x, y):
     corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))
-    return 1-corr/torch.std(x)/torch.std(y)
+    return 1.0-corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-16)
 mse_loss_fn = torch.nn.MSELoss()
+def mse_norm_loss_fn(y_pred, y):
+    return mse_loss_fn(y_pred, y)/(upper-lower)**2
 
 if training_type == 'bin':
     target_data = target_data.long()
@@ -106,19 +93,14 @@ if training_type == 'bin':
         y_pred = torch.cat((-y_pred, y_pred), dim=1)
         return cross_fn(y_pred, y[:,0])
     add_noise = False
-elif training_type=='softmargin':
-    loss_fn = torch.nn.SoftMarginLoss()
-    target_data -= 0.5
-    target_data *= 8.0
-    add_noise = False
 elif training_type=='mse':
-    loss_fn = mse_loss_fn
+    loss_fn = mse_norm_loss_fn
 elif training_type=='cor':
     loss_fn = cor_loss_fn
 elif training_type=='cormse':
     def loss_fn(x, y):
-        alpha = 0.6
-        mse = mse_loss_fn(x, y)
+        alpha = 0.1
+        mse = mse_norm_loss_fn(x, y)
         cor = cor_loss_fn(x, y)
         return alpha*cor+(1-alpha)*mse
 else:
@@ -141,7 +123,7 @@ for i,gate in enumerate(gates):
         cross_fn = torch.nn.CrossEntropyLoss(weight = weights)
     
     best_error = 1e10
-    for j in range(5):
+    for j in range(1):
         web.reset_parameters()
         geneArray, outputArray, fitnessArray = web.trainGA(input_data, 
                                                            target_data[i].view(-1,1), 
@@ -164,19 +146,15 @@ def print_gates():
         print(gate)
         # print output network and targets
         plt.subplot(2, 3 , 1 + i//2 + i%2*3)
-        legend_list = ['target', 'network', 'cv_output']
+        legend_list = ['target', 'network']
         plt.plot(target_data[i].numpy())
-        web.reset_parameters(np.float32(store_cvs[i]))
+        web.reset_parameters(store_cvs[i])
         store_output[i] = web.forward(input_data).data[:,0]
         plt.plot(store_output[i])
-        plt.plot(cv_data[i].data)
         plt.legend(legend_list)
         plt.title("%s, cv:%s" % (gate, np.round(store_cvs[i], 3)))
     # adjust margins 
     plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
-    # fullscreen plot   
-    figManager = plt.get_current_fig_manager()
-    figManager.window.showMaximized()
     plt.show()
 
 print_gates()

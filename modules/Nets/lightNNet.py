@@ -5,11 +5,17 @@ Created on Wed Feb 28 12:40:12 2018
 
 @author: hruiz
 
-Defines the standard Neural Network class using PyTorch nn-package. It defines the model and inplements the training procedure. 
+Defines the standard Neural Network class using PyTorch nn-package. It defines the model and implements the training procedure. 
+Different than staNNet, this is the light version of the network where you use frequency, amplitude, offset, fs and datapoint index 
+information to generate the input values for the minibatches. Therefore you don't need to load the complete input data information
+at once in your memory. This way, even the bad laptops of poor students can be used to train neural networks.
+
 INPUT: ->data; a list of (input,output) pairs for training and validation [(x_train,y_train),(x_val,y_val)]. 
                The dimensions of x and y arrays must be (Samples,Dim) and they must be torch.FloatTensor
        ->depth: number of hidden layers
        ->width: can be list of number of nodes in each hidden layer
+       ->frequency: a numpy array (1D) containing the sample frequencies
+       ->
        ->kwarg: loss='MSE'; string name of loss function that defines the problem (only default implemented)
                 activation='ReLU'; name of activation function defining the non-linearity in the network (only default implemented)
                 betas=(0.9, 0.999) is a tuple with beta1 and beta2 for Adam
@@ -24,37 +30,15 @@ import torch.nn as nn
 import numpy as np 
 #from matplotlib import pyplot as plt
 
-class staNNet(object):
+class lightNNet(object):
     
     def __init__(self,*args,loss='MSE',C=1.0,activation='ReLU', BN=False):
         
         self.ymax = 36 # Maximum value that the output can have (clipping value)
         self.C = torch.FloatTensor([C])
         
-        if len(args) == 3: #data,depth,width
-           data,depth,width = args
-           self.x_train, self.y_train = data[0]
-           self.x_val, self.y_val = data[1]
-           self.D_in = self.x_train.size()[1]
-           self.D_out = self.y_train.size()[1]
-           self._BN = BN
-           self.depth = depth
-           self.width = width
-           self.info = {'activation':activation, 'loss':loss}
-           self._tests()
-        
-           ################### DEFINE MODEL ######################################
-           self._contruct_model()
-           if isinstance(self.x_train.data,torch.cuda.FloatTensor): 
-               self.itype = torch.cuda.LongTensor
-               self.C.cuda()
-               self.model.cuda()
-               self.loss_fn.cuda()
-               print('Sent to GPU')
-           else: 
-               self.itype = torch.LongTensor
             
-        elif len(args)==1 and type(args[0]) is str:
+        if len(args)==1 and type(args[0]) is str:
             self._load_model(args[0])
             
         elif len(args) == 9:    #data,depth,width,freq,Vmax,fs,phase
@@ -89,7 +73,7 @@ class staNNet(object):
            else: 
                self.itype = torch.LongTensor
         else:
-            assert False, 'Arguments must be either 3 (data,depth,width) or a string to load the model!'
+            assert False, 'Arguments must be either 9 (data,depth,width,freq,amplitude,fs,offset,phase,) or a string to load the model!'
             
         
     def _load_model(self,data_dir):
@@ -104,40 +88,7 @@ class staNNet(object):
         else:
             self._BN = False
 
-         #TODO: Add all parameters to state dic 'info'   
-        self.loss_str = state_dic['loss']
-        state_dic.pop('loss') #Remove entrie of OrderedDict
-        
-        self.activ = state_dic['activation']
-        state_dic.pop('activation')  
-          
-        try:
-            #make a loop
-            self.noisefit = state_dic['noise_fit'] 
-            state_dic.pop('noise_fit')
-            self.amplitude = state_dic['amplitude']
-            state_dic.pop('amplitude')
-            self.freq = state_dic['freq']
-            state_dic.pop('freq')
-            self.fs = state_dic['fs']
-            state_dic.pop('fs')
-            self.offset = state_dic['offset']
-            state_dic.pop('offset')
-            self.phase = state_dic['phase']
-            state_dic.pop('phase')
-        except KeyError:
-            self.noisefit = False
-            print("Sine wave input data not saved in model.")
-        if self.noisefit:
-            try:
-                self.a = state_dic['noisefit_a'] 
-                state_dic.pop('noisefit_a')
-                self.b = state_dic['noisefit_b'] 
-                state_dic.pop('noisefit_b')
-            except KeyError:
-                print('Noise fit parameters failed to load')
-
-        
+    
         # move info key from state_dic to self
         if state_dic.get('info') is not None:
             self.info = state_dic['info']
@@ -164,7 +115,7 @@ class staNNet(object):
 
         self._contruct_model()
         
-        self.model.load_state_dict(state_dic)
+        self.model.load_state_dict(state_dic) #\\
 
         if isinstance(layers[-1][1],torch.FloatTensor): 
             self.itype = torch.LongTensor
@@ -191,7 +142,7 @@ class staNNet(object):
             track_running_stats=False  
             print('BN tracking average: ',track_running_stats)
             self.bn_layer = nn.BatchNorm1d(self.width,track_running_stats=track_running_stats)
-        """
+            
         activation = self.info['activation']
         if activation == 'tanh':
             activ_func = nn.Tanh()
@@ -203,8 +154,7 @@ class staNNet(object):
             activ_func = None
         else:
             assert False, "Activation function ('%s') not recognized!" % activation
-        """
-        activ_func = nn.ReLU() #\\
+
         if self._BN: 
             modules = [nn.BatchNorm1d(self.D_in,track_running_stats=track_running_stats),
                        self.l_in,activ_func]
@@ -224,26 +174,22 @@ class staNNet(object):
         
         print('Model constructed with modules: /n',modules)
         self.model = nn.Sequential(*modules)
-        if self.noisefit == False:
+        if self.info['noisefit'] == False:
             self.loss_fn = nn.MSELoss()
         else:
             # Fitting parameters for sigma = a*pred + b
-            #self.a = torch.tensor([-0.01839696391296179, 0.014719610317565695])
-            #self.b = torch.tensor([0.132513092, 0.048817234])
-            
-            #self.a = torch.tensor([-0.01453690797247516, 0.010176319709654977])
-            #self.b = torch.tensor([0.05450740839199429, 0.05450740839199429])
-            
-            self.a = torch.tensor([-0.01900258860717661, 0.014385111570154395])
+            self.a = torch.tensor([0.01900258860717661, 0.014385111570154395])
             self.b = torch.tensor([0.21272562199413553, 0.0994027221336])
+            self.info['loss'] = 'MSE_noisefit'
  
     def loss_fn(self, pred, targets):   
-        sign = torch.sign(pred)
-        #sigma = -1 * (sign-1)/2 * (abs(self.a[0] * pred) + self.b[0]) + (sign+1)/2 * (abs(self.a[1] * pred) + self.b[1])              
-        #r = torch.mean(((pred - targets) ** 2) / sigma ** 2 ) 
-        ay = -1 * (sign-1)/2 * (abs(self.a[0] * pred)) + (sign+1)/2 * (abs(self.a[1] * pred))
-        b = -1 * (sign-1)/2 * self.b[0] + (sign+1)/2 * self.b[1]
+        # There is a noise fit for both negative and positive outcomes. These have different fitting parameters
+        # and therefore it is necessary to determine the sign of the output.
+        sign = torch.sign(pred)         
+        ay = abs(sign-1)/2 * (self.a[0] * pred) + (sign+1)/2 * (self.a[1] * pred)
+        b = abs(sign-1)/2 * self.b[0] + (sign+1)/2 * self.b[1]
         r = torch.mean(((pred - targets) ** 2) / (ay**2 + b**2))
+
         return r
    
     def train_nn(self,learning_rate,nr_epochs,batch_size,betas=(0.9, 0.999),seed=False):   
@@ -270,7 +216,8 @@ class staNNet(object):
                 # Forward pass: compute predicted y by passing x to the model.
                 indices = permutation[i:i+batch_size]
                 if self.x_train.shape[1] == 1:
-                    y_pred = self.model(self.generateSineWave(self.freq, self.x_train[indices], self.amplitude, self.fs, self.offset, self.phase)) 
+                    y_pred = self.model(self.generateSineWave(self.info['freq'], self.x_train[indices], self.info['amplitude'], 
+                                                              self.info['fs'], self.info['offset'], self.info['phase'])) 
                 else:
                     y_pred = self.model(self.x_train[indices]) 
                 
@@ -298,23 +245,21 @@ class staNNet(object):
             self.model.eval()  
             
             if self.x_val.shape[1] == 1:
-                y = self.model(self.generateSineWave(self.freq, self.x_val, self.amplitude, self.fs, self.offset, self.phase)) 
+                y = self.model(self.generateSineWave(self.info['freq'], self.x_val, self.info['amplitude'],
+                                                     self.info['fs'], self.info['offset'], self.info['phase'])) 
             else:
                 y = self.model(self.x_val) 
-            
-            #if self.x_train.shape[1] == 1:
-            #    y_t = self.model(self.generateSineWave(self.freq, self.x_train, self.amplitude, self.fs, self.offset, self.phase)) 
-            #else:
-            #    y_t = self.model(self.x_train)
-            
+                       
             loss_val = self.loss_fn(y, self.y_val)
-            #loss_train = self.loss_fn(y_t, self.y_train)
             
             self.model.train()  
             self.L_val[epoch] = loss_val.item()
             self.L_train[epoch] = running_loss/nr_minibatches
             print('Epoch:',epoch,'Val. Error:', loss_val.item(),'Training Error:',running_loss/nr_minibatches)
             
+        self.info['L_train'] = self.L_train
+        self.info['L_val'] = self.L_val 
+        #TODO: The losses for training and validating will now overwrite if you further train an existing network. Fix this later
         print('Finished Training')
 #        plt.figure()
 #        plt.plot(np.arange(nr_epochs),self.L_val)
@@ -329,25 +274,11 @@ class staNNet(object):
         Saves the model in given path, all other attributes are saved under the 'info' key as a new dictionary.
         """
         self.model.eval()
-        state_dic = self.model.state_dict()
-
-        #TODO: Remove this if the 'info' state dic is tested
-        state_dic['activation'] = self.activ
-        state_dic['loss'] = self.loss_str
-        state_dic['noise_fit'] = self.noisefit
-        state_dic['freq'] = self.freq
-        state_dic['amplitude'] = self.amplitude
-        state_dic['offset'] = self.offset
-        state_dic['fs'] = self.fs
-        state_dic['phase'] = self.phase
-        
+        state_dic = self.model.state_dict()        
         if self.noisefit:
-            state_dic['noisefit_a'] = self.a
-            state_dic['noisefit_b'] = self.b
             self.info['noisefit_a'] = self.a
             self.info['noisefit_b'] = self.b
-        
-        
+               
         state_dic['info'] = self.info
 
         torch.save(state_dic,path)

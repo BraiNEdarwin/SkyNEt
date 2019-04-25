@@ -24,7 +24,7 @@ cf = config.experiment_config()
 saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
 # Initialize output data set
-data = np.zeros(int(cf.sampleTime * cf.fs))
+data = np.zeros((int(cf.sampleTime * cf.fs), 1))
 
 batches = int(cf.fs * cf.sampleTime / cf.samplePoints)
 
@@ -43,7 +43,7 @@ for i in range(0, batches):
         wavesRamped[j,int(0.5*cf.fs) + waves.shape[1]:] = np.linspace(waves[j,-1], 0, int(0.5*cf.fs))
         
     dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, cf.fs)      
-    data[i*cf.samplePoints: (i+1)*cf.samplePoints] = dataRamped[0,int(0.5*cf.fs):int(0.5*cf.fs) + waves.shape[1]]
+    data[i*cf.samplePoints: (i+1)*cf.samplePoints, 0] = dataRamped[0,int(0.5*cf.fs):int(0.5*cf.fs) + waves.shape[1]]
 
     if i % 10 == 0: # Save after every 10 mini batches
         print('Saving...')

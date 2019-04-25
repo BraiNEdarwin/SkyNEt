@@ -12,8 +12,8 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
 dims = 7
-Fs = 20
-factor = 0.1
+Fs = 30
+factor = 0.05
 skip_points = 1
 
 freq2 = np.array([2,np.pi,5,7,13,17,19])
@@ -21,9 +21,9 @@ freq = factor*np.sqrt(freq2[:dims])
 c_update = int(24*3600*freq[0])
 cycles = int(24*3600*freq[0])
 inputs = np.zeros((dims,1))
-Vmax =  np.array([0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9])
+Vmax =  np.array([0.5, 0.5, 0.9, 0.9, 0.9, 0.9, 0.9])
 
-t = np.arange(0, 10*24*3600, skip_points/Fs)
+t = np.arange(0, 2*24*3600, skip_points/Fs)
 for i in range(int(cycles/c_update)):
     input_part = freq[:,np.newaxis]*t[np.newaxis]
     phase = np.zeros((dims,1))
@@ -211,9 +211,9 @@ def distanceRandomGridBrute(gridpoints, inputs, grid_range = 0.25):
     return min_dist, empty_counter
 
 
-gridpoints = 10000
+gridpoints = 1000
 #min_dist_brute, empty_counter_brute = distance5D_brute(grid, inputs)
-min_dist, empty_counter = distanceRandomGrid(gridpoints, inputs, radius = 0.18, grid_range = Vmax - 0.05)
+min_dist, empty_counter = distanceRandomGrid(gridpoints, inputs, radius = 0.25, grid_range = Vmax - 0.05)
 
 plt.figure()
 #plt.hist(np.reshape(min_dist_brute, (min_dist_brute.size,1)),bins=50, normed = True,label = "Full grid search")
