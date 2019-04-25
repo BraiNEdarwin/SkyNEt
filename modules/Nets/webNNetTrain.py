@@ -79,6 +79,7 @@ def train(self,
         permutation = torch.randperm(len(train_data))
         for i in range(0,len(permutation), batch_size):
             indices = permutation[i:i+batch_size]
+            
             y_pred = self.forward(train_data[indices])
             error = self.error_fn(y_pred, target_data[indices], beta)
             optimizer.zero_grad()

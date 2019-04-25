@@ -9,9 +9,9 @@ Created on Mon Mar 12 14:39:57 2018
 import torch
 import torch.nn as nn
 import numpy as np 
-from SkyNEt.modules.Nets.staNNet import staNNet
+from SkyNEt.modules.Nets.lightNNet import lightNNet
 
-class predNNet(staNNet):
+class predNNet(lightNNet):
     
     def __init__(self,*args,loss='MSE',C=1.,activation='ReLU',BN=False):
         super(predNNet,self).__init__(*args,loss=loss,C=C,activation=activation,BN=BN)
@@ -29,6 +29,8 @@ class predNNet(staNNet):
                 
         pred_layer = nn.Linear(self.pred_in,self.D_in)
         self.dim_cv = self.D_in - self.pred_in
+        self.offset = self.info['offset']
+        self.amplitude = self.info['amplitude']
         pred_layer.bias.data.uniform_(self.offset[self.CVs][0] - self.amplitude[self.CVs][0] , self.offset[self.CVs][0] + self.amplitude[self.CVs][0]) 
 #        print('Predictor Bias initialized with uniform: ',pred_layer.bias.data)
         #set weights to zero to supress mixture of input and control voltages

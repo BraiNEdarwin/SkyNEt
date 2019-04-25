@@ -8,30 +8,36 @@ Created on Thu Mar 21 12:08:57 2019
 import numpy as np
 import torch
 from torch.autograd import Variable
+#from SkyNEt.modules.Nets.predNNet import predNNet
 from SkyNEt.modules.Nets.predNNet import predNNet
 from matplotlib import pyplot as plt
 ###############################################################################
 ########################### LOAD DATA  ########################################
 ###############################################################################
 #Load all_wfms.txt (outputs), fitness.tx (genes) and input_wfms.txt
-main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\nets\MSE_n_d10\\'
-data_dir = main_dir+'' #'2018_08_07_164652_CP_FullSwipe/'
-net = predNNet( data_dir + 'MSE_n_d10w90_50ep_lr3e-3_b1024_b1b2_0.90.75_seed.pt' )
+#main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\nets\MSE_n_d10\\'
+#data_dir = main_dir+'' #'2018_08_07_164652_CP_FullSwipe/'
+
+#net = predNNet( data_dir + 'MSE_n_d10w90_50ep_lr3e-3_b1024_b1b2_0.90.75_seed.pt' )
+data_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\nets\MSE_n_proper\\'
+net = predNNet(data_dir + 'MSE_n_d10w90_300ep_lr3e-3_b1024_b1b2_0.90.75_seed.pt')
 pred_logic = True
 pred_ring = False
 
 # Possible loss functions: mse, cor, cormse
-training_type = 'cormse'
-input_voltages = np.array([0,1])  # Determines which indices
-learning_rate,nr_epochs,batch_size = 3e-3, 400, 64
+training_type = 'cor'
+input_voltages = np.array([2,4])  # Determines which indices
+learning_rate,nr_epochs,batch_size = 9e-3, 400, 64
 reg_scale = 40.0
 
 N = 100
-x_inp = -0.5*np.ones((2,N*4))
-x_inp[1, N:2*N] = 0.
-x_inp[0, 2*N:3*N] = 0.
-x_inp[0, 3*N:] = 0.
-x_inp[1, 3*N:] = 0.
+inp_upper = 0.0
+inp_lower = -0.8
+x_inp = inp_lower*np.ones((2,N*4))
+x_inp[1, N:2*N] = inp_upper
+x_inp[0, 2*N:3*N] = inp_upper
+x_inp[0, 3*N:] = inp_upper
+x_inp[1, 3*N:] = inp_upper
 
 syst = 'cpu' # 'cpu' #
 if syst is 'cuda':
@@ -45,7 +51,7 @@ else:
 
 gates = ['AND','NAND','OR','NOR','XOR','XNOR']
 # hardcoded target values of logic gates with off->lower and on->upper
-upper = 10.
+upper = 1.
 lower = 0.
 ###############################################################################
 ################# GENERATE INPUT AND TEST DATA FOR GATES ######################
@@ -67,9 +73,9 @@ y_augm = y_target
 ###############################################################################
 if pred_ring:
     datafile = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_03_14_143310_characterization_7D_t_4days_f_0_1_fs_100\ring_dataset\Ring_class_data_0.40_many.npz'       
-    x_augm = np.load(datafile)['inp_wvfrm']*0.8 - 0.2
+    x_augm = np.load(datafile)['inp_wvfrm'] - 0.25
     #plt.plot(x_augm[:,0],x_augm[:,1],'.')
-    y_augm = np.load(datafile)['target'][np.newaxis,:]*10 + 1
+    y_augm = np.load(datafile)['target'][np.newaxis,:]*upper
     
 
 ###############################################################################
@@ -107,7 +113,10 @@ valErr_pred = np.zeros((nr_epochs,len(y)))
 ###############################################################################
 def cor_loss_fn(x, y):
     corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))
-    return 1-corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False) + 1E-15)
+    x_high_min = torch.min(x[(y == upper)]).item()
+    x_low_max = torch.max(x[(y == lower)]).item()
+    return (1.001 - (corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)))/(abs(x_high_min-x_low_max)/3)**0.5
+
 mse_loss_fn = torch.nn.MSELoss()
 
 
@@ -166,3 +175,4 @@ plt.ylabel('Normalized Validation Error log10')
 plt.xlabel('Epochs')
 plt.legend(gates)
 
+#saveArrays(r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\nets\MSE_n_adap_200ep\ring\\', filename="result_NAME,nr_epochs = nr_epochs,trained_cv=pred_voltages,input_electrodes = input_voltages,training_type=training_type,lr=learning_rate,input_scaling = '*0.7 -0.1',valErr_pred=valErr_pred,log10_error=log10_error,pred=y_pred,x_inp=x_augm)

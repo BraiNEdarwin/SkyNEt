@@ -164,29 +164,77 @@ def spreadPlotter(currents, name = ''):
         a: slope of the fit
         b: offset of the fit
     """
-    font = {'font.size': 16}
+    font = {'font.size': 18}
     
-    _, currents = removeClipping(currents,clip_cut=3.4)
+    _, currents = removeClipping(currents,clip_cut=36)
     Imean_pos = np.mean(currents[np.mean(currents, axis = 1) > 0,:], axis = 1)
-    Istd_pos = np.std(currents[np.mean(currents, axis = 1) > 0,:], axis = 1)
+    Ivar_pos = np.var(currents[np.mean(currents, axis = 1) > 0,:], axis = 1)
     Imean_neg = np.mean(currents[np.mean(currents, axis = 1) < 0,:], axis = 1)
-    Istd_neg = np.std(currents[np.mean(currents, axis = 1) < 0,:], axis = 1)
+    Ivar_neg = np.var(currents[np.mean(currents, axis = 1) < 0,:], axis = 1)
     
-    b = np.mean(np.std(currents[abs(np.mean(currents, axis = 1))<1.1],axis=1))
+    b = np.mean(np.std(currents[abs(np.mean(currents, axis = 1))<1.1],axis=1))**2
    
     #Istd_neg = 0
     #Imean_neg = 0
     a_pos = 0
     a_neg = 0
-    #[a_pos,_] =  np.polyfit(Imean_pos, Istd_pos - b, 1)
-    #[a_neg,_] = np.polyfit(Imean_neg, Istd_neg - b, 1)
+    [a_pos,b_pos] =  np.polyfit(Imean_pos**2, Ivar_pos, 1)
+    [a_neg,b_neg] = np.polyfit(Imean_neg**2, Ivar_neg, 1)
+    print(b_pos)
+    print(b_neg)
+    x_pos = np.linspace(Imean_pos[abs(Imean_pos).argmin()]**2, Imean_pos[abs(Imean_pos).argmax()]**2, 100)    
+    x_neg = np.linspace(Imean_neg[abs(Imean_neg).argmin()]**2, Imean_neg[abs(Imean_neg).argmax()]**2, 100)    
+    plt.figure(name + ' pos')
+    plt.plot(Imean_pos**2, Ivar_pos, '.')
+    plt.plot(x_pos, a_pos * x_pos + b_pos, '--') 
+    plt.xlabel('$I^2_\mu$ (nA)')
+    plt.ylabel('$var(I)$')
+    #plt.title('Standard deviations of CV configurations')
+    plt.rcParams.update(font)
+    plt.tight_layout()  
     
+    plt.figure(name + ' neg')
+    plt.plot(Imean_neg**2, Ivar_neg, '.')
+    plt.plot(x_neg, a_neg * x_neg + b_neg, '--') 
+    plt.xlabel('$I^2_\mu$ (nA)')
+    plt.ylabel('$var(I)$')
+    #plt.title('Standard deviations of CV configurations')
+    plt.rcParams.update(font)
+    plt.tight_layout()
     
-    #x_pos = np.linspace(Imean_pos[abs(Imean_pos).argmin()], Imean_pos[abs(Imean_pos).argmax()], 100)    
-    #x_neg = np.linspace(Imean_neg[abs(Imean_neg).argmin()], Imean_neg[abs(Imean_neg).argmax()], 100)    
+    return Ivar_pos, Ivar_neg, a_pos, a_neg, b_pos, b_neg, b
+
+def spreadPlotter2(currents, name = ''):
+    """
+    Plots the spread of the variance found of the sampled data versus the mean.
+    The variance is calculated using np.var(), not a PSD integral.
+    Fits y = ax + b through the datapoints
+    Parameters:
+        currents: measured currents
+        name: name of the figure (optional)
+    Returns:
+        Ivar: variance of the currents
+        a: slope of the fit
+        b: offset of the fit
+    """
+    font = {'font.size': 18}
+    
+    _, currents = removeClipping(currents,clip_cut=36)
+    Imean_pos = np.mean(currents[np.mean(currents, axis = 1) > 0,:], axis = 1)
+    Istd_pos = np.std(currents[np.mean(currents, axis = 1) > 0,:], axis = 1)
+    Imean_neg = np.mean(currents[np.mean(currents, axis = 1) < 0,:], axis = 1)
+    Istd_neg = np.std(currents[np.mean(currents, axis = 1) < 0,:], axis = 1)
+    
+    b = np.mean(np.std(currents[abs(np.mean(currents, axis = 1))<1.1],axis=1))**2
+   
+    [a_pos,b_pos] =  np.polyfit(Imean_pos, Istd_pos, 1)
+    [a_neg,b_neg] = np.polyfit(Imean_neg, Istd_neg, 1)
+    print('b = ' + str(b))
+    x_pos = np.linspace(Imean_pos[abs(Imean_pos).argmin()], Imean_pos[abs(Imean_pos).argmax()], 100)    
+    x_neg = np.linspace(Imean_neg[abs(Imean_neg).argmin()], Imean_neg[abs(Imean_neg).argmax()], 100)    
     plt.figure(name + ' pos')
     plt.plot(Imean_pos, Istd_pos, '.')
-    #plt.plot(x_pos, a_pos * x_pos + b, '--') 
+    #plt.plot(x_pos, a_pos * x_pos + b_pos, '--') 
     plt.xlabel('$I_\mu$ (nA)')
     plt.ylabel('$I_\sigma$')
     #plt.title('Standard deviations of CV configurations')
@@ -195,14 +243,14 @@ def spreadPlotter(currents, name = ''):
     
     plt.figure(name + ' neg')
     plt.plot(Imean_neg, Istd_neg, '.')
-    #plt.plot(x_neg, a_neg * x_neg + b, '--') 
+    #plt.plot(x_neg, a_neg * x_neg + b_neg, '--') 
     plt.xlabel('$I_\mu$ (nA)')
     plt.ylabel('$I_\sigma$')
     #plt.title('Standard deviations of CV configurations')
     plt.rcParams.update(font)
     plt.tight_layout()
     
-    return Istd_pos, Istd_neg, a_pos, a_neg, b
+    return Istd_pos, Istd_neg, a_pos, a_neg, b_pos, b_neg
 
 def gaussFit(currents, n, m, bins = 100, CVname = ''):
     """

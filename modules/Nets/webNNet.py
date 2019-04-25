@@ -210,8 +210,13 @@ class webNNet(torch.nn.Module):
         if 'output' not in v:
             # control voltages, repeated to match batch size of train_data
             cv_data = getattr(self, vertex).repeat(self._batch_size, 1)
+            
             # concatenate input with control voltage data
-            data = torch.cat((v['train_data'], cv_data), dim=1)
+            try:
+                data = torch.cat((v['train_data']*self.scale + self.bias, cv_data), dim=1) #\\
+            except: 
+                data = torch.cat((v['train_data'], cv_data), dim=1)
+            
             # swap columns according to input/control indices
             data = data[:,self.graph[vertex]['swapindices']]
             

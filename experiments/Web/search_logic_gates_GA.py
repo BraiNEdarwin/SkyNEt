@@ -31,8 +31,8 @@ cf.filepath = r'../../test/evolution_test/NN_testing/'
 cf.name = 'lineartest'
 
 # Initialize NN
-main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
-data_dir = 'lr2e-4_eps400_mb512_20180807CP.pt'
+main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\nets\MSE_n_adap_200ep\\'
+data_dir = 'MSE_n_adap_d10w90_200ep_lr3e-3_b1024_b1b2_0.90.75_seed.pt'
 net = staNNet(main_dir+data_dir)
 
 web = webNNet()
@@ -44,7 +44,7 @@ training_type = 'cormse'
 
 # hardcoded target values of logic gates with off->lower and on->upper
 target_hardcoded = True
-upper = 1.0
+upper = 5.0
 lower = 0.0
 # if set to false, use output of known cv configurations as targets
 
@@ -58,11 +58,11 @@ sigma = 0.01 # standard deviation of noise added to target
 
 
 # input data for both I0 and I1
-input_data = torch.zeros(N*4,2)
-input_data[N:2*N,   1] = 0.9
-input_data[2*N:3*N, 0] = 0.9
-input_data[3*N:,    0] = 0.9
-input_data[3*N:,    1] = 0.9
+input_data = -0.5*torch.zeros(N*4,2)
+input_data[N:2*N,   1] = 0.0
+input_data[2*N:3*N, 0] = 0.0
+input_data[3*N:,    0] = 0.0
+input_data[3*N:,    1] = 0.0
 
 gates = ['AND','NAND','OR','NOR','XOR','XNOR']
 
