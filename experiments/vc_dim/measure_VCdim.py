@@ -3,26 +3,40 @@ This is a template for evolving the NN based on the boolean_logic experiment.
 The only difference to the measurement scripts are on lines where the device is called.
 
 '''
+# General imports
+import signal
+import sys
+import time
+import numpy as np
+import pdb
+import logging
 # SkyNEt imports
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
 import SkyNEt.modules.PlotBuilder as PlotBuilder
 import config_evolve_VCdim as config
 try:
+    from SkyNEt.instruments import InstrumentImporter
     from SkyNEt.instruments.DAC import IVVIrack
+    from SkyNEt.instruments.ADwin import adwinIO
     from SkyNEt.instruments.niDAQ import nidaqIO
-except:
-    pass    
+    importerror = []
+except ImportError as error:
+    print('############################################')
+    print('WARNING:',error,'!!')
+    print('WARNING: Random output will be generated!!')
+    importerror = error
+    print('############################################')
 from SkyNEt.modules.Classifiers import perceptron
-# Other imports
-import signal
-import sys
-import time
-import numpy as np
-import pdb
+
+# Initialize instruments
+if not importerror:
+    ivvi = InstrumentImporter.IVVIrack.initInstrument()
+    adw = InstrumentImporter.adwinIO.initInstrument()
 
 #%%
-def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_testing/', hush=True):
+def evolve(inputs, binary_labels, fitthr=0.9,
+           filepath = r'D:/data/Hans/evolution_test/VCdim_testing/', hush=True):
     signal.signal(signal.SIGINT, reset)
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
@@ -31,7 +45,7 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
     t = cf.InputGen[0]  # Time array
     x = cf.InputGen[1]  # Array with P and Q signal
     w = cf.InputGen[2]  # Weight array
-    target = cf.TargetGen  # Target signal
+    target = cf.amplification*cf.TargetGen  # Target signal
     
     # np arrays to save genePools, outputs and fitness
     geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
@@ -50,12 +64,13 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
     # Initialize main figure
     if not hush:
         mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
-    
+    else:
+        print('WARNING: Plot is hushed; change hush flag to True for plotting...')
     # Initialize instruments
-    try:
-        ivvi = IVVIrack.initInstrument()
-    except:
-        pass
+    #if not importerror:
+    #        ivvi = InstrumentImporter.IVVIrack.initInstrument()
+    #        adw = InstrumentImporter.adwinIO.initInstrument()
+
     # Initialize genepool
     genePool = Evolution.GenePool(cf)
     
@@ -67,46 +82,48 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
             for k in range(cf.genes-1):
                 controlVoltages[k] = genePool.MapGenes(
                                         cf.generange[k], genePool.pool[j, k])
-            try:
+            if not importerror:
                 IVVIrack.setControlVoltages(ivvi, controlVoltages)
                 time.sleep(1)  # Wait after setting DACs
-            except:
-                pass
+
             # Set the input scaling
             x_scaled = x * genePool.config_obj.input_scaling
-    
             # Measure cf.fitnessavg times the current configuration
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
-                try:
-                    output = nidaqIO.IO_2D(x_scaled, cf.fs)
-                    output = np.array(output)
-                except:
-                    output = np.random.standard_normal(len(x[0]))
+                if not importerror:
+                    #print('x_scaled: ',x_scaled.shape)
+                    output = cf.amplification * nidaqIO.IO(x_scaled, cf.fs)
+                    output = np.array(output[0,:])
+                else:
+                    output = 0.1*np.random.standard_normal(len(x[0]))
+                    if j == 0:
+                        print('WARNING: Debug mode active; output is white noise!!')
     
                 # Plot genome
                 try:
-                    PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
+                    if not hush: PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
                 except:
-                    pass
+                    if j == 0:
+                        logging.exception('PlotBuilder.currentGenomeEvolution FAILED!')
+                        print('Gene pool shape is ',genePool.pool.shape)
     
                 # Train output
-                outputAvg[avgIndex] = cf.amplification * output
+                outputAvg[avgIndex] = output
                 # Calculate fitness
                 fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],
                                                          target,
                                                          w)
-    
                 # Plot output
                 try:
-                    PlotBuilder.currentOutputEvolution(mainFig,
+                    if not hush:PlotBuilder.currentOutputEvolution(mainFig,
                                                        t,
                                                        target,
                                                        output,
                                                        j + 1, i + 1,
                                                        fitnessTemp[j, avgIndex])
                 except:
-                    pass
+                    if j == 0: logging.exception('PlotBuilder.currentOutputEvolution FAILED!')
                 
             outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
     
@@ -114,13 +131,14 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
         end = time.time()
         # Status print
         print("Generation nr. " + str(i + 1) + " completed; took "+str(end-start)+" sec.")
-        print("Highest fitness: " + str(max(genePool.fitness)))
-    
+        max_fit = max(genePool.fitness)
+        print("Highest fitness: " + str(max_fit))
+        
         # Save generation data
         geneArray[i, :, :] = genePool.pool
         outputArray[i, :, :] = outputTemp
         fitnessArray[i, :] = genePool.fitness
-    
+        
         # Update main figure
         try:
             PlotBuilder.updateMainFigEvolution(mainFig,
@@ -129,25 +147,33 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
                                                outputArray,
                                                i + 1,
                                                t,
-                                               cf.amplification*target,
+                                               target,
                                                output,
                                                w)
         except:
-            pass
+            if not hush: logging.exception('PlotBuilder.updateMainFigEvolution FAILED!')
         # Save generation
         SaveLib.saveExperiment(saveDirectory,
                                genes = geneArray,
                                output = outputArray,
                                fitness = fitnessArray,
                                target = target[w][:,np.newaxis])
-    
+        
+        x_inp = outputTemp[genePool.fitness==max_fit,w][:,np.newaxis]
+        y = target[w][:,np.newaxis]
+        X = np.stack((x_inp, y), axis=0)[:,:,0]
+        corr = np.corrcoef(X)[0,1]
+        print(f"Correlation of fittest genome: {corr}")
+        if corr >= fitthr:
+            print(f'Very high fitness achieved already, evolution will stop (correlaton threshold set to {fitthr})')
+            break
         # Evolve to the next generation
         genePool.NextGen()
     
     try:
         PlotBuilder.finalMain(mainFig)
     except:
-        pass
+        if not hush: logging.exception('WARNING: PlotBuilder.finalMain FAILED!')
     
     #Get best results
     max_fitness = np.max(fitnessArray)
@@ -156,8 +182,8 @@ def evolve(inputs, binary_labels, filepath = r'../../test/evolution_test/VCdim_t
     assert fitnessArray[ind]==max_fitness,'Indices do not give value'
     best_genome = geneArray[ind]
     best_output = outputArray[ind]
-    y = best_output[w][:,np.newaxis]
-    trgt = target[w][:,np.newaxis]
+    y = best_output[w][:,np.newaxis]/cf.amplification
+    trgt = target[w][:,np.newaxis]/cf.amplification
     accuracy, _, _ = perceptron(y,trgt)
     print('Max. Fitness: ', max_fitness)
     print('Best genome: ', best_genome)
@@ -173,10 +199,9 @@ def reset(signum, frame):
         - Apply zero signal to the ADwin
         '''
         try:
-            global ivvi
-            ivvi.set_dacs_zero()
+            ivviReset = IVVIrack.initInstrument(name='ivviReset')
+            ivviReset.set_dacs_zero()
             print('ivvi DACs set to zero')
-            del ivvi  # Test if this works!
         except:
             print('ivvi was not initialized, so also not reset')
 			
@@ -187,16 +212,14 @@ def reset(signum, frame):
             print('nidaq not connected to PC, so also not reset')
 
         try:
-            global adw
-            reset_signal = np.zeros((2, 40003))
-            adwinIO.IO_2D(adw, reset_signal, 1000)
+            adw = adwinIO.initInstrument()
+            adwinIO.reset(adw)
+            print('adwin has been reset')
         except:
             print('adwin was not initialized, so also not reset')
-
-        # Finally stop the script execution
-        sys.exit()         
+        
 #%% MAIN
 if __name__=='__main__':
-    inputs = [[-0.9,0.9,-0.9,0.9],[-0.9,-0.9,0.9,0.9]]
-    binary_labels = [0,1,1,0]
-    _,_,_,_ = evolve(inputs,binary_labels)
+    inputs = [[-0.7,0.7,0.7,-0.7],[-0.7,-0.7,0.7,0.7]]
+    binary_labels = [0,0,1,1]
+    _,_,_,_ = evolve(inputs,binary_labels,hush=False)
