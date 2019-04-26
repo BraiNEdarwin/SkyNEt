@@ -59,13 +59,17 @@ def switch(ser, matrix):
 
     ser.write('>'.encode())
 
-def read_serial_out(ser):
-    #watch out scary code ahead
+def read_serial_out(ser): 
+    '''
+    this function reads out the com port (hopefully for enough time)
+    and then prints it to the console
+    TODO print to file or results
+    '''
     time.sleep(0.2)
     while ser.inWaiting()!=0:
-        #bytesToRead = ser.inWaiting()
-        bytesToRead =ser.read(140)
-        print(bytesToRead)
+
+        lineToRead =ser.read(140)
+        print(lineToRead.decode())
         ser.flushInput()
         time.sleep(0.2)
 
@@ -78,3 +82,13 @@ def connect_single_device(ser, device_number):
     matrix[:, device_number] = 1
     switch(ser, matrix)
     read_serial_out(ser)
+
+def connect_matrix(ser, connect_matrix):
+    '''
+    this function connects a specified matrix connection 
+    to the BNC connectors
+    See the config file for more information on how to
+    build this matrix
+    '''
+    switch(ser,matrix)
+    red_serial_out(ser)
