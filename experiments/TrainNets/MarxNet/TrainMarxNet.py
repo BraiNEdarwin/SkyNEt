@@ -17,23 +17,27 @@ from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 ###############################################################################
 ########################### LOAD DATA  ########################################
 ###############################################################################
-main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/NN_data_Mark/7D_train_data/data4nn/2019_04_08/'
+main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Marks_Data/April_2019/train set/data4nn/16_04_2019/'
 file_name = 'data_for_training.npz'
-data = dl(main_dir, file_name, syst='cpu', steps=3)
+data = dl(main_dir, file_name, steps=3)
 
 #%%
 ###############################################################################
 ############################ DEFINE NN and RUN ################################
 ###############################################################################
-depth = 5
+lss = 'MSE'
+depth = 20
 width = 90
-learning_rate,nr_epochs,batch_size = 3e-4, 5, 64
+learning_rate,nr_epochs,batch_size = 3e-3, 500, 2048 #3e-3, 200, 1024 w. depth=10
+# RMSE: 1.254 Error with d=20,w=90 and 3e-3, 500, 2048
+# Doing run now for loss=MSE and same parameters as above: 1.23 Error, 
+#so there is no difference between models yet... This can be do to the dominant term being the cross talk
 beta1,beta2 = 0.9, 0.75
 runs = 1
 valerror = np.zeros((runs,nr_epochs))
 trainerror = np.zeros((runs,nr_epochs))
 for i in range(runs):
-    net = staNNet(data,depth,width)
+    net = staNNet(data,depth,width,loss=lss)
     net.train_nn(learning_rate,nr_epochs,batch_size,betas=(beta1,beta2))
     valerror[i] = net.L_val
     trainerror[i] = net.L_train
@@ -44,21 +48,21 @@ for i in range(runs):
 plt.figure()
 plt.plot(np.arange(nr_epochs),valerror.T, label='Val. Error')
 plt.plot(np.arange(nr_epochs),trainerror.T, label='Train. Error')
-plt.title('Norm. Validation MSE Profile while Training')
+plt.title('MSE Profile while Training')
 plt.xlabel('Epochs')
 plt.legend()
-plt.show()
 
 now = datetime.datetime.now()
 nowstr = now.strftime('%d-%m-%Hh%Mm')
-
-plt.savefig(main_dir+f'{nowstr}-Error_lr{learning_rate}-eps{nr_epochs}-mb{batch_size}-b1{beta1}-b2{beta2}.png')
-
+job_id = f'loss{lss}-d{depth}w{width}-lr{learning_rate}-eps{nr_epochs}-mb{batch_size}-b1{beta1}-b2{beta2}'
+identifier = f'{nowstr}-Error_{job_id}'
+plt.savefig(main_dir+identifier+'.png')
+plt.show()
 #%%
 ###############################################################################
 ############################## SAVE NN ########################################
 ###############################################################################
-path = main_dir+f'{nowstr}_NN.pt'
+path = main_dir+f'{nowstr}_NN_{job_id}.pt'
 net.save_model(path)
 #Then later: net = staNNet(path)
 # Save other stuff? e.g. generalization/test error...
@@ -71,13 +75,13 @@ net = staNNet(path)
 
 
 ########################## TEST GENERALIZATION  ###############################
-file_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/NN_data_Mark/7D_test_sets/2019_03_19_084109_rand_test_set_100ms/data4nn/2019_04_08/'
-inputs, targets = gtd(file_dir+'data_for_test.npz', syst='cpu') #function to load data returning torch Variable with correct form and dtype 
-prediction = net.outputs(inputs)
+file_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Marks_Data/April_2019/random_test_set/data4nn/16_04_2019/'
+inputs, targets = gtd(file_dir+'data_for_test.npz') #function to load data returning torch Variable with correct form and dtype 
+prediction = net.outputs(inputs)#*10 for RMSE
  
 
 ###################### ------- Basic Plotting ------- #######################
-
+targets=np.mean(targets,axis=1,keepdims=True)
 ### Test Error
 subsample = np.random.permutation(len(prediction))[:30000]
 plt.figure()
@@ -85,14 +89,19 @@ plt.subplot(1,2,1)
 plt.plot(targets[subsample],prediction[subsample],'.')
 plt.xlabel('True Output')
 plt.ylabel('Predicted Output')
-min_out = np.min(np.concatenate((targets[subsample],prediction[subsample,np.newaxis])))
-max_out = np.max(np.concatenate((targets[subsample],prediction[subsample,np.newaxis])))
+min_out = np.min(np.concatenate((targets[subsample],prediction[subsample,np.newaxis]),axis=1))
+max_out = np.max(np.concatenate((targets[subsample],prediction[subsample,np.newaxis]),axis=1))
 plt.plot(np.linspace(min_out,max_out),np.linspace(min_out,max_out),'k')
 plt.title('Predicted vs True values')
 
-error = (targets[:,0]-prediction.T).T
-print(f'MSE on Test Set: \n {np.mean(error**2)}')
+ERR = (targets[:,0]-prediction.T).T
+MSE = np.mean(ERR**2)
+error = np.sqrt(MSE)
+print(f'Error on Test Set: \n {error}')
 plt.subplot(1,2,2)
-plt.hist(error,100)
-plt.title('Scaled error histogram')
+plt.hist(ERR,100)
+plt.title(f'Error = {error}')
+
+identifier = f'{nowstr}-TestError_{job_id}'
+plt.savefig(main_dir+identifier+'.png')
 plt.show()

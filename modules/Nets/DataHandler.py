@@ -104,11 +104,17 @@ def PrepData(main_dir, data_filename = 'training_NN_data.npz',
         raw_data['data_path'] = datapth_list
     else:
         raw_data = loader(main_dir+data_filename)
-        raw_data['data_path'] = raw_data['meta']['filename']
+        for key in raw_data['meta'].keys():
+            if 'file' in key:
+                raw_data['data_path'] = raw_data['meta'][key]
     
     ### Crop data ###
     nr_raw_samples = raw_data['meta']['nr_raw_samples']
-    mean_output = np.mean(raw_data['outputs'],axis=1) 
+    try:
+        mean_output = np.mean(raw_data['outputs'],axis=1) 
+    except:
+        mean_output = raw_data['outputs']
+        
     if type(threshold) is list:
         cropping_mask = (mean_output<threshold[1])*(mean_output>threshold[0])
     elif type(threshold) is float:
@@ -232,7 +238,7 @@ def DataLoader(data_dir, file_name,
         raise ValueError('Input and Output Batch Sizes do not match!')
     
     ### Define Data Type for PyTorch ###
-    if syst is 'gpu':
+    if syst is 'cuda':
         print('Train with GPU')
         dtype = torch.cuda.FloatTensor
     else: 
@@ -275,7 +281,8 @@ def GetData(dir_file, syst = 'cuda'):
 ####################################### MAIN #######################################################
 ####################################################################################################    
 if __name__ == '__main__':
-    main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/NN_data_Mark/7D_train_data/'
+    main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Marks_Data/April_2019/random_test_set/'
+#    r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Marks_Data/April_2019/train set/'
     if sys.argv[1] == '-dl':
         if len(sys.argv) > 2:
             data_dir = sys.argv[2]
@@ -284,8 +291,8 @@ if __name__ == '__main__':
             data_dir = main_dir+dir_data    
         file_name = 'data_for_training.npz'
         print('Loading data...')
-        data = DataLoader(data_dir, file_name, syst='cpu',steps=3)
+        data = DataLoader(data_dir, file_name,steps=3)
     
     elif sys.argv[1] == '-pd': 
         print('Cleaning and preparing data...')
-        PrepData(main_dir,data_filename = 'training_NN_dataT.npz', threshold = [-39.1,36.3])
+        PrepData(main_dir,data_filename = 'test_NN_data.npz', threshold = [-39.1,36.3])

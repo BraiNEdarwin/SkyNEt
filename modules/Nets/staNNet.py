@@ -23,6 +23,7 @@ import torch
 import torch.nn as nn
 import numpy as np 
 #from matplotlib import pyplot as plt
+import pdb
 
 class staNNet(object):
     
@@ -38,16 +39,17 @@ class staNNet(object):
            self.depth = depth
            self.width = width
            self.info = {'activation':activation, 'loss':loss}
+           self.ttype = self.x_train.type()
            self._tests()
         
            ################### DEFINE MODEL ######################################
-           self._contruct_model()
+           self._contruct_model(loss)
            if isinstance(self.x_train.data,torch.FloatTensor): 
                self.itype = torch.LongTensor
            else:
                self.itype = torch.cuda.LongTensor
                self.model.cuda()
-               self.loss_fn.cuda()
+#               self.loss_fn.cuda() apparently this is not needed if both arguments are already on gpu
                print('Sent to GPU')
             
         elif len(args)==1 and type(args[0]) is str:
@@ -60,6 +62,7 @@ class staNNet(object):
         print('Loading the model from '+data_dir)
         if torch.cuda.is_available():
             state_dic = torch.load(data_dir)
+            self.ttype = torch.cuda.FloatTensor
         else:
             state_dic = torch.load(data_dir, map_location='cpu')
         if list(filter(lambda x: 'running_mean' in x,state_dic.keys())):
@@ -72,6 +75,7 @@ class staNNet(object):
         # move info key from state_dic to self
         if state_dic.get('info') is not None:
             self.info = state_dic['info']
+            print(f'Model loaded with info dictionary containing: \n {self.info}')
             state_dic.pop('info')
         else:
             # for backwards compatibility with objects where information is stored directly in state_dic
@@ -85,7 +89,7 @@ class staNNet(object):
                     state_dic.pop(key)
 
         print('NN loaded with activation %s and loss %s' % (self.info['activation'], self.info['loss']))
-        
+        loss = self.info['loss']
         itms = list(state_dic.items())  
         layers = list(filter(lambda x: ('weight' in x[0]) and (len(x[1].shape)==2),itms))
         self.depth = len(layers)-2
@@ -93,7 +97,7 @@ class staNNet(object):
         self.D_in = layers[0][1].shape[1]
         self.D_out = layers[-1][1].shape[0]
 
-        self._contruct_model()
+        self._contruct_model(loss)
         
         self.model.load_state_dict(state_dic)
 
@@ -102,10 +106,10 @@ class staNNet(object):
         else: 
             self.itype = torch.cuda.LongTensor
             self.model.cuda()
-            self.loss_fn.cuda()    
+#            self.loss_fn.cuda()    
         self.model.eval()
             
-    def _contruct_model(self):
+    def _contruct_model(self,loss):
         # Use the nn package to define our model and loss function.
 #        self.model = nn.Sequential(
 #            nn.Linear(self.D_in, self.width),
@@ -152,10 +156,28 @@ class staNNet(object):
         modules.append(self.l_out)
         modules = [x for x in modules if x !=None ]
         
-        print('Model constructed with modules: /n',modules)
+        print('Model constructed with modules: \n',modules)
         self.model = nn.Sequential(*modules)
-        self.loss_fn = nn.MSELoss()
+        print(f'Loss founction is defined to be {loss}')
+        if loss == 'RMSE':
+            self.a = torch.tensor([0.01900258860717661, 0.014385111570154395]).type(self.ttype)
+            self.b = torch.tensor([0.21272562199413553, 0.0994027221336]).type(self.ttype)
+        elif loss == 'MSE':
+            self.loss_fn = nn.MSELoss()
+        else:
+            assert False, f'Loss function ERROR! {loss} is not recognized'
         
+    def loss_fn(self, pred, targets, scaling=10):
+        y = pred#targets
+        sign = torch.sign(y)
+        ay = (sign-1)/2 * (self.a[0] * torch.abs(y)) + (sign+1)/2 * (self.a[1] * torch.abs(y))
+        b = (sign-1)/2 * self.b[0] + (sign+1)/2 * self.b[1]
+        C = ((pred - targets/scaling) ** 2) / (ay**2 + b**2) #+ pred**2
+        r = torch.mean(C)
+#        r = torch.mean(torch.log(C))
+        #pdb.set_trace()
+        return r
+    
     def train_nn(self,learning_rate,nr_epochs,batch_size,betas=(0.9, 0.999),seed=False):   
         """TO DO: 
             check if x_train, x_val and y_train and y_val are defined, if not, raise an error asking to define
@@ -166,7 +188,7 @@ class staNNet(object):
             print('The torch RNG is seeded!')
             
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, betas=betas) # OR SGD?!
-        print('Prediction using ADAM optimaizer')
+        print('Prediction using ADAM optimizer')
         self.L_val = np.zeros((nr_epochs,))
         self.L_train = np.zeros((nr_epochs,))
         for epoch in range(nr_epochs):
