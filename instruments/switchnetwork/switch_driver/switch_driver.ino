@@ -74,32 +74,24 @@ void recvWithStartEndMarkers() {
 void parseData() {      // split the data into its parts
 
     char * strtokIndx; // this is used by strtok() as an index
+    strtokIndx = strtok(tempChars,",");
+    for(int i=0; i<8; i++){
+      switcharray[i]=atoi(strtokIndx);
+      //Serial.print(strtokIndx);
+      //Serial.print(atoi(strtokIndx));
+      strtokIndx = strtok(NULL,",");
+    }
 
-    strtokIndx = strtok(tempChars,",");      // get the first part - the string
-    switcharray[0] = atoi(strtokIndx);
- 
-    strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
-    switcharray[1] = atoi(strtokIndx);     // convert this part to an integer
-    strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
-    switcharray[2] = atoi(strtokIndx);     // convert this part to an integer
-    strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
-    switcharray[3] = atoi(strtokIndx);     // convert this part to an integer
-    strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
-    switcharray[4] = atoi(strtokIndx);     // convert this part to an integer
-    strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
-    switcharray[5] = atoi(strtokIndx);     // convert this part to an integer
-    strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
-    switcharray[6] = atoi(strtokIndx);     // convert this part to an integer
-    strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
-    switcharray[7] = atoi(strtokIndx);     // convert this part to an integer
+    
     flag = true;
 }
 
 //============
 
 void showParsedData() {
-    Serial.print("switch configs matrix for each switch:\n");    
+    Serial.print("switch configs matrix for each switch:\n");
     for (int j = 0; j<8; j++){
+      //Serial.print(switcharray[j]);   
       for (int i = 7; i >= 0; i--)
       {
          bool b = bitRead(switcharray[j], i);
@@ -119,7 +111,7 @@ void SendSignal(){
       i++;
       }
     if(i == 8){
-      Serial.write("\ndone");
+      Serial.write("done");
       digitalWrite(CSPin, HIGH);
       i = 0;
       newData = false;

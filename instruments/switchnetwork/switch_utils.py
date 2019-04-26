@@ -26,10 +26,11 @@ def matrix_to_bytes(matrix):
     send_string = ''
 
     # Loop over each row of matrix
+    # This code reverses bit order
     for ii in range(matrix.shape[0]):
         row_number = 0
         for jj in range(matrix.shape[1]): 
-            row_number += 2**jj * matrix[ii, jj]
+            row_number += int( 2**(7-jj) * matrix[ii, jj])
         send_string += str(row_number)
         if(ii < 7):
             send_string += ','  # Separator character
@@ -67,8 +68,7 @@ def read_serial_out(ser):
     '''
     time.sleep(0.2)
     while ser.inWaiting()!=0:
-
-        lineToRead =ser.read(140)
+        lineToRead =ser.read_until(b'done',150)
         print(lineToRead.decode())
         ser.flushInput()
         time.sleep(0.2)
@@ -90,5 +90,5 @@ def connect_matrix(ser, connect_matrix):
     See the config file for more information on how to
     build this matrix
     '''
-    switch(ser,matrix)
-    red_serial_out(ser)
+    switch(ser,connect_matrix)
+    read_serial_out(ser)
