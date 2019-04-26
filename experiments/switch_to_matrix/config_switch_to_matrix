@@ -17,4 +17,4 @@ class experiment_config(config_class):
         ######### SPECIFY PARAMETERS ###################
         ################################################
         self.comport = 'COM3'  # COM port of the arduino
-        self.device = 0
+        self.device = 1
