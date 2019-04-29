@@ -19,7 +19,7 @@ void setup() {
   pinMode(CSPin, OUTPUT);
   digitalWrite(CSPin, HIGH);
   Serial.setTimeout(8);
-  SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+  SPI.beginTransaction(SPISettings(4000000, LSBFIRST, SPI_MODE0));
   SPI.begin();
 
 }
