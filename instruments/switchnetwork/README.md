@@ -20,6 +20,7 @@ The switch network dipstick has:
 
 ![alt text](./pcb_schematic.svg "Connections schematic")
 
+**careful, the pictures and this data might be outdated**
 The most important thing to understand is the switching mechanism. On 
 the pcb there are 8 switching ICs daisy chained. This means that any 
 data that switching IC 1 receives is passed onto IC 2.
