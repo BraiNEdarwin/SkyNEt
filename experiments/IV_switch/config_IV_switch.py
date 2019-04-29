@@ -22,13 +22,13 @@ class experiment_config(object):
 
 
         #define where you want to save the data.
-        self.filepath = r'D:\BramdW\testIV\\'
+        self.filepath = r'D:\Rik\Find_configuration\\'
         self.name = 'test'
         
         #define the IV you want to take in volts.
-        self.v_low = -1
-        self.v_high = 1
-        self.n_points = 100
+        self.v_low = -0.5
+        self.v_high = 0.5
+        self.n_points = 1000
         self.direction = 'up'
 
         #define the input and output amplifications.
@@ -36,7 +36,7 @@ class experiment_config(object):
         self.source_gain = 1
 
         #measurment tool settings.
-        self.device = 'keithley'
+        self.device = 'adwin'
         self.fs = 1000
 
 
