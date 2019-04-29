@@ -98,15 +98,14 @@ void parseData() {      // split the data into its parts
 //============
 
 void showParsedData() {
-    Serial.print("switch configs for each switch:\n");  
-    Serial.print("c1\t\tc2\t\tc3\t\tc4\t\tc5\t\tc6\t\tc7\t\tc8\n");   
+    Serial.print("switch configs matrix for each switch:\n");    
     for (int j = 0; j<8; j++){
       for (int i = 7; i >= 0; i--)
       {
          bool b = bitRead(switcharray[j], i);
          Serial.print(b);
       }
-      Serial.print("\t");
+      Serial.print("\n");
     }
 }
 
