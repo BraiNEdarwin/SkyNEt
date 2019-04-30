@@ -11,8 +11,10 @@ from matplotlib import pyplot as plt
 #import pdb
 def perceptron(wvfrm,target,tolerance=0.01,max_iter=200):
     #Assumes that the waveform wvfrm and the target have the shape (n_total,1)
+    # Normalize the data; it is assumed that the target has binary values
+    wvfrm = (wvfrm-np.mean(wvfrm))/np.std(wvfrm)
     n_total = len(wvfrm)
-    weights = 10*np.random.randn(2,1) #np.zeros((2,1))
+    weights = np.random.randn(2,1) #np.zeros((2,1))
     inp = np.concatenate([np.ones_like(wvfrm),wvfrm],axis=1)
     shuffle = np.random.permutation(len(inp))
     
@@ -74,15 +76,15 @@ if __name__=='__main__':
     plt.figure()
     plt.plot(target)
     plt.plot(wvfrm,'.')
-    plt.plot(np.arange(len(target)),-weights[0]*np.ones_like(target)/weights[1])
+    plt.plot(np.arange(len(target)),(-weights[0]/weights[1])*np.ones_like(target))
     plt.plot(predicted[0],predicted[1],'xk')
     plt.show()
     
-    nr_examples = 300
+    nr_examples = 100
     accuracy = np.zeros((nr_examples,))
     for l in range(nr_examples):
-        accuracy[l], _, _ =  perceptron(wvfrm,target)
-        print('Prediction Accuracy: ',accuracy[l])
+        accuracy[l], weights, _ =  perceptron(wvfrm,target)
+        print(f'Prediction Accuracy: {accuracy[l]} and weights:{weights}')
         
     plt.figure()
     plt.hist(accuracy,100)
