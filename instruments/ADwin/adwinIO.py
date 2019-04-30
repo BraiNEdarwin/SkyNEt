@@ -73,15 +73,20 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     # Input preparation
     if len(Input.shape) == 1:
         Input = Input[np.newaxis,:]
-
+#watch out for rikbeuncode, this code might only run for specific inputs
     inputs = Input.copy()
     InputSize = inputs.shape[1]
     x = np.zeros((8, InputSize), dtype = int)
-    x[:inputs.shape[0], :] = inputs
+    #x[:inputs.shape[0], :] = inputs
     for i in range(x.shape[0]):
-        x[i, :] = FloatToLong(list(x[i, :]), 10)
+        if i < inputs.shape[0] :
+            x[i, :] = FloatToLong(list(inputs[i, :]), 10)
+        else:
+            x[i, :] = FloatToLong(list(x[i, :]), 10)
+
     outputs = [[], [], [], [], [], [], [], []]  # Eight empty output lists
     lastWrite = False
+    
 
     try:
         if os.name == 'posix':
