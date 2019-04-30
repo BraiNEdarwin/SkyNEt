@@ -44,6 +44,7 @@ class staNNet(object):
         
            ################### DEFINE MODEL ######################################
            self._contruct_model(loss)
+
            if isinstance(self.x_train.data,torch.FloatTensor): 
                self.itype = torch.LongTensor
            else:
