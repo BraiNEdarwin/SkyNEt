@@ -23,21 +23,21 @@ from SkyNEt.modules.Nets.webNNet import webNNet
 # ------------------------ configure ------------------------
 # load device simulation
 
-main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\nets\MSE_n_proper\\'
-data_dir = 'MSE_n_d10w90_300ep_lr3e-3_b1024_b1b2_0.90.75_seed.pt'
+main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\\'
+data_dir = 'MSE_d10w90_500ep_lr1e-3_b512_b1b2_0.90.75.pt'
 net1 = lightNNet(main_dir+data_dir)
-input_gates=[0,1]
-input_scaling = True
+input_gates=[3,4]
+input_scaling = False
 
 # single device web
 web = webNNet()
 web.add_vertex(net1, 'A', output=True, input_gates=input_gates)
 
 # input voltages of boolean inputs (on/upper, off/lower)
-input_lower = -0.5
-input_upper = 0.1
+input_lower = -0.8
+input_upper = 0.2
 
-nr_sessions = 1
+nr_sessions = 10
 # hardcoded target values of logic gates with off->lower and on->upper
 
 upper = 1.0
@@ -49,7 +49,7 @@ N = 100 # number of data points of one of four input cases, total 4*N
 
 batch_size = 100
 max_epochs = 500
-lr = 0.03
+lr = 0.06
 beta = 10
 cv_reset = 'rand'
 
@@ -131,7 +131,7 @@ def cor_loss_fn(x, y):
     corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))
     x_high_min = torch.min(x[(y == upper)]).item()
     x_low_max = torch.max(x[(y == lower)]).item()
-    return (1.001 - (corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)))/(abs(x_high_min-x_low_max)/2)**.5
+    return (1.1 - (corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)))/(abs(x_high_min-x_low_max)/4)**.5
 
 mse_loss_fn = torch.nn.MSELoss()
 

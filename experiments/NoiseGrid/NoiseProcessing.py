@@ -166,7 +166,7 @@ def spreadPlotter(currents, name = ''):
     """
     font = {'font.size': 18}
     
-    _, currents = removeClipping(currents,clip_cut=36)
+    _, currents = removeClipping(currents,clip_cut=356)
     Imean_pos = np.mean(currents[np.mean(currents, axis = 1) > 0,:], axis = 1)
     Ivar_pos = np.var(currents[np.mean(currents, axis = 1) > 0,:], axis = 1)
     Imean_neg = np.mean(currents[np.mean(currents, axis = 1) < 0,:], axis = 1)
@@ -219,7 +219,7 @@ def spreadPlotter2(currents, name = ''):
     """
     font = {'font.size': 18}
     
-    _, currents = removeClipping(currents,clip_cut=36)
+    _, currents = removeClipping(currents,clip_cut=356)
     Imean_pos = np.mean(currents[np.mean(currents, axis = 1) > 0,:], axis = 1)
     Istd_pos = np.std(currents[np.mean(currents, axis = 1) > 0,:], axis = 1)
     Imean_neg = np.mean(currents[np.mean(currents, axis = 1) < 0,:], axis = 1)

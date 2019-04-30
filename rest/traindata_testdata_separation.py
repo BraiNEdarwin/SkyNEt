@@ -11,16 +11,16 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
 dims = 7
-Fs = 1000
+Fs = 50
 ##############
 # Train data #
 ##############
 skip_points = 12 # During training not all sampled data is used. This parameter determines how many data points would be skipped.
-factor = 0.1
-trainset_fraction = 0.05 # Fraction of the train set used (0.5 means only use first half of sampled data)
+factor = 0.05
+trainset_fraction = 1 # Fraction of the train set used (0.5 means only use first half of sampled data)
 freq2 = np.array([2,np.pi,5,7,13,17,19])
 freq = factor*np.sqrt(freq2[:dims])
-sampleTime = int(24*3600 * trainset_fraction)
+sampleTime = int(48*3600 * trainset_fraction)
 Vmax = 0.9
 
 t = np.arange(0, sampleTime, skip_points/Fs)
@@ -32,11 +32,11 @@ inputs = np.sin(2*np.pi*inputs+phase)*Vmax
 #############
 # Test data #
 #############
-skip_pointsT = 10
-factorT = 0.087
+skip_pointsT = 12
+factorT = 0.05
 freq2T = np.array([2,np.pi,5,7,13,17,19])
 freqT = factorT*np.sqrt(freq2T[:dims])
-sampleTimeT = 2*3600
+sampleTimeT = 4*3600
 inputsT = np.ones((dims,1))
 Vmax = 0.9
 

@@ -18,17 +18,17 @@ from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 ###############################################################################
 np.random.seed(22)
 Seed = False
-main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\\'
+main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\\'
 file_name = 'data_for_training_skip3.npz'
 data, baseline_var = dl(main_dir, file_name, test_set=False)
 factor = 0.05
 #freq = torch.sqrt(torch.tensor([2,np.pi,5,7,13,17,19],dtype=torch.float32)) * factor
 freq = np.sqrt(np.array([2,np.pi,5,7,13,17,19])) * factor
-amplitude = np.array([0.5, 0.5, 0.9, 0.9, 0.9, 0.9, 0.9])
-offset = np.array([-0.3, -0.3, -0.2, -0.2, -0.2, -0.2, -0.2])
+amplitude = np.array([0.9, 0.9, 0.9, 0.9, 0.9, 0.5, 0.5])
+offset = np.array([-0.3, -0.3, -0.3, -0.3, -0.3, -0.2, -0.2])
 fs = 50
 generate_input = True
-noisefit = True
+noisefit = False
 phase = np.zeros(7)
 #phase = torch.zeros(7,dtype=torch.float32)
 #%%
@@ -37,7 +37,7 @@ phase = np.zeros(7)
 ###############################################################################
 depth = 10
 width = 90
-learning_rate,nr_epochs,batch_size = 1e-3, 100, [512]
+learning_rate,nr_epochs,batch_size = 1e-3, 500, [512]
 
 runs = 1
 valerror = np.zeros((runs,nr_epochs))
@@ -54,7 +54,7 @@ for i in range(runs):
     trainerror[i] = net.L_train
     print('Run nr. ',i)
     # Save every run so that they can be used to determine test error
-    net.save_model(main_dir+'MSE_n_d'+ str(depth) + 'w90_'+str(nr_epochs)+'ep_lr3e-3_b'+str(batch_size[i])+'_b1b2_'+str(beta1) + str(beta2) + '_seed.pt')
+    net.save_model(main_dir+'MSE_d'+ str(depth) + 'w90_'+str(nr_epochs)+'ep_lr1e-3_b'+str(batch_size[i])+'_b1b2_'+str(beta1) + str(beta2) + '.pt')
 print('Baseline Var. is ', baseline_var)
 norm_valerror = valerror/baseline_var
 
@@ -77,12 +77,13 @@ else:
     net = staNNet(main_dir+'MSE_n_d'+ str(depth) + 'w90_300ep_lr3e-3_b'+str(batch_size[i])+'_b1b2_'+str(beta1) + str(beta2) + '_seed.pt')
 
 ########################## TEST GENERALIZATION  ###############################
-file_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\champ_chip_test_set_2days_sample\2019_04_07_193724_test_set\\'+'test_set_rand_grid.npz'
-#file_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\test_set_skip3.npz'
-factor = 0.035
+
+#file_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_29_133910_test_data_5h_f_0_05\test_set_skip3.npz'
+file_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_29_195754_test_set_rand\test_set.npz'
+factor = 0.05
 freq = np.sqrt(np.array([2, np.pi, 5, 7, 13, 17, 19])) * factor
-amplitude = np.array([0.5, 0.5, 0.9, 0.9, 0.9, 0.9, 0.9])
-offset = np.array([-0.3, -0.3, -0.2, -0.2, -0.2, -0.2, -0.2])
+amplitude = np.array([0.9, 0.9, 0.9, 0.9, 0.9, 0.5, 0.5])
+offset = np.array([-0.3, -0.3, -0.3, -0.3, -0.3, -0.2, -0.2])
 phase = np.ones(7)
 fs = 50
 #phase = np.zeros(7)
@@ -106,7 +107,7 @@ plt.xlabel('Epochs')
 plt.show()
 
 ### Test Error
-subsample = np.random.permutation(len(prediction))[:30000]
+subsample = np.random.permutation(len(prediction))[:20000]
 plt.figure()
 plt.subplot(1,2,1)
 plt.plot(targets[subsample],prediction[subsample],'.')
@@ -119,7 +120,7 @@ plt.plot(np.linspace(min_out,max_out),np.linspace(min_out,max_out),'k')
 
 error = (targets[:]-prediction[:]).T#/np.sqrt(baseline_var)
 plt.subplot(1,2,2)
-plt.hist(error,100)
+plt.hist(error[subsample],100)
 plt.xlabel('error (nA)')
 plt.ylabel('nr. of samples')
 #plt.title('Scaled error histogram')

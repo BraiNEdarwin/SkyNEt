@@ -17,12 +17,11 @@ from SkyNEt.modules.Nets.webNNet import webNNet
 # ------------------------ configure ------------------------
 # load device simulation
 
-main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\nets\MSE_n_proper\\'
-data_dir = 'MSE_n_d10w90_300ep_lr3e-3_b1024_b1b2_0.90.75_seed.pt'
+main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\\'
+data_dir = 'MSE_n_d10w90_300ep_lr3e-3_b512_b1b2_0.90.75_seed.pt'
 net1 = lightNNet(main_dir+data_dir)
-input_gates=[0,1]
+input_gates=[3,4]
 input_scaling = True
-classify_ring = True
 # single device web
 web = webNNet()
 web.add_vertex(net1, 'A', output=True, input_gates=input_gates)
@@ -57,7 +56,7 @@ input_data = torch.from_numpy(np.load(ring_file)['inp_wvfrm']).to(torch.float)
 target_data = torch.from_numpy(np.load(ring_file)['target'] * upper).to(torch.float)[np.newaxis,:] # need to be [1,many] because Boolean logic finder is such that its dims are [# gates, labels]
 
 # Parameters used for regularizing the input
-inp_beta = 1000
+inp_beta = 10000
 max_inp = torch.from_numpy(net1.info['amplitude'][input_gates] + net1.info['offset'][input_gates]).to(torch.float)
 min_inp = torch.from_numpy(-net1.info['amplitude'][input_gates] + net1.info['offset'][input_gates]).to(torch.float)
 # Regularize the input scaling and bias
@@ -84,7 +83,7 @@ def cor_loss_fn(x, y):
     corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))
     x_high_min = torch.min(x[(y == upper)]).item()
     x_low_max = torch.max(x[(y == lower)]).item()
-    return (1.001 - (corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)))/(abs(x_high_min-x_low_max)/10)**.5
+    return (1.1 - (corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)))/(abs(x_high_min-x_low_max)/10)**.5
 
 mse_loss_fn = torch.nn.MSELoss()
 
@@ -180,11 +179,12 @@ def print_output():
 
 print_output()
 
-CV = np.zeros((1,5))
-for i in range(len(trained_cv)):
-    CV[i] = trained_cv[i]['A'].numpy()
 
-#saveArrays(r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\nets\MSE_n_adap_200ep\gates\\', filename="results_NAME",max_epochs = max_epochs, nr_sessions=nr_sessions,sigma=sigma,trained_cv=CV,training_type=training_type,upper=upper,lower=lower,lr=lr,input_upper=input_upper,input_lower=input_lower,input_gates=[4,5],pred=output_data,losslist=losslist)
+CV = best_cv['A'].numpy()
+bias = best_cv['bias'].numpy()
+scale = best_cv['scale'].numpy()
+
+#saveArrays(r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\NN\ring\\', filename="results_NAME",max_epochs = max_epochs, nr_sessions=nr_sessions,sigma=sigma,trained_cv=CV,training_type=training_type,upper=upper,lower=lower,lr=lr,input_upper=input_upper,input_lower=input_lower,input_gates=[4,5],pred=output_data,losslist=losslist)
 
 # Plot input data
 plt.figure()
