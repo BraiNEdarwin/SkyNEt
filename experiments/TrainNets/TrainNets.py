@@ -8,6 +8,7 @@ data into training and validation sets and returns a tensor object used by the N
 """
 
 import numpy as np
+import datetime
 from matplotlib import pyplot as plt
 from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.DataHandler import DataLoader as dl
@@ -16,9 +17,9 @@ from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 ###############################################################################
 ########################### LOAD DATA  ########################################
 ###############################################################################
-main_dir = r'../../test/NN_test/data4nn/Data_for_testing/'
+main_dir = r'../../test/NN_test/data4nn/16_04_2019/'
 file_name = 'data_for_training.npz'
-data, baseline_var = dl(main_dir, file_name, test_set=True)
+data = dl(main_dir, file_name, syst='cpu', steps=3)
 
 #%%
 ###############################################################################
@@ -26,23 +27,39 @@ data, baseline_var = dl(main_dir, file_name, test_set=True)
 ###############################################################################
 depth = 5
 width = 90
-learning_rate,nr_epochs,batch_size = 3e-4, 100, 512
+learning_rate,nr_epochs,batch_size = 3e-4, 5, 64
+beta1,beta2 = 0.9, 0.75
 runs = 1
 valerror = np.zeros((runs,nr_epochs))
+trainerror = np.zeros((runs,nr_epochs))
 for i in range(runs):
     net = staNNet(data,depth,width)
-    net.train_nn(learning_rate,nr_epochs,batch_size,betas=(0.9, 0.75))
+    net.train_nn(learning_rate,nr_epochs,batch_size,betas=(beta1,beta2))
     valerror[i] = net.L_val
+    trainerror[i] = net.L_train
     print('Run nr. ',i)
 
-print('Baseline Var. is ', baseline_var)
-norm_valerror = valerror/baseline_var
+
+### Training profile
+plt.figure()
+plt.plot(np.arange(nr_epochs),valerror.T, label='Val. Error')
+plt.plot(np.arange(nr_epochs),trainerror.T, label='Train. Error')
+plt.title('Norm. Validation MSE Profile while Training')
+plt.xlabel('Epochs')
+plt.legend()
+plt.show()
+
+now = datetime.datetime.now()
+nowstr = now.strftime('%d-%m-%Hh%Mm')
+
+plt.savefig(main_dir+f'{nowstr}-Error_lr{learning_rate}-eps{nr_epochs}-mb{batch_size}-b1{beta1}-b2{beta2}.png')
 
 #%%
 ###############################################################################
 ############################## SAVE NN ########################################
 ###############################################################################
-net.save_model(main_dir+'TEST_NN.pt')
+path = main_dir+f'{nowstr}_NN.pt'
+net.save_model(path)
 #Then later: net = staNNet(path)
 # Save other stuff? e.g. generalization/test error...
 
@@ -50,22 +67,16 @@ net.save_model(main_dir+'TEST_NN.pt')
 ###############################################################################
 ########################### LOAD NN & TEST ####################################
 ###############################################################################
-net = staNNet(main_dir+'TEST_NN.pt')
+net = staNNet(path)
+
 
 ########################## TEST GENERALIZATION  ###############################
-file_dir = main_dir+'test_set_from_trainbatch.npz'
-inputs, targets = gtd(file_dir) #function to load data returning torch Variable with correct form and dtype 
+file_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/NN_data_Mark/7D_test_sets/2019_03_19_084109_rand_test_set_100ms/data4nn/2019_04_08/'
+inputs, targets = gtd(file_dir+'data_for_test.npz', syst='cpu') #function to load data returning torch Variable with correct form and dtype 
 prediction = net.outputs(inputs)
  
-#%%
-###################### ------- Basic Plotting ------- #######################
 
-### Training profile
-plt.figure()
-plt.plot(np.arange(nr_epochs),norm_valerror.T)
-plt.title('Norm. Validation MSE Profile while Training')
-plt.xlabel('Epochs')
-plt.show()
+###################### ------- Basic Plotting ------- #######################
 
 ### Test Error
 subsample = np.random.permutation(len(prediction))[:30000]
@@ -79,7 +90,8 @@ max_out = np.max(np.concatenate((targets[subsample],prediction[subsample,np.newa
 plt.plot(np.linspace(min_out,max_out),np.linspace(min_out,max_out),'k')
 plt.title('Predicted vs True values')
 
-error = (targets[:,0]-prediction.T).T/np.sqrt(baseline_var)
+error = (targets[:,0]-prediction.T).T
+print(f'MSE on Test Set: \n {np.mean(error**2)}')
 plt.subplot(1,2,2)
 plt.hist(error,100)
 plt.title('Scaled error histogram')

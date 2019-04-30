@@ -40,6 +40,9 @@ class staNNet(object):
            self.depth = depth
            self.width = width
            self.info = {'activation':activation, 'loss':loss}
+           for key, item in data[2].items():
+               self.info[key] = item
+           print(f'Meta-info: \n {list(self.info.keys())}')
            self._tests()
         
            ################### DEFINE MODEL ######################################
