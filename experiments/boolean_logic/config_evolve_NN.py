@@ -68,20 +68,20 @@ class experiment_config(config_class):
 
         # Define experiment
         self.amplification = 1
-        self.TargetGen = self.NOR
-        self.generations = 100
-        self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600]]
-        self.input_scaling = 0.9
+        self.TargetGen = self.XOR
+        self.generations = 10
+        self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600],[0.9,0.9]]
+#        self.input_scaling = 0.9
 
         # Specify either partition or genomes
         self.partition = [5, 5, 5, 5, 5]
 
         # Documentation
-        self.genelabels = ['CV1','CV2','CV3','CV4','CV5']
+        self.genelabels = ['CV1','CV2','CV3','CV4','CV5','Input_scaling']
 
         # Save settings
         self.filepath = r'../../test/evolution_test/NN_testing/'
-        self.name = 'AND'
+        self.name = 'XOR'
 
         ################################################
         ################# OFF-LIMITS ###################
