@@ -68,7 +68,7 @@ def read_serial_out(ser):
     '''
     time.sleep(0.2)
     while ser.inWaiting()!=0:
-        lineToRead =ser.read_until(b'done',150)
+        lineToRead =ser.read_until(b'done',300)
         print(lineToRead.decode())
         ser.flushInput()
         time.sleep(0.2)

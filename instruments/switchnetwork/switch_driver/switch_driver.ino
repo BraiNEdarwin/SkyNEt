@@ -33,6 +33,7 @@ void loop() {
             //   because strtok() used in parseData() replaces the commas with \0
         parseData();
         showParsedData();
+        scrambleData();
         SendSignal();
     }
 }
@@ -101,6 +102,41 @@ void showParsedData() {
     }
 }
 
+//============
+/*
+ This is necessary because the device numbers are not connected as the figure shows 
+ or as is seen on the board itself.
+ The real order goes like this:
+ D1 D3  D5  D7
+ D2 D4  D6  D8
+ this function scrambles the bits so that the original numbering can be followed
+ */
+//============
+void scrambleData(){
+  int temparray[8];
+  for(int i=0; i<8;i++){
+    temparray[i]=0;
+    temparray[i]+=switcharray[i]&0b11000001;
+    temparray[i]+=(switcharray[i]&0b00100000)>>2;
+    temparray[i]+=(switcharray[i]&0b00010000)>>3;
+    temparray[i]+=(switcharray[i]&0b00001000)<<2;
+    temparray[i]+=(switcharray[i]&0b00000100)<<2;
+    temparray[i]+=(switcharray[i]&0b00000010)<<1;
+    switcharray[i]=temparray[i];   
+  }
+  Serial.print("scramble data\n");
+      for (int j = 0; j<8; j++){
+      //Serial.print(switcharray[j]);   
+      for (int i = 7; i >= 0; i--)
+      {
+         bool b = bitRead(switcharray[j], i);
+         Serial.print(b);
+      }
+      Serial.print("\n");
+    }
+}
+
+//============
 void SendSignal(){
   if(newData == true && flag == true){
     digitalWrite(CSPin, LOW);
