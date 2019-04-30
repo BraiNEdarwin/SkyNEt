@@ -107,8 +107,8 @@ void showParsedData() {
  This is necessary because the device numbers are not connected as the figure shows 
  or as is seen on the board itself.
  The real order goes like this:
- D1 D3  D5  D7
- D2 D4  D6  D8
+ D1 D2  D5  D7
+ D3 D4  D6  D8
  this function scrambles the bits so that the original numbering can be followed
  */
 //============
