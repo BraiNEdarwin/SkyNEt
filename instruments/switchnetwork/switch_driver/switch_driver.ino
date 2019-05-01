@@ -104,6 +104,7 @@ void showParsedData() {
 
 //============
 /*
+ This function might be actively harmful for different PCBs
  This is necessary because the device numbers are not connected as the figure shows 
  or as is seen on the board itself.
  The real order goes like this:
@@ -124,16 +125,6 @@ void scrambleData(){
     temparray[i]+=(switcharray[i]&0b00000010)<<1;
     switcharray[i]=temparray[i];   
   }
-  Serial.print("scramble data\n");
-      for (int j = 0; j<8; j++){
-      //Serial.print(switcharray[j]);   
-      for (int i = 7; i >= 0; i--)
-      {
-         bool b = bitRead(switcharray[j], i);
-         Serial.print(b);
-      }
-      Serial.print("\n");
-    }
 }
 
 //============
