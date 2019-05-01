@@ -68,20 +68,23 @@ class experiment_config(config_class):
 
         # Define experiment
         self.amplification = 1
-        self.TargetGen = self.NOR
-        self.generations = 10
-        self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600],[0.3,0.5]]
+        self.TargetGen = self.OR
+        self.generations = 2
+        
+        #Generange and inputrange in Volts 
+        self.generange = [[-1.1, 0.7], [-1.1, 0.7], [-1.1, 0.7], [-1.1, 0.7],[-1.1, 0.7], [0.3, 0.7]]
+        self.inputrange = [-0.8,0.2]
         #self.input_scaling = 0.9
-
+     
         # Specify either partition or genomes
         self.partition = [5, 5, 5, 5, 5]
 
         # Documentation
-        self.genelabels = ['CV1','CV2','CV3','CV4','CV5','Input Scaling']
+        self.genelabels = [ 'CV1','CV2','CV3','CV4','CV5', 'Input Scaling']
 
         # Save settings
         self.filepath = r'../../test/evolution_test/NN_testing/'
-        self.name = 'AND'
+        self.name = 'Test'
 
         ################################################
         ################# OFF-LIMITS ###################

@@ -177,7 +177,7 @@ def initMainFig(genes, generations, genelabels, generange):
     for i in range(genes):
         ax = mainFig.add_subplot(spec[i, 0])
         ax.set_xlim(1, generations)
-        ax.set_ylim(0, 1)
+        ax.set_ylim(-1.2,0.8)
         ax.grid()
         ax.set_title(genelabels[i])
 
@@ -211,21 +211,30 @@ def initMainFigEvolution(genes, generations, genelabels, generange):
     spec = gridspec.GridSpec(ncols=3, nrows=genes + 1)
     
     # big daddy (i.e. best genom) plots
-    for i in range(genes):
+    for i in range(genes-1):
         ax = mainFig.add_subplot(spec[i, 0])
         ax.set_xlim(1, generations)
-        ax.set_ylim(0, 1)
+        ax.set_ylim(-1.2,0.8)
         ax.grid()
         ax.set_title(genelabels[i])
 
         twinax = ax.twinx()
-        twinax.set_ylim(mapGenes(generange[i], 0), mapGenes(generange[i], 1))
+        twinax.set_ylim(mapGenes(generange[i], 0), mapGenes(generange[genes-1], 1))
         twinax.tick_params('y', colors='r')
+    ax = mainFig.add_subplot(spec[genes-1, 0])
+    ax.set_xlim(1, generations)
+    ax.set_ylim(0,1)
+    ax.grid()
+    ax.set_title(genelabels[genes-1])
+
+    twinax = ax.twinx()
+    twinax.set_ylim(mapGenes(generange[genes-1], 0), mapGenes(generange[genes-1], 1))
+    twinax.tick_params('y', colors='r')
     
     # current genome plot
     ax = mainFig.add_subplot(spec[genes, 0])
     ax.set_xlim(1, genes)
-    ax.set_ylim(0,1)
+    ax.set_ylim(-1.2,0.8)
     ax.grid()
     ax.set_title('Current genome')
 
