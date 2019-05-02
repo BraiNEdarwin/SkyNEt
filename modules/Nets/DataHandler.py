@@ -250,7 +250,7 @@ def DataLoader(data_dir, file_name,
     x_val = torch.from_numpy(inputs_val).type(dtype)
     y_val = torch.from_numpy(outputs_val).type(dtype)
 
-    return [(x_train,y_train),(x_val,y_val)]
+    return [(x_train,y_train),(x_val,y_val),meta]
 
 #%% EXTRA: Just load data and return as torch.tensor
 def GetData(dir_file, syst = 'cuda'):
@@ -281,17 +281,20 @@ def GetData(dir_file, syst = 'cuda'):
 ####################################### MAIN #######################################################
 ####################################################################################################    
 if __name__ == '__main__':
-    main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Marks_Data/April_2019/random_test_set/'
-#    r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Marks_Data/April_2019/train set/'
+    main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/train set/'
+#    r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/random_test_set/'
+
     if sys.argv[1] == '-dl':
         if len(sys.argv) > 2:
             data_dir = sys.argv[2]
         else:
-            dir_data = 'data4nn/2019_04_03/'
+            dir_data = 'data4nn/16_04_2019/'
             data_dir = main_dir+dir_data    
         file_name = 'data_for_training.npz'
         print('Loading data...')
         data = DataLoader(data_dir, file_name,steps=3)
+        meta = data[-1]
+        print(f'Data has meta-info {list(meta.keys())}')
     
     elif sys.argv[1] == '-pd': 
         print('Cleaning and preparing data...')
