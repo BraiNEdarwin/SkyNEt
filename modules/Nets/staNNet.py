@@ -264,3 +264,31 @@ class staNNet(object):
 
     def outputs(self,inputs):
         return self.model(inputs).data.cpu().numpy()[:,0]
+
+if __name__ == '__main__':
+    #%%
+    ###############################################################################
+    ########################### LOAD DATA  ########################################
+    ###############################################################################
+    
+    from SkyNEt.modules.Nets.DataHandler import DataLoader as dl
+    main_dir = r'../../test/NN_test/'
+    file_name = 'data_for_training.npz'
+    data = dl(main_dir+r'data4nn/16_04_2019/', file_name, steps=3)
+    
+    #%%
+    ###############################################################################
+    ############################ DEFINE NN and RUN ################################
+    ###############################################################################
+    depth = 5
+    width = 90
+    learning_rate,nr_epochs,batch_size = 3e-4, 5, 64*32
+    net = staNNet(data,depth,width)
+    net.train_nn(learning_rate,nr_epochs,batch_size)    
+    #%%
+    ###############################################################################
+    ############################## SAVE NN ########################################
+    ###############################################################################
+    path = main_dir+f'TESTING_staNNet.pt'
+    net.save_model(path)
+    #Then later: net = staNNet(path)
