@@ -4,8 +4,7 @@ from SkyNEt.instruments import InstrumentImporter
 from SkyNEt.instruments.Keithley2400 import Keithley2400
 import numpy as np
 import os
-import config_IV_switch as config
-import time
+import config_IV as config
 
 # Load the information from the config class.
 config = config.experiment_config()
@@ -15,20 +14,20 @@ saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.name)
 
 # Define the device input using the function in the config class.
 Input = config.Sweepgen( config.v_high, config.v_low, config.n_points, config.direction)
-grounded_input = np.zeros((4,Input.shape[0]))
-grounded_input[0] = Input
-grounded_input[2] = -Input
+if config.device2 == 'IVVI':
+	ivvi = InstrumentImporter.IVVIrack.initInstrument()
+#	InstrumentImporter.IVVIrack.setControlVoltages(ivvi, config.controlVoltages)
+
 # Measure using the device specified in the config class.
 if config.device == 'nidaq':
     Output = InstrumentImporter.nidaqIO.IO(Input, config.fs)
 elif config.device == 'adwin':
     adwin = InstrumentImporter.adwinIO.initInstrument()
-    Output = InstrumentImporter.adwinIO.IO(adwin, grounded_input, config.fs, inputPorts = [1, 1, 1, 1, 1, 1, 1])
-
-
+    Output = InstrumentImporter.adwinIO.IO(adwin, Input, config.fs, inputPorts = [1, 1, 1, 1, 1, 1, 1])
 elif config.device == 'keithley':
     Output = np.zeros_like(Input)
     keithley = Keithley2400.Keithley_2400('keithley', 'GPIB0::11')
+
 
     # Set compliances
     keithley.compliancei.set(1E-6)
@@ -37,13 +36,13 @@ elif config.device == 'keithley':
     # Turn keithley output on
     keithley.output.set(1)
 
-    for ii in range(len(Output)):
-        # Set voltage
-        keithley.volt.set(Input[ii])
+    for ii in range(7):
+        InstrumentImporter.IVVIrack.setControlVoltage(ivvi, config.controlVoltages[ii],0)
 
         # Record current
-        time.sleep(0.05)
+        #time.sleep(0.05)
         Output[ii] = keithley.curr()
+        print(Output)
 
     # Turn keithley output off
     keithley.output.set(0)
@@ -51,21 +50,14 @@ else:
     print('specify measurement device')
 
 # Save the Input and Output
-SaveLib.saveExperiment(saveDirectory, input = Input, output = Output*config.amplification)
+SaveLib.saveExperiment(saveDirectory, input = Input, output = Output)
 
-# Convert to current
-#R = 1E6  # Ohm
-#V = grounded_input[0] - Output[0]
-#I = Output[0]/R
-# Plot the IV curve
-for n in range(7):
+x = np.linspace(0,1,len(Output))
+# Plot the IV curve.
+for i in range(1):
     plt.figure()
-    plt.plot(grounded_input[0], Output[n],'b',grounded_input[1], Output[n],'g',grounded_input[2], Output[n],'r',grounded_input[3], Output[n],'k')
-# plt.figure()
-# plt.plot(grounded_input[0], Output[0],'b',grounded_input[0], Output[1],'g',grounded_input[0], Output[2],'k',grounded_input[0], Output[3],'r')
+    plt.plot(x, Output)
 plt.show()
+
 # Final reset
 InstrumentImporter.reset(0, 0)
-
-
-

@@ -28,7 +28,7 @@ class experiment_config(object):
         #define the IV you want to take in volts.
         self.v_low = -0.1
         self.v_high = 0.1
-        self.n_points = 1000
+        self.n_points = 10
         self.direction = 'up'
 
         #define the input and output amplifications.
@@ -36,8 +36,10 @@ class experiment_config(object):
         self.source_gain = 1
 
         #measurment tool settings.
-        self.device = 'adwin'
+        self.device = 'keithley'
+        self.device2 = 'IVVI'
         self.fs = 1000
+        self.controlVoltages = [10,20,30,40,50,60,70,80]
 
 
         self.Sweepgen = self.Sweepgen
