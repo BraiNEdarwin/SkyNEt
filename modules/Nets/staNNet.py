@@ -182,7 +182,9 @@ class staNNet(object):
         #pdb.set_trace()
         return r
     
-    def train_nn(self,learning_rate,nr_epochs,batch_size,betas=(0.9, 0.999),seed=False):   
+    def train_nn(self,learning_rate,nr_epochs,batch_size,
+                 betas = (0.9, 0.999),
+                 data = None, seed=False):
         """TO DO: 
             check if x_train, x_val and y_train and y_val are defined, if not, raise an error asking to define
         """
@@ -190,7 +192,13 @@ class staNNet(object):
         if seed:
             torch.manual_seed(22)
             print('The torch RNG is seeded!')
-            
+        if not isinstance(data,type(None)):
+            self.x_train, self.y_train = data[0]
+            self.x_val, self.y_val = data[1]
+            #Check if dimensions match
+            assert self.D_in == self.x_train.size()[1], f'Dimensions do not match: D_in is {self.D_in} while input has dimension {self.x_train.size()[1]}'
+            assert self.D_out == self.y_train.size()[1], f'Dimensions do not match: D_out is {self.D_out} while y has dimension {self.y_train.size()[1]}'
+
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, betas=betas) # OR SGD?!
         print('Prediction using ADAM optimizer')
         self.L_val = np.zeros((nr_epochs,))
