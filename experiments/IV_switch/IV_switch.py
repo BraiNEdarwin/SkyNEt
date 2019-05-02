@@ -15,8 +15,9 @@ saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.name)
 
 # Define the device input using the function in the config class.
 Input = config.Sweepgen( config.v_high, config.v_low, config.n_points, config.direction)
-grounded_input = np.zeros((1,Input.shape[0]))
+grounded_input = np.zeros((4,Input.shape[0]))
 grounded_input[0] = Input
+grounded_input[2] = -Input
 # Measure using the device specified in the config class.
 if config.device == 'nidaq':
     Output = InstrumentImporter.nidaqIO.IO(Input, config.fs)
@@ -57,11 +58,11 @@ SaveLib.saveExperiment(saveDirectory, input = Input, output = Output*config.ampl
 #V = grounded_input[0] - Output[0]
 #I = Output[0]/R
 # Plot the IV curve
-# for n in range(7):
-#     plt.figure()
-#     plt.plot(grounded_input[0], Output[n])
-plt.figure()
-plt.plot(grounded_input[0], Output[0],'b',grounded_input[0], Output[1],'g',grounded_input[0], Output[2],'k',grounded_input[0], Output[3],'r')
+for n in range(7):
+    plt.figure()
+    plt.plot(grounded_input[0], Output[n],'b',grounded_input[1], Output[n],'g',grounded_input[2], Output[n],'r',grounded_input[3], Output[n],'k')
+# plt.figure()
+# plt.plot(grounded_input[0], Output[0],'b',grounded_input[0], Output[1],'g',grounded_input[0], Output[2],'k',grounded_input[0], Output[3],'r')
 plt.show()
 # Final reset
 InstrumentImporter.reset(0, 0)
