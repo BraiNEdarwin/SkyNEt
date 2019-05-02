@@ -23,12 +23,11 @@ import torch
 import torch.nn as nn
 import numpy as np 
 #from matplotlib import pyplot as plt
+import pdb
 
 class staNNet(object):
     
-    def __init__(self,*args,loss='MSE',C=1.0,activation='ReLU', BN=False):
-        
-        self.C = torch.FloatTensor([C])
+    def __init__(self,*args,loss='MSE',activation='ReLU', dim_cv=5, BN=False):
         
         if len(args) == 3: #data,depth,width
            data,depth,width = args
@@ -43,17 +42,18 @@ class staNNet(object):
            for key, item in data[2].items():
                self.info[key] = item
            print(f'Meta-info: \n {list(self.info.keys())}')
+           self.ttype = self.x_train.type()
            self._tests()
         
            ################### DEFINE MODEL ######################################
-           self._contruct_model()
+           self._contruct_model(loss)
+
            if isinstance(self.x_train.data,torch.FloatTensor): 
                self.itype = torch.LongTensor
            else:
                self.itype = torch.cuda.LongTensor
-               self.C.cuda()
                self.model.cuda()
-               self.loss_fn.cuda()
+#               self.loss_fn.cuda() apparently this is not needed if both arguments are already on gpu
                print('Sent to GPU')
             
         elif len(args)==1 and type(args[0]) is str:
@@ -66,6 +66,7 @@ class staNNet(object):
         print('Loading the model from '+data_dir)
         if torch.cuda.is_available():
             state_dic = torch.load(data_dir)
+            self.ttype = torch.cuda.FloatTensor
         else:
             state_dic = torch.load(data_dir, map_location='cpu')
         if list(filter(lambda x: 'running_mean' in x,state_dic.keys())):
@@ -78,6 +79,7 @@ class staNNet(object):
         # move info key from state_dic to self
         if state_dic.get('info') is not None:
             self.info = state_dic['info']
+            print(f'Model loaded with info dictionary containing: \n {self.info}')
             state_dic.pop('info')
         else:
             # for backwards compatibility with objects where information is stored directly in state_dic
@@ -91,7 +93,7 @@ class staNNet(object):
                     state_dic.pop(key)
 
         print('NN loaded with activation %s and loss %s' % (self.info['activation'], self.info['loss']))
-        
+        loss = self.info['loss']
         itms = list(state_dic.items())  
         layers = list(filter(lambda x: ('weight' in x[0]) and (len(x[1].shape)==2),itms))
         self.depth = len(layers)-2
@@ -99,7 +101,7 @@ class staNNet(object):
         self.D_in = layers[0][1].shape[1]
         self.D_out = layers[-1][1].shape[0]
 
-        self._contruct_model()
+        self._contruct_model(loss)
         
         self.model.load_state_dict(state_dic)
 
@@ -107,12 +109,11 @@ class staNNet(object):
             self.itype = torch.LongTensor
         else: 
             self.itype = torch.cuda.LongTensor
-            self.C.cuda()
             self.model.cuda()
-            self.loss_fn.cuda()    
+#            self.loss_fn.cuda()    
         self.model.eval()
             
-    def _contruct_model(self):
+    def _contruct_model(self,loss):
         # Use the nn package to define our model and loss function.
 #        self.model = nn.Sequential(
 #            nn.Linear(self.D_in, self.width),
@@ -159,10 +160,28 @@ class staNNet(object):
         modules.append(self.l_out)
         modules = [x for x in modules if x !=None ]
         
-        print('Model constructed with modules: /n',modules)
+        print('Model constructed with modules: \n',modules)
         self.model = nn.Sequential(*modules)
-        self.loss_fn = nn.MSELoss()
+        print(f'Loss founction is defined to be {loss}')
+        if loss == 'RMSE':
+            self.a = torch.tensor([0.01900258860717661, 0.014385111570154395]).type(self.ttype)
+            self.b = torch.tensor([0.21272562199413553, 0.0994027221336]).type(self.ttype)
+        elif loss == 'MSE':
+            self.loss_fn = nn.MSELoss()
+        else:
+            assert False, f'Loss function ERROR! {loss} is not recognized'
         
+    def loss_fn(self, pred, targets, scaling=10):
+        y = pred#targets
+        sign = torch.sign(y)
+        ay = (sign-1)/2 * (self.a[0] * torch.abs(y)) + (sign+1)/2 * (self.a[1] * torch.abs(y))
+        b = (sign-1)/2 * self.b[0] + (sign+1)/2 * self.b[1]
+        C = ((pred - targets/scaling) ** 2) / (ay**2 + b**2) #+ pred**2
+        r = torch.mean(C)
+#        r = torch.mean(torch.log(C))
+        #pdb.set_trace()
+        return r
+    
     def train_nn(self,learning_rate,nr_epochs,batch_size,betas=(0.9, 0.999),seed=False):   
         """TO DO: 
             check if x_train, x_val and y_train and y_val are defined, if not, raise an error asking to define
@@ -173,13 +192,12 @@ class staNNet(object):
             print('The torch RNG is seeded!')
             
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, betas=betas) # OR SGD?!
-        print('Prediction using ADAM optimaizer')
+        print('Prediction using ADAM optimizer')
         self.L_val = np.zeros((nr_epochs,))
         self.L_train = np.zeros((nr_epochs,))
         for epoch in range(nr_epochs):
     
             permutation = torch.randperm(self.x_train.size()[0]).type(self.itype) # Permute indices 
-            running_loss = 0.0 
             nr_minibatches = 0
 
             for i in range(0,len(permutation),batch_size):
@@ -189,9 +207,7 @@ class staNNet(object):
                 y_pred = self.model(self.x_train[indices])
                 
                 # Compute and print loss.
-                loss = self.loss_fn(y_pred, self.y_train[indices])
-                loss = loss*(self.C.cuda())
-                running_loss += loss.item()      
+                loss_training = self.loss_fn(y_pred, self.y_train[indices])
                 # Before the backward pass, use the optimizer object to zero all of the
                 # gradients for the variables it will update (which are the learnable
                 # weights of the model). This is because by default, gradients are
@@ -201,7 +217,7 @@ class staNNet(object):
                 
                 # Backward pass: compute gradient of the loss with respect to model
                 # parameters
-                loss.backward()
+                loss_training.backward()
                 
                 # Calling the step function on an Optimizer makes an update to its
                 # parameters
@@ -209,13 +225,24 @@ class staNNet(object):
                 nr_minibatches += 1
         
             
-            self.model.eval()  
+            
+            self.model.eval()
+            
+            # Evaluate training error
+            get_indices = torch.randperm(self.x_train.size()[0]).type(self.itype)[:10000]
+            x = self.x_train[get_indices]
+            y = self.model(x)
+            y_subset = self.y_train[get_indices]
+            loss = self.loss_fn(y,y_subset).item()
+            self.L_train[epoch] = loss
+            #Evaluate Validation error
             y = self.model(self.x_val)
-            loss = self.loss_fn(y, self.y_val)
-            self.model.train()  
-            self.L_val[epoch] = loss.item()
-            self.L_train[epoch] = running_loss/nr_minibatches
-            print('Epoch:',epoch,'Val. Error:', loss.item(),'Training Error:',running_loss/nr_minibatches)
+            loss = self.loss_fn(y, self.y_val).item()
+            self.L_val[epoch] = loss
+            
+            print('Epoch:', epoch, 'Val. Error:', self.L_val[epoch],
+                  'Training Error:', self.L_train[epoch])
+            self.model.train()
             
         print('Finished Training')
 #        plt.figure()
