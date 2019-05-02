@@ -73,6 +73,7 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     # Input preparation
     if len(Input.shape) == 1:
         Input = Input[np.newaxis,:]
+
     inputs = Input.copy()
     InputSize = inputs.shape[1]
     x = np.zeros((8, InputSize), dtype = int)
