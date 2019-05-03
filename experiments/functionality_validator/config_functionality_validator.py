@@ -65,30 +65,21 @@ class experiment_config(config_class):
         ######### SPECIFY PARAMETERS ###################
         ################################################
         self.comport = 'COM3'  # COM port for the ivvi rack
-        self.device = 'nidaq'  # Either nidaq or adwin
+        self.device = 'cDAQ'  # Either nidaq or adwin
 
         self.cv_amplification = 1
-        #self.controlVoltages = np.load(r'D:\data\Mark\predict\MSE_n_adap_200ep\gates\results_gates3.npz')['trained_cv'] # given in volts
+        #self.controlVoltages = np.load(r'D:\data\Mark\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\NN\gates\results_MSE_n_more_XNOR.npz')['CV'] # given in volts
+        #self.controlVoltages = np.load(r'D:\data\Mark\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\NN\ring\results_MSE_n_tanh_ring_inverse.npz')['CV'] # given in volts
+        self.controlVoltages = np.array([-1.1714, 0.3669, 0.4937, 0.0138, -0.6853])[np.newaxis,:]
+        self.inputScaling = 1 #-1.0583    
+        self.inputOffset = -0.5 #np.array([0., 0.])
 
-        #[-774.362, -680.593, -1017.35, -663.765, -508.381] # AND
-        #[-372.121, -1087.715, -746.049, -1003.28, -524.232] # XNOR
-        #[449.768, 137.156, 519.327, 390.888, 326.843] # NOR
-        #[459.102, -665.898, 418.019, -186.33, -479.847] # OR
-        #[251.832, -232, -397.058, 579.829, 401.14] # NAND
-        #[-181.56,254.977,356.816, -261.699,-247.675]  # XOR
-        #self.controlVoltages = [cv/self.cv_amplification for cv in self.controlVoltages]
-        self.controlVoltages = np.array([0.69251, 0.65566, -0.25120, 0.50996, 0.69392])
-
-        self.inputScaling = 0.7
-        self.inputOffset = -0.1
-
-        #self.x = np.asarray(self.InputGen()[1:3])  * self.inputScaling + self.inputOffset# Array with P and Q signal
-        #self.x = np.load(r'D:\data\Mark\predict\MSE_n_adap_200ep\ring\results.npz')['x_inp'].T # * self.inputScaling + self.inputOffset
-        #self.x = np.array([[0,0,1,1],[0,1,0,1]])* self.inputScaling + self.inputOffset
-        self.x = np.load(r'D:\data\Mark\ring_data\Ring_class_data_0.40.npz')['inp_wvfrm'].T * self.inputScaling + self.inputOffset
+        self.x = np.array([[0,0,1,1],[0,1,0,1]])* self.inputScaling + self.inputOffset
+        #self.x = np.load(r'D:\data\Mark\ring_data\Ring_class_data_0.40.npz')['inp_wvfrm'].T 
+        #self.x = self.x/np.max(np.abs(self.x)) * self.inputScaling + self.inputOffset[:,np.newaxis]
         # Define experiment
         self.postgain = 1
-        self.amplification = 10  # nA/V
+        self.amplification = 100  # nA/V
 
         self.fs = 1000
         self.pointlength = 100   # Amount of datapoints for a single sample
@@ -103,33 +94,10 @@ class experiment_config(config_class):
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
 
         #                       Summing module S2d              Matrix module       on chip
-        self.input_electrodes = [0,1]
-        self.electrodeSetup = [['inp0',1,3,5,4,2,'inp1','out'],[11,12,13,15,16,7,8,10],[5,6,7,8,1,2,3,4]]
-        #self.electrodeSetup = [[1,3,'inp0',5,'inp1',4,2,'out'],[11,12,13,15,16,7,8,10],[5,6,7,8,1,2,3,4]]
-        self.name = 'ring_less_points'
+        self.input_electrodes = [1,2]
+        self.electrodeSetup = [['ao5','inp0','ao1''ao0','a02','inp4','ao6','out'],[1,3,5,6,11,13,15,17],[5,6,7,8,1,2,3,4]]
+        self.name = 'MSE_n_tanh_XNOR'
 
-        ################################################
-        ################# OFF-LIMITS ###################
-        ################################################
-        # Check if genomes parameter has been changed
-        if(self.genomes != sum(self.default_partition)):
-            if(self.genomes%5 == 0):
-                self.partition = [int(self.genomes/5)]*5  # Construct equally partitioned genomes
-            else:
-                print('WARNING: The specified number of genomes is not divisible by 5.'
-                      + ' The remaining genomes are generated randomly each generation. '
-                      + ' Specify partition in the config instead of genomes if you do not want this.')
-                self.partition = [self.genomes//5]*5  # Construct equally partitioned genomes
-                self.partition[-1] += self.genomes%5  # Add remainder to last entry of partition
-
-        self.genomes = int(sum(self.partition))  # Make sure genomes parameter is correct
-        self.genes = int(len(self.generange))  # Make sure genes parameter is correct
-
-    #####################################################
-    ############# USER-SPECIFIC METHODS #################
-    #####################################################
-    # Optionally define new methods here that you wish to use in your experiment.
-    # These can be e.g. new fitness functions or input/output generators.
 	
     def FitnessCorr(self, x, target, W):
         '''
