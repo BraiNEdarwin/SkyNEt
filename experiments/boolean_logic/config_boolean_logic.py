@@ -66,25 +66,26 @@ class experiment_config(config_class):
         ################################################
         ######### SPECIFY PARAMETERS ###################
         ################################################
-        self.comport = 'COM3'  # COM port for the ivvi rack
-        self.device = 'nidaq'  # Either nidaq or adwin
+        self.comport = 'COM4'  # COM port for the ivvi rack
+        self.device = 'adwin'  # Either nidaq or adwin
 
         # Define experiment
-        self.amplification = 1
-        self.TargetGen = self.NOR
-        self.generations = 2
-        self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600], [0.1, 0.5]]
+        self.amplification = 10
+        self.TargetGen = self.XNOR
+        self.generations = 100
+        self.generange = [[-1500,1500], [-1200, 1200], [-1200, 1200], [-1200, 1200], [-1200, 1200], [0.1, 0.9]]
 
         # Specify either partition or genomes
         #self.partition = [5, 5, 5, 5, 5]
-        self.genomes = 10
+        self.genomes = 25
+        self.fitness = self.marx_fit
 
         # Documentation
         self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
 
         # Save settings
-        self.filepath = r'D:\Data\Bram\evolution_test\\'  #Important: end path with double backslash
-        self.name = 'NOR'
+        self.filepath = r'D:\Rik\Evolve\\'  #Important: end path with double backslash
+        self.name = 'XNOR'
 
         ################################################
         ################# OFF-LIMITS ###################
@@ -108,3 +109,27 @@ class experiment_config(config_class):
     #####################################################
     # Optionally define new methods here that you wish to use in your experiment.
     # These can be e.g. new fitness functions or input/output generators.
+    def marx_fit(self, output, target, w, clpval = 35.5):
+        if np.any(np.abs(output)>clpval*self.amplification):
+            #print(f'Clipping value set at {clpval}')
+            return -1
+            
+        corr = self.corr_fit(output, target, w)
+         # Apply weights w
+        indices = np.argwhere(w)  #indices where w is nonzero (i.e. 1)
+        target_weighed = np.zeros(len(indices))
+        output_weighed = np.zeros(len(indices))
+        for i in range(len(indices)):
+            target_weighed[i] = target[indices[i][0]]
+            output_weighed[i] = output[indices[i][0]]
+        # Determine normalized separation
+        indices1 = np.argwhere(target_weighed)  #all indices where target is nonzero
+        x0 = np.empty(0)  #list of values where x should be 0
+        x1 = np.empty(0)  #list of values where x should be 1
+        for i in range(len(target_weighed)):
+            if(i in indices1):
+                x1 = np.append(x1, output_weighed[i])
+            else:
+                x0 = np.append(x0, output_weighed[ i])
+        Q = np.abs(min(x1) - max(x0))/2
+        return corr*np.sqrt(Q)/(1-corr)

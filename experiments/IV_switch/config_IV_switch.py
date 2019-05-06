@@ -22,12 +22,12 @@ class experiment_config(object):
 
 
         #define where you want to save the data.
-        self.filepath = r'D:\Rik\Find_configuration\\'
-        self.name = 'test'
+        self.filepath = r'D:\Rik\IV\Device8\\'
+        self.name = 'devicecheck'
         
         #define the IV you want to take in volts.
-        self.v_low = -0.5
-        self.v_high = 0.5
+        self.v_low = -0.9
+        self.v_high = 0.9
         self.n_points = 1000
         self.direction = 'up'
 
