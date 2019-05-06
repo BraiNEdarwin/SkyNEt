@@ -178,8 +178,8 @@ class lightNNet(object):
             self.loss_fn = nn.MSELoss()
         else:
             # Fitting parameters for sigma = a*pred + b
-            self.a = torch.tensor([0.01900258860717661, 0.014385111570154395])
-            self.b = torch.tensor([0.21272562199413553, 0.0994027221336])
+            self.a = torch.tensor([0.011551715269117874, 0.013572345994055003])
+            self.b = torch.tensor([0.32025425531027374, 0.34207612321482517])
             self.info['loss'] = 'MSE_noisefit'
  
     def loss_fn(self, pred, targets):   

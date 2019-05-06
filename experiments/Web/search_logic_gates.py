@@ -19,14 +19,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from SkyNEt.modules.Nets.lightNNet import lightNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
+from SkyNEt.modules import SaveLib
 
 # ------------------------ configure ------------------------
 # load device simulation
 
 main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\\'
-data_dir = 'MSE_d10w90_500ep_lr1e-3_b512_b1b2_0.90.75.pt'
+data_dir = 'MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
 net1 = lightNNet(main_dir+data_dir)
-input_gates=[3,4]
+input_gates=[1,2]
 input_scaling = False
 
 # single device web
@@ -34,27 +35,26 @@ web = webNNet()
 web.add_vertex(net1, 'A', output=True, input_gates=input_gates)
 
 # input voltages of boolean inputs (on/upper, off/lower)
-input_lower = -0.8
-input_upper = 0.2
+input_lower = -0.5
+input_upper = 0.5
 
-nr_sessions = 10
-# hardcoded target values of logic gates with off->lower and on->upper
+nr_sessions = 3 # hardcoded target values of logic gates with off->lower and on->upper
 
-upper = 1.0
-lower = 0.0
+upper = 1.
+lower = 0.
 
 # if set to false, use output of known cv configurations as targets
 
 N = 100 # number of data points of one of four input cases, total 4*N
 
-batch_size = 100
-max_epochs = 500
-lr = 0.06
+batch_size = 150
+max_epochs = 600
+lr = 0.08
 beta = 10
 cv_reset = 'rand'
 
 
-training_type = 'cor' # options: None, mse, bin, binmse, cor, cormse
+training_type = 'cor_adap' # options: None, mse, bin, binmse, cor, cormse
 
 add_noise = False # automatically set to false when using bin
 sigma = 0.01 # standard deviation of added noise in target
@@ -128,10 +128,15 @@ optimizer = torch.optim.Adam
 #    return 1.0-corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-16)/()
 
 def cor_loss_fn(x, y):
-    corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))
-    x_high_min = torch.min(x[(y == upper)]).item()
-    x_low_max = torch.max(x[(y == lower)]).item()
-    return (1.1 - (corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)))/(abs(x_high_min-x_low_max)/4)**.5
+    corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)
+    return 1.0001 - corr
+
+
+def cor_adap_loss_fn(x, y):
+    corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)
+    x_high_min = torch.min(x[(y == upper)]) #.item()
+    x_low_max = torch.max(x[(y == lower)]) #.item()
+    return (1.1 - corr)/ ((torch.tanh((x_high_min - x_low_max)/2 - 1) + 1)/2)              #(abs(x_high_min-x_low_max)/5)**.5
 
 mse_loss_fn = torch.nn.MSELoss()
 
@@ -165,6 +170,9 @@ elif training_type=='binmse':
 elif training_type=='cor':
     def loss_fn(x, y):
         return cor_loss_fn(x[:,0], y[:,0])
+elif training_type=='cor_adap':
+    def loss_fn(x, y):
+        return cor_adap_loss_fn(x[:,0], y[:,0])
 elif training_type=='cormse':
     alpha = 0.3
     def loss_fn(x_in, y_in):
@@ -172,7 +180,7 @@ elif training_type=='cormse':
         y = y_in[:,0]
         cor = cor_loss_fn(x, y)
         mse = mse_loss_fn(x, y)
-        return alpha*cor+(1-alpha)*mse/(upper-lower)**2
+        return alpha*cor+(1-alpha)*mse #/(upper-lower)**2
 
 
 if add_noise:
@@ -190,7 +198,7 @@ for (i,gate) in enumerate(gates):
     if training_type == 'bin':
         cross_fn = torch.nn.CrossEntropyLoss(weight = w[i])
 
-    loss_l, best_cv, param_history = web.session_train(input_data, target_data[i].view(-1,1), 
+    loss_l, best_cv, param_history = web.session_train(input_data, target_data[-1].view(-1,1),  #\\
                      beta=beta,
                      batch_size=batch_size,
                      max_epochs=max_epochs,
@@ -226,15 +234,15 @@ def print_gates():
         web.forward(input_data)
         output_data[:,i:i+1] = web.get_output()
         
-        loss = web.error_fn(output_data[:,i:i+1], target_data[i].view(-1,1), beta).item()
+        loss = web.error_fn(output_data[:,i:i+1], target_data[-1].view(-1,1), beta).item() #\\
         print("loss:", loss)
         
-        mseloss = mse_norm_loss_fn(output_data[:,i:i+1], target_data[i].view(-1,1).float()).item()
+        mseloss = mse_norm_loss_fn(output_data[:,i:i+1], target_data[-1].view(-1,1).float()).item() #\\
         print("mseloss: ", mseloss)
         
         # print output network and targets
         plt.subplot(2, 3 , 1 + i//2 + i%2*3)
-        plt.plot(10*target_data[i].numpy())
+        plt.plot(10*target_data[i].numpy()) #\\
         legend_list = ['target']
         if False: #training_type == 'bin':
             plt.plot(torch.sigmoid(output_data))
@@ -257,4 +265,4 @@ CV = np.zeros((6,5))
 for i in range(len(trained_cv)):
     CV[i] = trained_cv[i]['A'].numpy()
 
-#saveArrays(r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\nets\MSE_n_adap_200ep\gates\\', filename="results_NAME",max_epochs = max_epochs, nr_sessions=nr_sessions,sigma=sigma,trained_cv=CV,training_type=training_type,upper=upper,lower=lower,lr=lr,input_upper=input_upper,input_lower=input_lower,input_gates=[4,5],pred=output_data,losslist=losslist)
+#saveArrays(r'C:\..\..\..\..\\', filename="results_NAME",max_epochs = max_epochs, nr_sessions=nr_sessions,sigma=sigma,CV=CV,training_type=training_type,upper=upper,lower=lower,lr=lr,input_upper=input_upper,input_lower=input_lower,input_gates=input_gates,pred=output_data,losslist=losslist)

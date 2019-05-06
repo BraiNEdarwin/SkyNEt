@@ -18,7 +18,8 @@ from SkyNEt.modules.Nets.webNNet import webNNet
 # load device simulation
 
 main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\\'
-data_dir = 'MSE_n_d10w90_300ep_lr3e-3_b512_b1b2_0.90.75_seed.pt'
+#data_dir = 'MSE_n_d10w90_30ep_lr1e-3_b1024_b1b2_0.90.75.pt'
+data_dir = 'MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
 net1 = lightNNet(main_dir+data_dir)
 input_gates=[3,4]
 input_scaling = True
@@ -26,25 +27,25 @@ input_scaling = True
 web = webNNet()
 web.add_vertex(net1, 'A', output=True, input_gates=input_gates)
 
-nr_sessions = 10
+nr_sessions = 20
 upper = 1.
 lower = 0.
 
-batch_size = 100
-max_epochs = 500
-lr = 0.05
+batch_size = 50
+max_epochs = 800
+lr = 0.08
 beta = 10
 cv_reset = 'rand'
 
-training_type = 'cor' # options: None, mse, bin, binmse, cor, cormse
+training_type = 'cor_adap' # options: None, mse, bin, binmse, cor, cormse
 add_noise = False # automatically set to false when using bin
-sigma = 0.01 # standard deviation of added noise in target
+sigma = 0.05 # standard deviation of added noise in target
 
 
 # define custom stopping criteria
 def stop_fn(epoch, error_list, best_error):
     # if the error has not improved the last 50 epochs, reset parameters random
-    if min(error_list[-150:]) > best_error:
+    if min(error_list[-200:]) > best_error:
 #        print("INFO: No improvement after 50 iterations")
         return True
 
@@ -53,10 +54,10 @@ def stop_fn(epoch, error_list, best_error):
 # Load ring data 
 ring_file = r'C:\Users\User\APH\Thesis\Data\Ring\Ring_class_data_0.40_many.npz'
 input_data = torch.from_numpy(np.load(ring_file)['inp_wvfrm']).to(torch.float)
-target_data = torch.from_numpy(np.load(ring_file)['target'] * upper).to(torch.float)[np.newaxis,:] # need to be [1,many] because Boolean logic finder is such that its dims are [# gates, labels]
+target_data = torch.from_numpy((np.load(ring_file)['target'] - 1) * (-1)* upper).to(torch.float)[np.newaxis,:] # need to be [1,many] because Boolean logic finder is such that its dims are [# gates, labels]
 
 # Parameters used for regularizing the input
-inp_beta = 10000
+inp_beta = 1000
 max_inp = torch.from_numpy(net1.info['amplitude'][input_gates] + net1.info['offset'][input_gates]).to(torch.float)
 min_inp = torch.from_numpy(-net1.info['amplitude'][input_gates] + net1.info['offset'][input_gates]).to(torch.float)
 # Regularize the input scaling and bias
@@ -69,8 +70,8 @@ if input_scaling:
     # rescale the input data to [-1, 1]
     input_data = input_data / torch.max(torch.abs(input_data))
             
-    scale = torch.tensor([0.1],dtype=torch.float)      # Start scale at [-0.1,0.1] V
-    bias = torch.tensor([0.,0.],dtype=torch.float)    # Start center of data at [0,0] V
+    scale = torch.tensor([0.25],dtype=torch.float)      # Start scale at [-0.1,0.1] V
+    bias = torch.tensor([-0.,-0.],dtype=torch.float)    # Start center of data at [0,0] V
     web.add_parameters(['scale','bias'],[scale, bias], reg_input)
 
 
@@ -80,10 +81,14 @@ optimizer = torch.optim.Adam
 #    return 1.0-corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-16)/()
 
 def cor_loss_fn(x, y):
-    corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))
-    x_high_min = torch.min(x[(y == upper)]).item()
-    x_low_max = torch.max(x[(y == lower)]).item()
-    return (1.1 - (corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)))/(abs(x_high_min-x_low_max)/10)**.5
+    corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))/ (torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)
+    return (1.0001 - corr)
+
+def cor_loss_adap_fn(x, y):
+    corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y))) / (torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)
+    x_high_min = torch.min(x[(y == upper)]) #.item()
+    x_low_max = torch.max(x[(y == lower)]) #.item()
+    return (1.2 - corr)/((torch.tanh((x_high_min - x_low_max)/2 - 1) + 1)/2)  #(abs(x_high_min-x_low_max)/5)**.5
 
 mse_loss_fn = torch.nn.MSELoss()
 
@@ -99,6 +104,9 @@ if training_type == 'mse' or training_type == None:
 elif training_type=='cor':
     def loss_fn(x, y):
         return cor_loss_fn(x[:,0], y[:,0])
+elif training_type=='cor_adap':
+    def loss_fn(x, y):
+        return cor_loss_adap_fn(x[:,0], y[:,0])
 elif training_type=='cormse':
     alpha = 0.3
     def loss_fn(x_in, y_in):
@@ -180,7 +188,7 @@ def print_output():
 print_output()
 
 
-CV = best_cv['A'].numpy()
+CV = best_cv['A'].numpy()[np.newaxis,:]
 bias = best_cv['bias'].numpy()
 scale = best_cv['scale'].numpy()
 
