@@ -119,7 +119,7 @@ class webNNet(torch.nn.Module):
         assert voltage_bounds.shape == (2, D_in), "shape of voltage bounds (%s) does not match expected shape (%s)"
 
         # define full transfer functions for each gate (may not be used)
-        transfer = [lambda x: self.transfer(x)*(i[1]-i[0])+i[0] for i in voltage_bounds.t()]
+        transfer = [(lambda y: (lambda x: self.transfer(x)*(y[1]-y[0])+y[0]))(ii) for ii in voltage_bounds.t()]
         
         # keep only the values of control gates, input gate values are not used
         voltage_bounds = voltage_bounds[:, control_gates]
@@ -178,7 +178,7 @@ class webNNet(torch.nn.Module):
         if custom_reg is not None:
             self.custom_reg = custom_reg
     
-    def forward(self, x, verbose=False):
+    def forward(self, x):
         """Evaluates the graph, returns output (torch.tensor)
         Start at network which is the output of the whole graph, 
         then recursively step through graph vertex by vertex
@@ -188,7 +188,7 @@ class webNNet(torch.nn.Module):
         self._clear_output()
         
         # define input data for all networks
-        self._set_input_data(x, verbose = verbose)
+        self._set_input_data(x)
         
         tuple_data = ()
         for key,value in self.graph.items():
@@ -238,7 +238,7 @@ class webNNet(torch.nn.Module):
             reg_loss += torch.sum(torch.relu(voltage_bounds[0] - x) + torch.relu(-voltage_bounds[1] + x))
         return self.loss_fn(y_pred, y) + beta*reg_loss + self.custom_reg()
     
-    def _set_input_data(self, x, verbose=False):
+    def _set_input_data(self, x):
         """Store training data for each network, assumes the torch tensor has the same ordering as in the dictionary"""
         # assumes each vertex has same number of parameters (could change in future)
         dim = x.shape[1]
