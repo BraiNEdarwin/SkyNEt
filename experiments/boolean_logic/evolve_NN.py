@@ -6,7 +6,8 @@ The only difference to the measurement scripts are on lines where the device is 
 # SkyNEt imports
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
-import SkyNEt.modules.PlotBuilder as PlotBuilder
+from SkyNEt.modules.PlotBuilder import PlotBuilder
+
 import config_evolve_NN as config
 from SkyNEt.modules.Nets.staNNet import staNNet 
 # Other imports
@@ -40,13 +41,18 @@ controlVoltages = np.zeros(cf.genes)
 # Initialize save directory
 saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
-# Initialize main figure
-mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
+# Initialize figure
+pb = PlotBuilder()
+pb.add_subplot((0,0), (5, 1), adaptive=True, ylim=(-0.1,1.1), title='cv genes')
+pb.add_subplot((0,1), (2 ,t.shape[0]), ylim=(-0.1,1.1), title='current device output')
+pb.add_subplot((1,1), cf.genes, ylim=(0,1), title='current genome voltages')
+pb.add_subplot((1,0), cf.genes, adaptive=True, title='best fitness')
+pb.finalize()
 
 # Initialize NN
 main_dir = r'../../test/NN_test/data4nn/Data_for_testing/' 
 # NN model coming from /home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/25_07_2018_CP-full-search-77K/lr2e-4_eps1000_mb512_25072018CP.pt
-dtype = torch.cuda.FloatTensor
+dtype = torch.FloatTensor
 net = staNNet(main_dir+'TEST_NN.pt')
 
 # Initialize genepool
@@ -74,8 +80,8 @@ for i in range(cf.generations):
             inputs = Variable(inputs)
             output = net.outputs(inputs)
 
-#            # Plot genome
-            PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
+            # Plot current genome
+            pb.update((1,1), genePool.pool[j])
 
             # Train output
             outputAvg[avgIndex] = cf.amplification * np.asarray(output)  # empty for now, as we have only one output node
@@ -85,13 +91,8 @@ for i in range(cf.generations):
                                                      target,
                                                      w)
 
-#            # Plot output
-            PlotBuilder.currentOutputEvolution(mainFig,
-                                               t,
-                                               target,
-                                               output,
-                                               j + 1, i + 1,
-                                               fitnessTemp[j, avgIndex])
+            # Plot current output vs target
+            pb.update((0,1), np.stack((target, output)))
 
         outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
 
@@ -105,17 +106,12 @@ for i in range(cf.generations):
     geneArray[i, :, :] = genePool.pool
     outputArray[i, :, :] = outputTemp
     fitnessArray[i, :] = genePool.fitness
+    best_fitness_index = np.argmax(fitnessArray[:i+1], axis=1)
+    
+    # Update main figure
+    pb.update((0,0), geneArray[np.arange(i+1),best_fitness_index,:].T)
+    pb.update((1,0), fitnessArray[np.arange(i+1), best_fitness_index])
 
-#    # Update main figure
-    PlotBuilder.updateMainFigEvolution(mainFig,
-                                       geneArray,
-                                       fitnessArray,
-                                       outputArray,
-                                       i + 1,
-                                       t,
-                                       cf.amplification*target,
-                                       output,
-                                       w)
 
     # Save generation
     SaveLib.saveExperiment(saveDirectory,
@@ -125,5 +121,3 @@ for i in range(cf.generations):
 
     # Evolve to the next generation
     genePool.NextGen()
-
-PlotBuilder.finalMain(mainFig)
