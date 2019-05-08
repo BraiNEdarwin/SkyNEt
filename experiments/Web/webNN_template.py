@@ -11,8 +11,8 @@ from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 
 # create nn object from which the web is made
-main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
-data_dir = 'lr2e-4_eps400_mb512_20180807CP.pt'
+main_dir = r'C:/Users/Jardi/Desktop/BachelorOpdracht/NNModel/'
+data_dir = '24-04-21h48m_NN_lossMSE-d20w90-lr0.003-eps500-mb2048-b10.9-b20.75.pt'
 net1 = staNNet(main_dir+data_dir)
 
 
@@ -21,12 +21,14 @@ web = webNNet()
 
 # add networks as vertices
 # network object, name of vertex
-web.add_vertex(net1, 'A', output=True)
-web.add_vertex(net1, 'B')
+bounds = torch.tensor([[-0.8, -0.8, -1.1, -1.1, -1.1, -1.1, -1.1], [0.2, 0.2, 0.7, 0.7, 0.7, 0.7, 0.7]])
+web.add_vertex(net1, 'A', output=True, input_gates = [6], voltage_bounds = bounds)
+web.add_vertex(net1, 'B', input_gates = [6], voltage_bounds = bounds)
 
 # connect vertices with arcs, source->sink
 # source vertex, sink vertex, sink gate index
-web.add_arc('B', 'A', 2)
+web.add_arc('B', 'A', 6)
+#web.add_arc('A', 'B', 0)
 
 # Check if web is valid (and optionally plot)
 web.check_graph(print_graph=True)
