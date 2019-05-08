@@ -1,5 +1,5 @@
-from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers, Ints, Enum, MultiType, Bool
+from SkyNEt.qcodes import VisaInstrument
+from SkyNEt.qcodes.utils.validators import Numbers, Ints, Enum, MultiType, Bool
 
 from functools import partial
 
