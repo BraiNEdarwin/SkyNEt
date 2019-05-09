@@ -32,102 +32,86 @@ from shutil import copyfile
 configSrc = config.__file__
 
 # Initialize config object
-config = config.experiment_config()
-samples = config.samples
-fs = config.fs
-T = config.sampleTime
+cf = config.experiment_config()
+samples = cf.samples
+fs = cf.fs
+T = cf.sampleTime
 
 # Initialize instrument
 ivvi = IVVIrack.initInstrument(dac_step = 500, dac_delay = 0.001)
 
 
 
-# Find control voltages:
-if config.findCV:
-    controlVoltages = np.zeros((len(config.targetCurrent), config.genes - 1))
-    for i in range(len(config.targetCurrent)):
-        print('\nFinding control voltages, ' + str(i + 1) + '/' +str(len(config.targetCurrent)) +'...')
-        target = config.Target()[1][i]
-        controlVoltages[i,:] = CVFinder(config, target, ivvi)
-elif config.gridSearch:
-    controlVoltages = gridConstructor(config.controls, config.steps)
-elif config.device == 'cDAQ':
-    controlVoltages = config.t
-    print('Wave electrodes are used')
-else:
-    controlVoltages = config.CVs    
-    print('Predefined control voltages are used')
-    #print(str(controlVoltages))
+# Specify whether to collect data for the random test set or to collect data for the noise fit
+if cf.device == 'cDAQ':
+    controlVoltages = cf.t
+    print('cDAQ is used')
+    if cf.experiment_type == 'test_set':
+        controlVoltages = cf.CVs    
+        print('Predefined control voltages are used to collect a test set')
+    elif cf.experiment_type == 'noise_fit':
+        controlVoltages = cf.t
+        print('Noise data will be collected')
+    else:
+        print('Specify what experiment to do')
 
 # Initialize data container and save directory
-if config.T_test:
-    saveDirectoryT = SaveLib.createSaveDirectory(config.filepath, config.name_T)
-    Tcurrents = np.zeros((samples * controlVoltages.shape[0], int(fs * T)))
-if config.S_test:
-    saveDirectoryS = SaveLib.createSaveDirectory(config.filepath, config.name_S)
-    Scurrents = np.zeros((samples * controlVoltages.shape[0], int(fs * T)))
+
+saveDirectoryT = SaveLib.createSaveDirectory(cf.filepath, cf.name_T)
+Tcurrents = np.zeros((samples * controlVoltages.shape[0], int(fs * T)))
 
 # Main acquisition loop
-if config.T_test:
-    print('Testing accuracy of sample time ...')
-    for i in range(0, controlVoltages.shape[0]):
-        print('Getting Data for control voltage ' + str(i + 1) + ', ' + str(controlVoltages.shape[0] - i - 1) + ' control voltages remaining.')
-        for j in range(samples):
-            print('Sampling ' + str(j + 1) + '/' + str(samples) +'...')
+for i in range(0, controlVoltages.shape[0]):
+    print('Getting Data for control voltage ' + str(i + 1) + ', ' + str(controlVoltages.shape[0] - i - 1) + ' control voltages remaining.')
+    for j in range(samples):
+        print('Sampling ' + str(j + 1) + '/' + str(samples) +'...')
 
-            if config.device == 'cDAQ':
-                waves = config.generateSineWave(config.freq, config.t[i], config.Vmax, config.fs_wave) \
-                    * np.ones((config.freq.shape[0], config.sampleTime * config.fs)) + config.offset[:,np.newaxis]
-                #waves = controlVoltages[i,:][:,np.newaxis] * np.ones((config.freq.shape[0], int(config.sampleTime * config.fs)))
+        if cf.device == 'cDAQ':
+            # Create input data dependent on what type of experiment is chosen
+            if cf.experiment_type == 'noise_fit':
+                waves = cf.generateSineWave(cf.freq, cf.t[i], cf.Vmax, cf.fs_wave) \
+                    * np.ones((cf.freq.shape[0], cf.sampleTime * cf.fs)) + cf.offset[:,np.newaxis]
 
-                wavesRamped = np.zeros((waves.shape[0], waves.shape[1] + 2*config.rampT))
-                for l in range(config.waveElectrodes):
+            elif cf.experiment_type == 'test_set':
+                waves = controlVoltages[i,:][:,np.newaxis] * np.ones((cf.freq.shape[0], int(cf.sampleTime * cf.fs)))
 
-                    wavesRamped[l,0:config.rampT] = np.linspace(0,waves[l,0], config.rampT)
-                    wavesRamped[l,config.rampT:config.rampT+waves.shape[1]] = waves[l,:]
-                    wavesRamped[l,config.rampT+waves.shape[1]:] = np.linspace(waves[l,-1],0, config.rampT)
+            # Add ramping up and down for the datapoints
+            wavesRamped = np.zeros((waves.shape[0], waves.shape[1] + 2*cf.rampT))
+            for l in range(cf.waveElectrodes):
 
-                dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, config.fs)      
-                Tcurrents[i * samples + j, :] = dataRamped[:, config.rampT:config.rampT+waves.shape[1]]
+                wavesRamped[l,0:cf.rampT] = np.linspace(0,waves[l,0], cf.rampT)
+                wavesRamped[l,cf.rampT:cf.rampT+waves.shape[1]] = waves[l,:]
+                wavesRamped[l,cf.rampT+waves.shape[1]:] = np.linspace(waves[l,-1],0, cf.rampT)
 
-            else:
-                wavesRamped = np.zeros((config.waveElectrodes, int(fs * T + 12*config.rampT)))
-                for l in range(config.waveElectrodes):
+            # Actual measurement
+            dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, cf.fs)      
+            Tcurrents[i * samples + j, :] = dataRamped[:, cf.rampT:cf.rampT+waves.shape[1]]
+    if i%10==0:
+        print('Saving...')
+        np.savez(os.path.join(saveDirectoryT, 'nparrays'), CV = controlVoltages, output = cf.amplification*Tcurrents/cf.postgain)
 
-                    wavesRamped[l,0:config.rampT] = np.linspace(0,config.CVs[i,l], config.rampT)
-                    wavesRamped[l,config.rampT:config.rampT+int(fs * T)] = config.CVs[i,l] * np.ones(config.sampleTime * config.fs)
-                    wavesRamped[l,config.rampT+int(fs * T):2*config.rampT+int(fs * T)] = np.linspace(config.CVs[i,l],0, config.rampT)
+        #else:
+        #    wavesRamped = np.zeros((cf.waveElectrodes, int(fs * T + 12*cf.rampT)))
+        #    for l in range(cf.waveElectrodes):
 
-                dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, config.fs)      
-                Tcurrents[i * samples + j, :] = dataRamped
+        #        wavesRamped[l,0:cf.rampT] = np.linspace(0,cf.CVs[i,l], cf.rampT)
+        #        wavesRamped[l,cf.rampT:cf.rampT+int(fs * T)] = cf.CVs[i,l] * np.ones(cf.sampleTime * cf.fs)
+        #            wavesRamped[l,cf.rampT+int(fs * T):2*cf.rampT+int(fs * T)] = np.linspace(cf.CVs[i,l],0, cf.rampT)
+
+        #        dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(wavesRamped, cf.fs)      
+        #        Tcurrents[i * samples + j, :] = dataRamped
                 #IVVIrack.setControlVoltages(ivvi, controlVoltages[i,:]) 
                 #time.sleep(0.5)  # Pause in between two samples
                 #Tcurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T), fs)
             
-
-if config.S_test:
-    print('Testing accuracy of switching CV config ...')
-    for i in range(0, controlVoltages.shape[0]):
-        print('Getting Data for control voltage ' + str(i + 1) + ', ' + str(controlVoltages.shape[0] - i - 1) + ' control voltages remaining.')
-        for j in range(samples):
-            print('Sampling ' + str(j + 1) + '/' + str(samples) +'...')
-            IVVIrack.setControlVoltages(ivvi, controlVoltages[i,:]) 
-            time.sleep(1)  # Pause in between two samples
-            Scurrents[i * samples + j,:] = nidaqIO.IO(np.zeros(fs * T), fs) 
-            IVVIrack.setControlVoltages(ivvi, np.random.random(7) * 1400 - 700) # Switch to a random config.
-            time.sleep(2) # Keep the CV config on random for a short period
-
 # Set IVVI back to zero
 IVVIrack.setControlVoltages(ivvi, np.zeros(8))   
 
 
 # Save obtained data (the two tests are saved in separate files)
-if config.T_test:
-    np.savez(os.path.join(saveDirectoryT, 'nparrays'), CV = controlVoltages, output = config.amplification*Tcurrents/config.postgain)
-    copyfile(configSrc, saveDirectoryT +'\\config_NoiseSamplingST.py') # TODO: fix bug with configSrc
-if config.S_test:
-    np.savez(os.path.join(saveDirectoryS, 'nparrays'), CV = controlVoltages, output = config.amplification*Scurrents/config.postgain)
-    copyfile(configSrc, saveDirectoryS + '\\config_NoiseSamplingST.py')
+
+np.savez(os.path.join(saveDirectoryT, 'nparrays'), CV = controlVoltages, output = cf.amplification*Tcurrents/cf.postgain)
+copyfile(configSrc, saveDirectoryT +'\\config_NoiseSamplingST.py') # TODO: fix bug with configSrc
 
 InstrumentImporter.reset(0,0)
 

@@ -37,51 +37,58 @@ try:
     ivvi = InstrumentImporter.IVVIrack.initInstrument(comport = cf.comport)
 except:
     pass
-
-#%% Measurement loop
-
-# Set the DAC voltages
-InstrumentImporter.IVVIrack.setControlVoltages(ivvi, cf.controlVoltages)
-time.sleep(5)  # Wait after setting DACs
+# Initialize input and output arrays
+allInputs = np.zeros((cf.controlVoltages.shape[0], 7, x.shape[1]*cf.pointlength + x.shape[1]*(cf.rampT+1)))
+outputs = np.zeros((cf.controlVoltages.shape[0], x.shape[1]*cf.pointlength + x.shape[1]*(cf.rampT+1)))
 
 # Set the ramping on the input signal
-
 x_ramp = np.zeros((x.shape[0], x.shape[1]*cf.pointlength + x.shape[1]*(cf.rampT+1))) # +1 because of ramp at start and end.
 for i in range(x.shape[0]):
     x_ramp[i,0:cf.rampT] = np.linspace(0,x[i,0],cf.rampT)
     x_ramp[i,cf.rampT: cf.rampT + cf.pointlength] = x[i,0]*np.ones(cf.pointlength)
-
-for i in range(x.shape[0]):
     for j in range(1,x.shape[1]):
         x_ramp[i, (cf.rampT + cf.pointlength)*j: cf.pointlength*j + cf.rampT*(j+1)] = np.linspace(x[i,j-1],x[i,j],cf.rampT)
         x_ramp[i, cf.pointlength*j + cf.rampT*(j+1): (cf.pointlength + cf.rampT)*(j+1)] = x[i,j]*np.ones(cf.pointlength)
 
-#plt.plot(x_ramp[0,:],x_ramp[1,:])
+#plt.plot(x_ramp[0],x_ramp[1])
 #plt.show()
 
+#%% Measurement loop
+# Set the DAC voltages
+for gates in range(0,cf.controlVoltages.shape[0]):
+    print('Measuring gate ' + str(gates+1))
+    InstrumentImporter.IVVIrack.setControlVoltages(ivvi, cf.controlVoltages[gates,:]*1000) # *1000 since it was saved in volts
+    # Feed input to measurement devices
+    if(cf.device == 'nidaq'):
+        time.sleep(3)  # Wait after setting DACs
+        outputs[gates] = InstrumentImporter.nidaqIO.IO(x_ramp, cf.fs)
+    elif(cf.device == 'adwin'):
+        time.sleep(3)  # Wait after setting DACs
+        adw = InstrumentImporter.adwinIO.initInstrument()
+        outputs[gates] = InstrumentImporter.adwinIO.IO(adw, x_ramp, cf.fs)
+    elif(cf.device == 'cDAQ'):
 
-# Feed input to measurement devices
-if(cf.device == 'nidaq'):
-    output = InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)
-elif(cf.device == 'adwin'):
-    adw = InstrumentImporter.adwinIO.initInstrument()
-    output = InstrumentImporter.adwinIO.IO(adw, x_scaled, cf.fs)
-elif(cf.device == 'cDAQ'):
-    output = InstrumentImporter.nidaqIO.IO_cDAQ(x_ramp, cf.fs)
+        inputs = cf.controlVoltages[gates,:][:,np.newaxis] * np.ones((cf.controlVoltages.shape[1], x_ramp.shape[1]))
+        for i in range(x_ramp.shape[0]):
+            inputs = np.insert(inputs, cf.input_electrodes[i], x_ramp[i], axis=0)
 
-else:
-    print('Specify measurement device as either adwin, nidaq or cDAQ')
+        outputs[gates] = InstrumentImporter.nidaqIO.IO_cDAQ(inputs, cf.fs)
+        allInputs[gates,:,:] = inputs
+    else:
+        print('Specify measurement device as either adwin, nidaq or cDAQ')
 
-# Save generation
+  # Save generation
 SaveLib.saveExperiment(cf.configSrc, saveDirectory,
                          t = t,
+                         inputs = cf.controlVoltages,
                          x = x,
                          x_ramp = x_ramp,
-                         output = output*cf.amplification)
+                         cDAQ_inputs = allInputs,
+                         outputs = outputs*cf.amplification)
 
 # Plot output
 plt.figure()
-plt.plot(output[0]*cf.amplification)
+plt.plot(outputs.T*cf.amplification)
 plt.show()
 
 InstrumentImporter.reset(0, 0)
