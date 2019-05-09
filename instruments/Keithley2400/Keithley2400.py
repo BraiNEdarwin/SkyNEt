@@ -98,6 +98,7 @@ class Keithley_2400(VisaInstrument):
         following actions.
             Returns the SourceMeter to the GPIB default conditions.
             Cancels all pending commands.
+
             Cancels all previously send `*OPC` and `*OPC?`
         """
         self.write(':*RST')
