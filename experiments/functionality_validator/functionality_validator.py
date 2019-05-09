@@ -1,18 +1,9 @@
 '''
 In this script the control voltages corresponding to different functionalities is set and a measurement is performed.
-This is done withig 3 for loops:
-1. for i in range generations for every generation rankes the fitnsessed of the genomes (control voltage sets) of the generation and used the GA to define the genomes of the next generation.
-   After this the output with the best fitness as well as this fitness compared to the generation are plotted.
-2. for j in range genomes for ever genome in a generation it sets the desisred control voltages on the DAC's of the IVVI-rack and scales the boulean logic input.
-   Next, it uses either the adwin or nidaq to measure the boulean logic input output relation after which the coresponding fitness is calculated.
-   Finally, the genomes and output of each genome is plotted.
-3. for k in range genes is use to map the 0-1 generated genome to the generange at put it in the desired orded in the coltrolvoltage array. 
 '''
 
 # SkyNEt imports
 import SkyNEt.modules.SaveLib as SaveLib
-import SkyNEt.modules.Evolution as Evolution
-import SkyNEt.modules.PlotBuilder as PlotBuilder
 import config_functionality_validator as config
 import matplotlib.pyplot as plt
 from SkyNEt.instruments import InstrumentImporter
@@ -37,6 +28,7 @@ try:
     ivvi = InstrumentImporter.IVVIrack.initInstrument(comport = cf.comport)
 except:
     pass
+
 # Initialize input and output arrays
 allInputs = np.zeros((cf.controlVoltages.shape[0], 7, x.shape[1]*cf.pointlength + x.shape[1]*(cf.rampT+1)))
 outputs = np.zeros((cf.controlVoltages.shape[0], x.shape[1]*cf.pointlength + x.shape[1]*(cf.rampT+1)))
@@ -55,25 +47,31 @@ for i in range(x.shape[0]):
 
 #%% Measurement loop
 # Set the DAC voltages
-for gates in range(0,cf.controlVoltages.shape[0]):
-    print('Measuring gate ' + str(gates+1))
-    InstrumentImporter.IVVIrack.setControlVoltages(ivvi, cf.controlVoltages[gates,:]*1000) # *1000 since it was saved in volts
+for i in range(0,cf.controlVoltages.shape[0]):
+    print('Measuring case ' + str(i+1))
+    
+    # This part is not used to measure for the nidaq and adwin but saves all the voltages set on the electrodes per validation
+    inputs = cf.controlVoltages[i,:][:,np.newaxis] * np.ones((cf.controlVoltages.shape[1], x_ramp.shape[1]))
+    for j in range(x_ramp.shape[0]):
+        inputs = np.insert(inputs, cf.input_electrodes[j], x_ramp[j], axis=0)
+    allInputs[i,:,:] = inputs
+        
     # Feed input to measurement devices
     if(cf.device == 'nidaq'):
+        InstrumentImporter.IVVIrack.setControlVoltages(ivvi, cf.controlVoltages[i,:]*1000) # *1000 since it was saved in volts
         time.sleep(3)  # Wait after setting DACs
-        outputs[gates] = InstrumentImporter.nidaqIO.IO(x_ramp, cf.fs)
+        outputs[i] = InstrumentImporter.nidaqIO.IO(x_ramp, cf.fs)     
+                        
     elif(cf.device == 'adwin'):
+        InstrumentImporter.IVVIrack.setControlVoltages(ivvi, cf.controlVoltages[i,:]*1000) # *1000 since it was saved in volts
         time.sleep(3)  # Wait after setting DACs
         adw = InstrumentImporter.adwinIO.initInstrument()
-        outputs[gates] = InstrumentImporter.adwinIO.IO(adw, x_ramp, cf.fs)
+        outputs[i] = InstrumentImporter.adwinIO.IO(adw, x_ramp, cf.fs)        
+        
     elif(cf.device == 'cDAQ'):
-
-        inputs = cf.controlVoltages[gates,:][:,np.newaxis] * np.ones((cf.controlVoltages.shape[1], x_ramp.shape[1]))
-        for i in range(x_ramp.shape[0]):
-            inputs = np.insert(inputs, cf.input_electrodes[i], x_ramp[i], axis=0)
-
-        outputs[gates] = InstrumentImporter.nidaqIO.IO_cDAQ(inputs, cf.fs)
-        allInputs[gates,:,:] = inputs
+        print('cDAQ will be used to validate')
+        outputs[i] = InstrumentImporter.nidaqIO.IO_cDAQ(inputs, cf.fs)
+        
     else:
         print('Specify measurement device as either adwin, nidaq or cDAQ')
 
