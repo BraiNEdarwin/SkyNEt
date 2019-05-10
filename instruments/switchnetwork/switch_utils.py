@@ -68,3 +68,6 @@ def connect_single_device(ser, device_number):
     matrix = np.zeros((8, 8))
     matrix[:, device_number] = 1
     switch(ser, matrix)
+
+def close(ser):
+    ser.close()

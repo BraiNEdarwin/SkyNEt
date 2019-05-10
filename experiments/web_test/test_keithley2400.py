@@ -13,7 +13,9 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-output = np.zeros(100)
+N = 100
+
+output = np.zeros(N)
 
 # Set compliances
 keithley.compliancei.set(1E-6)
@@ -24,16 +26,17 @@ keithley.output.set(1)
 
 start = time.time()
 for ii in range(len(output)):
-    # Set voltage
-#    keithley.volt.set(Input[ii])
-
     # Record current
 #    time.sleep(0.05)
     output[ii] = keithley.curr()
+    print('got currernt %i' % ii)
 
 print( time.time()-start)
 # Turn keithley output off
 keithley.output.set(0)
+keithley.close()
 
 plt.figure()
-plt.plot(output)
+plt.plot(np.arange(N), output*1e9)
+plt.ylabel('output nA')
+plt.xlabel('sample')

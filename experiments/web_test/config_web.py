@@ -27,47 +27,28 @@ class experiment_config(object):
         #define where you want to save the data.
         self.filepath = r'D:\Lennart\tests\\'
         self.name = 'test1'
-        
-        #define the IV you want to take in volts.
-        self.v_low = -0.9
-        self.v_high = 0.9
-        self.n_points = 10000
-        self.direction = 'up'
-
-        #define the input and output amplifications.
-        self.amplification = 1
-        self.source_gain = 1
 
         #measurment tool settings.
-        self.device = 'nidaq'
+        self.measure_device = 'keithley2400'
+        self.set_device = 'cdaq' 
         self.fs = 1000
+        
+        # arduino switch network
+        self.switch_device = 1
+        self.switch_comport = 'COM3'
 
-
-        self.Sweepgen = self.Sweepgen
-
-    def Sweepgen(self, v_high, v_low, n_points, direction):
-        n_points = n_points/2
-
-        if direction == 'down':
-            Input1 = np.linspace(0, v_low, int((n_points*v_low)/(v_low-v_high)))
-            Input2 = np.linspace(v_low, v_high, n_points)
-            Input3 = np.linspace(v_high, 0, int((n_points*v_high)/(v_high-v_low)))
-        elif direction == 'up':
-            Input1 = np.linspace(0, v_high, int((n_points*v_high)/(v_high-v_low)))
-            Input2 = np.linspace(v_high, v_low, n_points)
-            Input3 = np.linspace(v_low, 0, int((n_points*v_low)/(v_low-v_high)))
-        else:
-            print('Specify the sweep direction')
-
-
-        Input = np.zeros(len(Input1)+len(Input2)+len(Input3))
-        Input[0:len(Input1)] = Input1
-        Input[len(Input1):len(Input1)+len(Input2)] = Input2
-        Input[len(Input1)+len(Input2):len(Input1)+len(Input2)+len(Input3)] = Input3
-        return Input
-
-
-
+    def voltage_from_result(self, genome, generange):
+        for i,val in enumerate(generange):
+            genome[i] = (genome[i]*(val[1]-val[0])+val[0])
+        
+        low = -genome[-1]
+#        low = 0.0
+        high = genome[-1]
+        input_data = np.zeros((4,7))
+        input_data[:,[1,3,4,5,6]] = genome[:-1]/1000
+        input_data[:,0] = np.array([low, high, low, high])
+        input_data[:,2] = np.array([low, low, high, high])
+        return input_data
 
 
 
