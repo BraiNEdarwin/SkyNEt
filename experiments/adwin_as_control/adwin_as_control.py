@@ -3,7 +3,7 @@ import SkyNEt.modules.SaveLib as SaveLib
 from SkyNEt.instruments.ADwin import adwinIO
 import SkyNEt.modules.Evolution as Evolution
 from SkyNEt.instruments.DAC import IVVIrack
-import SkyNEt.modules.PlotBuilder as PlotBuilder
+from SkyNEt.modules.PlotBuilder import PlotBuilder
 
 # Other imports
 import time

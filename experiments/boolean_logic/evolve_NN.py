@@ -43,10 +43,11 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
 # Initialize figure
 pb = PlotBuilder()
-pb.add_subplot((0,0), (5, 1), adaptive=True, ylim=(-0.1,1.1), title='cv genes')
-pb.add_subplot((0,1), (2 ,t.shape[0]), ylim=(-0.1,1.1), title='current device output')
-pb.add_subplot((1,1), cf.genes, ylim=(0,1), title='current genome voltages')
-pb.add_subplot((1,0), cf.genes, adaptive=True, title='best fitness')
+pb.add_subplot('genes',     (0,0), (5, 1),   adaptive=True,  ylim=(-0.1,1.1), title='History of best genes',    xlabel='generations', rowspan=2)
+pb.add_subplot('fitness',   (2,0), cf.genes, adaptive=True,                   title='History of best fitness',  xlabel='generations',  rowspan=2)
+pb.add_subplot('cur_output',(0,1), (2 ,t.shape[0]),          ylim=(-0.1,1.1), title='Fittest device output of last generation', legend=['target', 'device'], rowspan=2)
+pb.add_subplot('cur_genome',(2,1), cf.genes,                 ylim=(0,1),      title='Current genome voltages')
+pb.add_subplot('output',    (3,1), (2 ,t.shape[0]),          ylim=(-0.1,1.1), title='Device output', legend=['target', 'device'])
 pb.finalize()
 
 # Initialize NN
@@ -80,9 +81,6 @@ for i in range(cf.generations):
             inputs = Variable(inputs)
             output = net.outputs(inputs)
 
-            # Plot current genome
-            pb.update((1,1), genePool.pool[j])
-
             # Train output
             outputAvg[avgIndex] = cf.amplification * np.asarray(output)  # empty for now, as we have only one output node
 
@@ -91,10 +89,13 @@ for i in range(cf.generations):
                                                      target,
                                                      w)
 
-            # Plot current output vs target
-            pb.update((0,1), np.stack((target, output)))
 
         outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
+        
+        # Plot current genome
+        pb.update('cur_genome', genePool.pool[j])
+        # Plot current device output
+        pb.update('output', np.stack((target, outputTemp[j])))
 
     genePool.fitness = fitnessTemp.min(1)  # Save fitness
     end = time.time()
@@ -108,9 +109,12 @@ for i in range(cf.generations):
     fitnessArray[i, :] = genePool.fitness
     best_fitness_index = np.argmax(fitnessArray[:i+1], axis=1)
     
-    # Update main figure
-    pb.update((0,0), geneArray[np.arange(i+1),best_fitness_index,:].T)
-    pb.update((1,0), fitnessArray[np.arange(i+1), best_fitness_index])
+    # Plot best output of last generation
+    pb.update('cur_output', np.stack((target, outputTemp[best_fitness_index[0]])))
+    # Plot history of genes
+    pb.update('genes', geneArray[np.arange(i+1),best_fitness_index,:].T)
+    # Plot best fitness of each generation
+    pb.update('fitness', fitnessArray[np.arange(i+1), best_fitness_index])
 
 
     # Save generation

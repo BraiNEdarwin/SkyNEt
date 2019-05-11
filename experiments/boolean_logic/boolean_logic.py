@@ -14,7 +14,7 @@ This is done withing 3 for loops:
 # SkyNEt imports
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
-import SkyNEt.modules.PlotBuilder as PlotBuilder
+from SkyNEt.modules.PlotBuilder import PlotBuilder
 import config_boolean_logic as config
 from SkyNEt.instruments import InstrumentImporter
 
@@ -45,8 +45,14 @@ controlVoltages = np.zeros(cf.genes)
 # Initialize save directory
 saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
-# Initialize main figure
-mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
+# Initialize figure
+pb = PlotBuilder()
+pb.add_subplot('genes',     (0,0), (5, 1),   adaptive=True,  ylim=(-0.1,1.1), title='History of best genes',    xlabel='generations', rowspan=2)
+pb.add_subplot('fitness',   (2,0), cf.genes, adaptive=True,                   title='History of best fitness',  xlabel='generations',  rowspan=2)
+pb.add_subplot('cur_output',(0,1), (2 ,t.shape[0]),          ylim=(-0.1,1.1), title='Fittest device output of last generation', legend=['target', 'device'], rowspan=2)
+pb.add_subplot('cur_genome',(2,1), cf.genes,                 ylim=(0,1),      title='Current genome voltages')
+pb.add_subplot('output',    (3,1), (2 ,t.shape[0]),          ylim=(-0.1,1.1), title='Device output', legend=['target', 'device'])
+pb.finalize()
 
 # Initialize instruments
 ivvi = InstrumentImporter.IVVIrack.initInstrument()
@@ -79,9 +85,6 @@ for i in range(cf.generations):
             else:
                 print('Specify measurement device as either adwin or nidaq')
 
-            # Plot genome
-            PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
-
             # Train output
             outputAvg[avgIndex] = cf.amplification * np.asarray(output)  # empty for now, as we have only one output node
 
@@ -90,15 +93,12 @@ for i in range(cf.generations):
                                                      target,
                                                      w)
 
-            # Plot output
-            PlotBuilder.currentOutputEvolution(mainFig,
-                                               t,
-                                               target,
-                                               output,
-                                               j + 1, i + 1,
-                                               fitnessTemp[j, avgIndex])
-
         outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
+        
+        # Plot current genome
+        pb.update('cur_genome', genePool.pool[j])
+        # Plot current device output
+        pb.update('output', np.stack((target, outputTemp[j])))
 
     genePool.fitness = fitnessTemp.min(1)  # Save fitness
 
@@ -110,17 +110,14 @@ for i in range(cf.generations):
     geneArray[i, :, :] = genePool.pool
     outputArray[i, :, :] = outputTemp
     fitnessArray[i, :] = genePool.fitness
+    best_fitness_index = np.argmax(fitnessArray[:i+1], axis=1)
 
-    # Update main figure
-    PlotBuilder.updateMainFigEvolution(mainFig,
-                                       geneArray,
-                                       fitnessArray,
-                                       outputArray,
-                                       i + 1,
-                                       t,
-                                       cf.amplification*target,
-                                       output,
-                                       w)
+    # Plot best output of last generation
+    pb.update('cur_output', np.stack((target, outputTemp[best_fitness_index[0]])))
+    # Plot history of genes
+    pb.update('genes', geneArray[np.arange(i+1),best_fitness_index,:].T)
+    # Plot best fitness of each generation
+    pb.update('fitness', fitnessArray[np.arange(i+1), best_fitness_index])
 
     # Save generation
     SaveLib.saveExperiment(saveDirectory,
@@ -133,8 +130,6 @@ for i in range(cf.generations):
 
     # Evolve to the next generation
     genePool.NextGen()
-
-PlotBuilder.finalMain(mainFig)
 
 InstrumentImporter.reset(0, 0)
 
