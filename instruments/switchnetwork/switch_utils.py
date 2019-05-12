@@ -19,17 +19,21 @@ def matrix_to_bytes(matrix):
     signal of 8 bytes that can be sent over the serial port to the 
     Arduino.
 
-    The first row of matrix corresponds to the switching configuration
-    of C1.
+    The rows of matrix corresponds to the switching configuration
+    of Connectors C1-C8.
+    The columns correspond to the devices.
     '''
+    # flip in both directions such that c8 recieves first and device numbering is the same as on PCB
+    matrix = np.flipud(np.fliplr(matrix))
+    
     #send_string = '<'  # Start flag
     send_string = ''
 
     # Loop over each row of matrix
-    for ii in range(matrix.shape[0]):
+    for ii, row in enumerate(matrix):
         row_number = 0
-        for jj in range(matrix.shape[1]): 
-            row_number += 2**jj * matrix[ii, jj]
+        for jj,element in enumerate(row): 
+            row_number += 2**jj * element
         send_string += str(row_number)
         if(ii < 7):
             send_string += ','  # Separator character
@@ -62,7 +66,7 @@ def switch(ser, matrix):
 
 def connect_single_device(ser, device_number):
     '''
-    This function connects the device number device_number (0-7)
+    This function connects the device number device_number (1-8 on PCB)
     to the BNC connectors
     '''
     matrix = np.zeros((8, 8))
