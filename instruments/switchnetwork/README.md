@@ -38,8 +38,16 @@ Suppose we wish to connect the following:
 
 Then we pass the following list of bytes:
 
-`[00000010, 00000000, 00000000, 01100001, 00000000, 11001000, 00000000,
- 00000000]`
+`[00000000,
+  00000000,
+  11001000,
+  00000000,
+  01100001,
+  00000000,
+  00000000,
+  00000010]`
+
+So rows are for Electrodes and columns are for devices.
 
 ## Installation
 
