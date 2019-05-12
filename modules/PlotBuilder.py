@@ -92,22 +92,15 @@ class PlotBuilder:
             max_x = pos[1] if pos[1]>max_x else max_x
         
         self.fig = plt.figure()
+        gs = self.fig.add_gridspec(max_y+1, max_x+1)
         self.axes = {}
         # loop through subplots we want to add and set properties of each subplot
         for pos, pltargs in self.plots.items():
-            # add subplot in a grid (gridsize, position, colspan, rowspan)
-            self.axes[pos] = plt.subplot2grid(
-                    (max_y+1, max_x+1),
-                    pos,
-                    colspan=pltargs.pop('colspan', 1),
-                    rowspan=pltargs.pop('rowspan', 1))
-            self.axes[pos].set(**pltargs)
+            rows = pltargs.pop('rowspan',1)
+            cols= pltargs.pop('colspan',1)
+            gs_temp = gs[pos[0]:pos[0]+rows, pos[1]:pos[1]+cols]
+            self.axes[pos]= self.fig.add_subplot(gs_temp, **pltargs)
         
-        if self.maximize:
-            # maximize figure, works only on Qt backends
-            figManager = self.fig.canvas.manager
-            figManager.window.showMaximized()
-
         # It is necessary to draw the canvas at least once before draw_artist can be called
         self.fig.canvas.draw()
         
@@ -123,6 +116,11 @@ class PlotBuilder:
             if self.legends[pos] is not None:
                 ax.legend(self.lines[pos], self.legends[pos], loc='upper left')
             self.backgrounds[pos] = self.fig.canvas.copy_from_bbox(ax.bbox)
+
+        if self.maximize:
+            # maximize figure, works only on Qt backends
+            figManager = self.fig.canvas.manager
+            figManager.window.showMaximized()
 
         # use tight layout
         self.fig.tight_layout()
@@ -140,4 +138,3 @@ class PlotBuilder:
             self.axes[subplot].autoscale_view(True,True,True)
         self.fig.canvas.blit(self.axes[subplot].bbox)
         plt.pause(0.0000001)
-
