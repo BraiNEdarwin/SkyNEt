@@ -69,8 +69,9 @@ def connect_single_device(ser, device_number):
     This function connects the device number device_number (1-8 on PCB)
     to the BNC connectors
     '''
+    assert (device_number>0 and device_number<9), "Device number must be in range (1-8)"
     matrix = np.zeros((8, 8))
-    matrix[:, device_number] = 1
+    matrix[:, device_number-1] = 1
     switch(ser, matrix)
 
 def close(ser):

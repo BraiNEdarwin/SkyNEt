@@ -110,9 +110,9 @@ class IO_cDAQ:
         assert nr_channels>0, 'There must be at least one channel'
         self.nr_channels = nr_channels
         self.state = np.zeros(self.nr_channels)
-        self.__set_state(self.state)
+        self.set_state(self.state)
     
-    def __set_state(self, state):
+    def set_state(self, state):
         """ 
         WARNING, DONT USE THIS TO FUNCTION DIRECTLY!
         Always ramp to values if your devices to not break.
