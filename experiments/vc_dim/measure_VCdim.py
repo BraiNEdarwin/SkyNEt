@@ -87,7 +87,7 @@ def evolve(inputs, binary_labels, fitthr=0.9,
                 time.sleep(1)  # Wait after setting DACs
 
             # Set the input scaling
-            x_scaled = x * genePool.config_obj.input_scaling
+            x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
             # Measure cf.fitnessavg times the current configuration
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
@@ -157,7 +157,8 @@ def evolve(inputs, binary_labels, fitthr=0.9,
                                genes = geneArray,
                                output = outputArray,
                                fitness = fitnessArray,
-                               target = target[w][:,np.newaxis])
+                               target = target[w][:,np.newaxis],
+                               weights = w, time = t)
         
         x_inp = outputTemp[genePool.fitness==max_fit,w][:,np.newaxis]
         y = target[w][:,np.newaxis]
@@ -220,6 +221,6 @@ def reset(signum, frame):
         
 #%% MAIN
 if __name__=='__main__':
-    inputs = [[-0.7,0.7,0.7,-0.7],[-0.7,-0.7,0.7,0.7]]
-    binary_labels = [0,0,1,1]
-    _,_,_,_ = evolve(inputs,binary_labels,hush=False)
+    inputs = [[-0.7,0.7,-0.7,0.7,-1,1],[-0.7,-0.7,0.7,0.7,0,0]]
+    binary_labels = [1,0,1,1,0,1]
+    best_genome, best_output, max_fitness, accuracy = evolve(inputs,binary_labels,hush=False)

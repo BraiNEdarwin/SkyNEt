@@ -69,14 +69,18 @@ class experiment_config(config_class):
         # Define experiment
         self.lengths, self.slopes = [100], [10] # in 1/fs
         self.InputGen = self.input_waveform(inputs)
-        self.amplification = 10
+        self.amplification = 1000
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 60
-        self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]
-        self.input_scaling = 1.0
-        print('INPUT will be SCALED with',self.input_scaling)  
+        self.generations = 80
+        self.generange = [[-1200,1200], [-1200, 1200], [-1200, 1200], [-1000, 1000], [-1000, 1000],[1.0,1.0]]
+        #[[-1200, 600], [-1200, 600], [-1200, 600], [-700,300], [-700, 300],[1.0,1.0]]
+        # could be [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]?? this works, but best is 
+        # +/-1.2 in the 3 furthest electrodes and +/-1 in the neighboring electrodes. From the latest results, for N=6
+        # the range of the 4th electrode should be increased at least in negative side... to -1.2 or -1.5?
+        #self.input_scaling = 1.0
+        print('INPUT will be SCALED with',self.generange[-1])  
 
-        self.Fitness = self.marx_fit#self.corr_fit
+        self.Fitness = self.Affitness#self.marx_fit#self.corr_fit
 #        self.fitnessparameters = [1, 0, 0, 1]
 
         # Specify either partition or genomes
@@ -84,7 +88,7 @@ class experiment_config(config_class):
         #self.partition = [2, 6, 6, 6, 5]
 
         # Documentation
-        self.genelabels = ['CV1','CV2','CV3','CV4','CV5']
+        self.genelabels = ['CV1','CV2','CV3','CV4','CV5','Input']
 
         # Save settings
         self.filepath = filepath
@@ -178,3 +182,18 @@ class experiment_config(config_class):
                 x0 = np.append(x0, output_weighed[ i])
         Q = np.abs(min(x1) - max(x0))/2
         return corr*np.sqrt(Q)/(1-corr)
+        
+    def Affitness(self, output, target, w, clpval = 3.55):
+        if np.any(np.abs(output)>clpval*self.amplification):
+            #print(f'Clipping value set at {clpval}')
+            return -1
+        corr = self.corr_fit(output, target, w)
+        # Apply weights w
+        x = output[w][:,np.newaxis]
+        y = target[w][:,np.newaxis]
+        x0 = x[y==y.min()]
+        x1 = x[y==y.max()]
+        dx = np.mean(x1)-np.mean(x0)
+        #print(np.mean(x1), np.mean(x0))
+        f = 1/(1+np.exp(-2*(dx-2)))
+        return corr*f

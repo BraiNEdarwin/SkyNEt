@@ -17,23 +17,26 @@ from matplotlib import pyplot as plt
 import time
 import os
 
-inputs = [[-0.7,0.7,-0.7,0.7,-0.35, 0.35],[-0.7,-0.7,0.7,0.7, 0., 0.]] ## MAYBE NEEDS TO BE ADAPTED!!
-#[[-0.9,0.9,-0.9,0.9,0,0],[-0.9,-0.9,0.9,0.9,-0.6,0.6]]
+inputs = [[-0.7,0.7,-0.7,0.7,-1.,1.],[-0.7,-0.7,0.7,0.7,0.,0.]]
+#[[-1.,0.4,-1.,0.4,-0.8, 0.2],[-1.,-1.,0.4,0.4, 0., 0.]]
 N=len(inputs[0])
 #Create save directory
 filepath0 = r'D:/data/Hans/Results/VC_dim' # evolution_test/VCdim_testing'#
 filepath1 = filepath0+'/Capacity_N'+str(N)
-date = time.strftime('%Y_%m_%d_%H-%M_missclassif-2019_04_18_17-06')
+date = time.strftime('%Y_%m_%d_%H-%M_3ndRun-case55-2019_05_10_23-38')
 dirname = filepath1+'/'+date+'/'
 if os.path.exists(filepath0):
     os.makedirs(dirname)
 else:
     assert 1==0, 'No directory created. Parent target directory '+filepath0+' does not exist'
     
-# Create binary labels for N samples
-bad_gates = [1,2,3,4,5,6,7,9,11,13,14,15,17,18,19,21,22,23,25,26,33,35,36,37,38,39,41,43,44,45,46,47,49,53,55,57,60,61,62]
+## Create binary labels for N samples
+bad_gates = [55]#[22,23,48,52,53,55,57,60,61]
+# for N=6 with (+/-0.35, 0.) as inputs 5 & 6 w. range +/-[1.2,1.0]: [6,33,37,41,45,53,57,60,61]
+# --> bad gates for N=6 w. range +/-0.9 and lower: [1,3,6,7,9,12,14,17,19,22,23,24,25,28,30,33,35,36,37,38,39,41,44,45,46,47,49,51,52,53,54,55,56,57,60,61,62]
 binary_labels = bintarget(N)[bad_gates].tolist() 
 #binary_labels = bintarget(N).tolist()  
+
 threshold = (1-0.5/N)#1-(0.65/N)*(1+1.0/N)
 print('Threshold for acceptance is set at: ',threshold)
 #Initialize container variables
@@ -85,14 +88,14 @@ np.savez(dirname+'Summary_Results',
          output_classifier = output_classifier,
          genes_classifier = genes_classifier)
 
+vcd.reset(0, 0)
+
 plt.figure()
 plt.plot(fitness_classifier,accuracy_classifier,'o')
-plt.plot(np.linspace(np.nanmin(fitness_classifier),1.0),threshold*np.ones_like(np.linspace(0,1)),'-k')
+plt.plot(np.linspace(np.nanmin(fitness_classifier),np.nanmax(fitness_classifier)),threshold*np.ones_like(np.linspace(0,1)),'-k')
 plt.xlabel('Fitness')
 plt.ylabel('Accuracy')
 plt.show()
-
-vcd.reset(0, 0)
 
 try:
     not_found = found_classifier==0
@@ -100,9 +103,15 @@ try:
     binaries_nf = np.array(binary_labels)[not_found]
     print('belongs to : \n', binaries_nf)
     output_nf = output_classifier[not_found]
+    #plt output of failed classifiers
     plt.figure()
     plt.plot(output_nf.T)
     plt.legend(binaries_nf)
+    #plt gnes with failed classifiers
+    plt.figure()
+    plt.hist(genes_classifier[not_found,:5],30)
+    plt.legend([1,2,3,4,5])
+    
     plt.show()
 except:
     print('Error in plotting output!')
