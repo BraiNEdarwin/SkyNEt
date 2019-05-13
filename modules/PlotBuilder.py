@@ -1,281 +1,140 @@
-'''
-Builds plots for specific data sets
-A function for each type of data that has to be plotted
-'''
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue May  7 13:52:06 2019
+
+@author: ljknoll
+
+TODO:
+    write documentation
+    set only lower or upper limit
+    tight_layout doesn't seem to work
+
+
+Example:
+
+import time
 import numpy as np
-import math
+m,n = 10,100
+pb = PlotBuilder()
+pb.add_subplot('big_plot', (0,0), (2,0),  ylim=(0,1), adaptive=True, rowspan=2, title='adaptive X, static Y', xlabel='generations')
+pb.add_subplot('static', (0,1), m, ylim=(0,1), title='static axis are quicker', xlabel='genes')
+pb.add_subplot('adaptive', (1,1), n, adaptive=True, title='both axes are adaptive', xlabel='iteration')
+pb.finalize()
+
+t_start = time.time()
+genomes = np.zeros((2,n))
+for i in range(1, n):
+    genome3 = np.random.rand(m)
+    pb.update('static', genome3)
+    if i%10==0:
+        genomes[:,i//10] = np.random.rand(2)
+        pb.update('big_plot', genomes[:, :i//10+1])
+        genome = np.random.rand(i)*n/m+np.arange(i)
+        pb.update('adaptive', genome)
+avg = (time.time() - t_start)/n
+print('Average time drawing one frame: %0.4f' %avg)
 
 
-def mapGenes(generange, gene):
-    return generange[0] + gene * (generange[1] - generange[0])
+"""
 
+import numpy as np
+import time
+import matplotlib
+import matplotlib.pyplot as plt
 
-def genericPlot1D(x, y, xlabel, ylabel, title):
-    plt.figure()
-    plt.plot(x, y)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.tight_layout()
-
-
-def genericPlot2D(x, y, xlabel, ylabel, title):
-    length, dim = np.shape(y)
-    plt.figure()
-    for i in range(dim):
-        plt.plot(x, y[:, i])
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.tight_layout()
-
-
-def showPlot():
-    plt.show()
-
-
-def bigDaddy(geneArray, fitnessArray):
-    generations = geneArray.shape[0]
-    genes = geneArray.shape[1]
-    bigDaddyArray = np.empty((geneArray.shape[0], genes))
-    for i in range(generations):
-        bigDaddyArray[i, :] = geneArray[i, :, np.argmax(fitnessArray[i, :])]
-
-    for i in range(genes):
-        plt.subplot(genes, 1, i + 1)
-        plt.plot(bigDaddyArray[:, i])
-    plt.show()
-
-
-def bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration):
-    genes = geneArray.shape[2]
-    bigDaddyArray = np.empty((currentGeneration, genes))
-    for i in range(currentGeneration):
-        bigDaddyArray[i, :] = geneArray[i, np.argmax(fitnessArray[i, :])]
-
-    for i in range(genes):
-        mainFig.axes[i * 2].plot(range(1, currentGeneration + 1),
-                             bigDaddyArray[0:currentGeneration, i], 'r-x')
-
-    plt.pause(0.01)
-
-
-def fitnessMain(mainFig, fitnessArray, currentGeneration):
-    mainFig.axes[-2].plot(range(1, currentGeneration + 1),
-                          np.max(fitnessArray, 1)[0:currentGeneration], 'r-x')
-    plt.autoscale()
-    plt.pause(0.01)
-
-def fitnessMainEvolution(mainFig, fitnessArray, currentGeneration):
-    mainFig.axes[-3].plot(range(1, currentGeneration + 1),
-                          np.max(fitnessArray, 1)[0:currentGeneration], 'r-x')
-    plt.autoscale()
-    plt.pause(0.01)
-
-
-def outputMain(mainFig, t, target, outputArray, fitnessArray, currentGeneration):
-    mainFig.axes[-1].lines.clear()
-    mainFig.axes[-1].plot(t, outputArray[currentGeneration - 1,
-                                         :, np.argmax(fitnessArray[currentGeneration - 1])], 'r')
-    mainFig.axes[-1].plot(t, target, 'b--')
-    mainFig.axes[-1].legend(['Trained output', 'Target'], loc = 1)
-    plt.pause(0.01)
-
-def outputMainEvolution(mainFig, t, target, outputArray, fitnessArray, currentGeneration, W):
-    x = outputArray[currentGeneration - 1, np.argmax(fitnessArray[currentGeneration - 1])]
-
-    #extract fit data with weights W
-    indices = np.argwhere(W)  #indices where W is nonzero (i.e. 1)
-
-    t_weighed = np.empty(len(indices))
-    x_weighed = np.empty(len(indices))
-    target_weighed = np.empty(len(indices))
-    for i in range(len(indices)):
-        x_weighed[i] = x[indices[i]]
-        target_weighed[i] = target[indices[i]]
-        t_weighed[i] = t[indices[i]]
-
-    mainFig.axes[-2].lines.clear()
-    mainFig.axes[-2].plot(x_weighed, 'r')
-    mainFig.axes[-2].plot(target_weighed, 'b--')
-    mainFig.axes[-2].legend(['Best output', 'Target'], loc = 1)
-    mainFig.axes[-2].set_title('Best output of last generation / fitness ' + str(np.max(fitnessArray[currentGeneration - 1])) )
-    plt.pause(0.01)
-
-def outputMainClassification(mainFig, outputArray, win, fitnessArray, currentGeneration, marker):
-    out = outputArray[currentGeneration - 1,np.argmax(fitnessArray[currentGeneration - 1]),:,:]
-    y = np.zeros(len(out))
-    mainFig.axes[-2].clear()
-    mainFig.axes[-2].grid()
-    for i in range(len(out)):
-        y[i] = np.average(out[i])
-        a = mainFig.axes[-2].plot(out[i],np.arange(0,len(out[i])),dashes = [1,1], label = win[i])
-        if i > 16:
-            mainFig.axes[-2].plot(out[i],np.arange(0,len(out[i])),'o',color = a[0].get_color())
-        elif i == marker:
-            mainFig.axes[-2].plot(out[i],np.arange(0,len(out[i])),'o',color = a[0].get_color())
+class PlotBuilder:
+    def __init__(self):
+        if matplotlib.get_backend() == 'Qt5Agg':
+            self.maximize = True
         else:
-            mainFig.axes[-2].plot(out[i],np.arange(0,len(out[i])),'x',color = a[0].get_color())
-        mainFig.axes[-2].plot([y[i],y[i]],[0,len(out[0])],dashes = [5,5],color = a[0].get_color())
-    # mainFig.axes[-2].legend(loc = 1)
-    mainFig.axes[-2].set_title('Best output of last generation / fitness ' + str(np.max(fitnessArray[currentGeneration - 1])) )
-    plt.autoscale()
-    plt.pause(0.01)
-
-def currentOutputEvolution(mainFig, t, target, currentOutput, genome, currentGeneration, fitness):
-    mainFig.axes[-1].lines.clear()
-    mainFig.axes[-1].plot(t, currentOutput, 'r')
-    mainFig.axes[-1].plot(t, target, 'b--')
-    mainFig.axes[-1].legend(['Current output', 'Target'], loc = 1)
-    mainFig.axes[-1].set_title('Genome ' + str(genome) + '/Generation ' + str(currentGeneration) + '/fitness ' + '{0:.2f}'.format(fitness))
-    plt.pause(0.01)
-
-def currentOutputClassification(mainFig, out, win, genome, currentGeneration, fitness, marker):
-    y = np.zeros(len(out))
-    mainFig.axes[-1].clear()
-    mainFig.axes[-1].grid()
-    for i in range(len(out)):
-        y[i] = np.average(out[i])
-        a = mainFig.axes[-1].plot(out[i],np.arange(0,len(out[i])),dashes = [1,1], label = win[i])
-        if i > 16:
-            mainFig.axes[-1].plot(out[i],np.arange(0,len(out[i])),'o',color = a[0].get_color())
-        elif i == marker:
-            mainFig.axes[-1].plot(out[i],np.arange(0,len(out[i])),'o',color = a[0].get_color())
-        else:
-            mainFig.axes[-1].plot(out[i],np.arange(0,len(out[i])),'x',color = a[0].get_color())
-        mainFig.axes[-1].plot([y[i],y[i]],[0,len(out[0])],dashes = [5,5],color = a[0].get_color())
-    # mainFig.axes[-1].legend(loc = 1)
-    mainFig.axes[-1].set_title('Genome ' + str(genome) + '/Generation ' + str(currentGeneration) + '/fitness ' + '{0:.2f}'.format(fitness))
-    plt.autoscale()
-    plt.pause(0.01)
-
-def currentGenomeEvolution(mainFig, genome):
-    mainFig.axes[-4].lines.clear()
-    mainFig.axes[-4].plot(range(1, len(genome) + 1), genome, 'r-x')
-    plt.pause(0.01)
-
-def statsMain(mainFig, geneArray, currentGeneration):    
-	generations = geneArray.shape[0]
-	statstext = mainFig.text(0.5, 0.8, 'hello')
-
-def genePoolVisual(genePool):
-    plt.matshow(genePool)
-    plt.show()
-
-
-def initMainFig(genes, generations, genelabels, generange):
-    # plt.ion()
-    plt.ioff()
-    mainFig = plt.figure()
-    figManager = plt.get_current_fig_manager()
-    figManager.window.showMaximized()
-    plt.pause(0.01)
-    spec = gridspec.GridSpec(ncols=3, nrows=genes)
-    # big daddy (i.e. best genom) plots
-    for i in range(genes):
-        ax = mainFig.add_subplot(spec[i, 0])
-        ax.set_xlim(1, generations)
-        ax.set_ylim(0, 1)
-        ax.grid()
-        ax.set_title(genelabels[i])
-
-        twinax = ax.twinx()
-        twinax.set_ylim(mapGenes(generange[i], 0), mapGenes(generange[i], 1))
-        twinax.tick_params('y', colors='r')
-
-    axFitness = mainFig.add_subplot(
-        spec[0:math.floor(genes / 2), 1:])  # fitness history
-    axFitness.set_xlim(1, generations)
-    axFitness.grid()
-    axFitness.set_title('Fitness')
-
-    axOutput = mainFig.add_subplot(
-        spec[math.ceil(genes / 2):, 1:])  # current best output
-    axOutput.grid()
-    axOutput.set_title('Best output of last generation')
-
-
-    mainFig.subplots_adjust(hspace=0.4, wspace=0.4)
-    plt.pause(0.01)
-    return mainFig
-
-def initMainFigEvolution(genes, generations, genelabels, generange):
-    # plt.ion()
-    plt.ioff()
-    mainFig = plt.figure()
-    figManager = plt.get_current_fig_manager()
-    figManager.window.showMaximized()
-    plt.pause(0.01)
-    spec = gridspec.GridSpec(ncols=3, nrows=genes + 1)
+            self.maximize = False
+            print("\x1b[33mWARN: In order to maximize figure, we need Qt backend. Try typing '%matplotlib qt' in your ipython console.\x1b[0m")
+        self.plots = {}
+        self.data_size = {}
+        self.adaptive = {}
+        self.legends = {}
+        self.names = {}
     
-    # big daddy (i.e. best genom) plots
-    for i in range(genes):
-        ax = mainFig.add_subplot(spec[i, 0])
-        ax.set_xlim(1, generations)
-        ax.set_ylim(0, 1)
-        ax.grid()
-        ax.set_title(genelabels[i])
+    def add_subplot(self, name, pos, data_size, adaptive=False, legend=None, **kwargs):
+        """ 
+        name        string: name which can be used to update the figure
+        pos         tuple:  (y, x) position on figure grid
+        data_size   int:    length of ydata in plot (ignored if adaptive)
+                    tuple:  (nr_lines, n) plot number of lines each of size n
+        adaptive    bool:   Whether axes sizes are adaptive to new data,
+                             can be used together with ylim, but xlim argument is ignored.
+        legend      list:   List of strings to be put in the legend
+        
+        Warning: plotting takes some time (~50ms), if you want to speed things up, plot less often
+        
+        extra keyword arguments are used to set axis properties.
+        e.g. if there is a keyword argument title = 'test title',
+        then axes.set_title('test title') will be called on the subplot.
+        
+        See https://matplotlib.org/2.0.2/api/axes_api.html and search 'set_' for all available properties
+        """
+        if adaptive:
+            kwargs.pop('xlim', None)
+        self.data_size[pos] = data_size
+        self.adaptive[pos] = adaptive
+        self.legends[pos] = legend
+        self.plots[pos] = kwargs
+        self.names[name] = pos
 
-        twinax = ax.twinx()
-        twinax.set_ylim(mapGenes(generange[i], 0), mapGenes(generange[i], 1))
-        twinax.tick_params('y', colors='r')
     
-    # current genome plot
-    ax = mainFig.add_subplot(spec[genes, 0])
-    ax.set_xlim(1, genes)
-    ax.set_ylim(0,1)
-    ax.grid()
-    ax.set_title('Current genome')
+    def finalize(self):
+        # determine size of grid (max_y, max_x)
+        max_y = 0
+        max_x = 0
+        for pos in self.plots.keys():
+            max_y = pos[0] if pos[0]>max_y else max_y
+            max_x = pos[1] if pos[1]>max_x else max_x
+        
+        self.fig = plt.figure()
+        gs = self.fig.add_gridspec(max_y+1, max_x+1)
+        self.axes = {}
+        # loop through subplots we want to add and set properties of each subplot
+        for pos, pltargs in self.plots.items():
+            rows = pltargs.pop('rowspan',1)
+            cols= pltargs.pop('colspan',1)
+            gs_temp = gs[pos[0]:pos[0]+rows, pos[1]:pos[1]+cols]
+            self.axes[pos]= self.fig.add_subplot(gs_temp, **pltargs)
+        
+        # It is necessary to draw the canvas at least once before draw_artist can be called
+        self.fig.canvas.draw()
+        
+        # store lines and backgrounds in order to overwrite data later
+        self.backgrounds = {}
+        self.lines = {}
+        for pos, args in self.plots.items():
+            ax = self.axes[pos]
+            size = self.data_size[pos]
+            dummydata = np.zeros(size)
+            # create and store lines such that their data can be overwritten later
+            self.lines[pos] = ax.plot(np.arange(dummydata.shape[-1]), dummydata.T)
+            if self.legends[pos] is not None:
+                ax.legend(self.lines[pos], self.legends[pos], loc='upper left')
+            self.backgrounds[pos] = self.fig.canvas.copy_from_bbox(ax.bbox)
 
-    #fitness history plot
-    axFitness = mainFig.add_subplot(
-        spec[0:math.floor(genes / 3) + 1, 1:])  # fitness history
-    axFitness.set_xlim(1, generations)
-    axFitness.grid()
-    axFitness.set_title('Fitness')
+        if self.maximize:
+            # maximize figure, works only on Qt backends
+            figManager = self.fig.canvas.manager
+            figManager.window.showMaximized()
 
-    #best output of last generation
-    axOutput = mainFig.add_subplot(
-        spec[math.floor(genes / 3) + 1: 2 * math.floor(genes / 3) + 1, 1:])  # current best output
-    axOutput.grid()
-    axOutput.set_title('Best output of last generation')
+        # use tight layout
+        self.fig.tight_layout()
 
-    #current output
-    axCurrentOutput = mainFig.add_subplot(
-        spec[2 * math.floor(genes / 3) + 1: , 1:])  # current best output
-    axCurrentOutput.grid()
-    axCurrentOutput.set_title('Current genome output')
-
-    mainFig.subplots_adjust(hspace=0.8, wspace=0.8)
-    plt.pause(0.01)
-    return mainFig
-
-
-def updateMainFig(mainFig, geneArray, fitnessArray, outputArray, currentGeneration, t, target):
-    bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration)
-    fitnessMain(mainFig, fitnessArray, currentGeneration)
-    outputMain(mainFig, t, target, outputArray,
-               fitnessArray, currentGeneration)
-    #statsMain(mainFig, geneArray, currentGeneration)
-
-
-def updateMainFigEvolution(mainFig, geneArray, fitnessArray, outputArray, currentGeneration, t, target, currentOutput, W):
-    bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration)
-    fitnessMainEvolution(mainFig, fitnessArray, currentGeneration)
-    outputMainEvolution(mainFig, t, target, outputArray,
-               fitnessArray, currentGeneration, W)
-    #currentOutputEvolution(mainFig, t, target, currentOutput)
-    #statsMain(mainFig, geneArray, currentGeneration)
-
-def updateMainFigClassification(mainFig, geneArray, fitnessArray, outputArray, currentGeneration, win, marker):
-    bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration)
-    fitnessMainEvolution(mainFig, fitnessArray, currentGeneration)
-    outputMainClassification(mainFig, outputArray, win, 
-               fitnessArray, currentGeneration, marker)
-    #currentOutputEvolution(mainFig, t, target, currentOutput)
-    #statsMain(mainFig, geneArray, currentGeneration)
-
-def finalMain(mainFig):
-    plt.show()
+    def update(self, name, ydata):
+        subplot = self.names[name]
+        self.fig.canvas.restore_region(self.backgrounds[subplot])
+        nr_points = ydata.shape[-1]
+        ydata = ydata.reshape(-1,nr_points) # reshape to (nr_lines, nr_points), also for a single line
+        for i,line in enumerate(self.lines[subplot]):
+            line.set_ydata(ydata[i])
+            line.set_xdata(np.arange(nr_points))
+        if self.adaptive[subplot]:
+            self.axes[subplot].relim()
+            self.axes[subplot].autoscale_view(True,True,True)
+        self.fig.canvas.blit(self.axes[subplot].bbox)
+        plt.pause(0.0000001)
