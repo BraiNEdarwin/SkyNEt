@@ -79,7 +79,7 @@ def connect_single_device(ser, device_number):
     to the BNC connectors
     '''
     matrix = np.zeros((8, 8))
-    matrix[:, device_number] = 1
+    matrix[:, device_number-1] = 1
     switch(ser, matrix)
     read_serial_out(ser)
 

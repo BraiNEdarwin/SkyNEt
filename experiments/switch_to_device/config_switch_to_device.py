@@ -7,7 +7,7 @@ class experiment_config(config_class):
 
     comport; string, e.g. 'COM3' the comport to which the arduino is 
                 connected
-    device; int, 0-7 indicating the device to which you wish to switch
+    device; int, 1-8 indicating the device to which you wish to switch
     '''
 
     def __init__(self):
