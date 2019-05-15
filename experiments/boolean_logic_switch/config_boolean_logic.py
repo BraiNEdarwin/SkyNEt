@@ -66,25 +66,30 @@ class experiment_config(config_class):
         ################################################
         ######### SPECIFY PARAMETERS ###################
         ################################################
-        self.comport = 'COM3'  # COM port for the ivvi rack
-        self.device = 'nidaq'  # Either nidaq or adwin
+#        self.comport = 'COM3'  # COM port for the ivvi rack
+#        self.device = 'nidaq'  # Either nidaq or adwin
+        
+        # switch network
+        self.switch_comport = 'COM3'
+        self.nr_channels = 7
+        self.switch_device = 7
 
         # Define experiment
         self.amplification = 1
-        self.TargetGen = self.OR
-        self.generations = 2
-        self.generange = [[-600,600], [-900, 900], [-900, 900], [-900, 900], [-600, 600], [0.1, 0.5]]
-
+        self.TargetGen = self.XNOR
+        self.generations = 20
+        self.generange = [[500,1500], [500, 1500], [500, 1500], [500, 1500], [1.0, 3.0]]
+        self.Fitness = self.marx_fit
         # Specify either partition or genomes
-        #self.partition = [5, 5, 5, 5, 5]
-        self.genomes = 10
+        self.partition = [5, 5, 5, 5, 5]
+#        self.genomes = 10
 
         # Documentation
-        self.genelabels = ['CV1/T11','CV2/T13','CV3/T17','CV4/T7','CV5/T1', 'Input scaling']
+        self.genelabels = ['CV0/E2','CV1/E3','CV2/E5','CV3/E6', 'Input scaling']
 
         # Save settings
-        self.filepath = r'D:\Data\lennart\boolean_2019-05-13\\'  #Important: end path with double backslash
-        self.name = 'OR'
+        self.filepath = r'D:\lennart\boolean_2019-05-14\\'  #Important: end path with double backslash
+        self.name = 'XNOR'
 
         ################################################
         ################# OFF-LIMITS ###################
@@ -108,3 +113,82 @@ class experiment_config(config_class):
     #####################################################
     # Optionally define new methods here that you wish to use in your experiment.
     # These can be e.g. new fitness functions or input/output generators.
+    def BoolInput(self):
+        t = np.arange(4)
+        x = np.zeros((2,4))
+        x[0, [1,3]] = np.ones(2)
+        x[1, [2,3]] = np.ones(2)
+        w = np.ones(4,dtype=bool)
+        target = np.zeros(4)
+        target[3] = 1.0
+        return [t, x[0], x[1], w]
+    
+    def AND(self):
+        t = np.arange(4)
+        x = np.zeros(4)
+        x[-1] = 0.
+        return t, x
+    def OR(self):
+        t = np.arange(4)
+        x = np.ones(4)
+        x[0] = 0.
+        return t, x
+    def XOR(self):
+        t = np.arange(4)
+        x = np.ones(4)
+        x[0] = 0.
+        x[-1] = 0.
+        return t, x
+    def NAND(self):
+        t,x = self.AND()
+        return t, 1-x
+    def NOR(self):
+        t,x = self.OR()
+        return t, 1-x
+    def XNOR(self):
+        t,x = self.XOR()
+        return t, 1-x
+    
+    def lennart_fit(self, output, target, *args, **kwargs):
+        max_v = np.max(output)
+        min_v = np.min(output)
+        diff = max_v-min_v
+        output_scaled = (output - min_v)/diff
+        return (np.log(1+diff))/(1e-6+np.mean((output_scaled-target)**2))
+    
+    def corr_fit(self, output, target, w,clpval=3.55):
+        if np.any(np.abs(output)>clpval*self.amplification):
+            #print(f'Clipping value set at {clpval}')
+            corr = -1
+        else:
+            x = output[w][:,np.newaxis]
+            y = target[w][:,np.newaxis]
+            X = np.stack((x, y), axis=0)[:,:,0]
+            corr = np.corrcoef(X)[0,1]
+    #        print('corr_fit')
+        return corr
+    
+    def marx_fit(self, output, target, w, clpval = 3.55):
+        if np.any(np.abs(output)>clpval*self.amplification):
+            #print(f'Clipping value set at {clpval}')
+            return -1
+            
+        corr = self.corr_fit(output, target, w)
+         # Apply weights w
+        indices = np.argwhere(w)  #indices where w is nonzero (i.e. 1)
+        target_weighed = np.zeros(len(indices))
+        output_weighed = np.zeros(len(indices))
+        for i in range(len(indices)):
+            target_weighed[i] = target[indices[i][0]]
+            output_weighed[i] = output[indices[i][0]]
+        # Determine normalized separation
+        indices1 = np.argwhere(target_weighed)  #all indices where target is nonzero
+        x0 = np.empty(0)  #list of values where x should be 0
+        x1 = np.empty(0)  #list of values where x should be 1
+        for i in range(len(target_weighed)):
+            if(i in indices1):
+                x1 = np.append(x1, output_weighed[i])
+            else:
+                x0 = np.append(x0, output_weighed[ i])
+        Q = np.abs(min(x1) - max(x0))
+        return corr*(1/(1+np.exp(-Q+1)))/(1-corr)

@@ -37,25 +37,26 @@ if cf.measure_device == 'keithley2400':
 else:
     raise('specify measurement device')
 
+ivvi = InstrumentImporter.IVVIrack.initInstrument()
 
-for device in range(1,9):
+output_data = np.zeros((7, cf.nr_samples))
+for ii in range(1,8):
 
     
-    cf.switch_device = device   # device number 1-8 on PCB
-    cf.electrode = 0        # electrode which to apply voltage sweep to
+    cf.switch_device = 7   # device number 1-8 on PCB
+    cf.electrode = ii       # electrode which to apply voltage sweep to 1-8
     
-    cf.filepath = r'D:\Lennart\iv_curves_switch\\'
-    cf.name = 'device%i_curve8-1' % cf.switch_device
+    cf.filepath = r'D:\Lennart\iv_curves_to_output\\'
+    cf.name = 'device7_curve4-%i' % cf.electrode
 
-    saveDirectory = SaveLib.createSaveDirectory(cf.filepath,cf.name)
+    # saveDirectory = SaveLib.createSaveDirectory(cf.filepath,cf.name)
     
-    # sweep from v_min to v_max
-    v_min = -0.5
-    v_max = 1
-    
+    v_min = 0.
+    v_max = 2.5
+
     x = np.linspace(v_min, v_max, cf.nr_samples)
-    input_data = np.zeros((cf.nr_samples,7))
-    input_data[:,cf.electrode] = x
+    input_data = np.zeros((cf.nr_samples,7))*1000
+    input_data[:,cf.electrode-1] = x
     
     # arduino switch network
     # Initialize serial object
@@ -68,30 +69,42 @@ for device in range(1,9):
 
     
     # set voltages with
-    if cf.set_device == 'cdaq':
-        sdev = InstrumentImporter.nidaqIO.IO_cDAQ(nr_channels=cf.nr_channels)
-    else:
-        raise('specify set device')
-    
-    output_data = np.zeros(cf.nr_samples)
-    for ii, single_input in enumerate(input_data):
-        sdev.ramp(single_input)
-        output_data[ii] = -keithley.curr()
-    
-    sdev.ramp_zero()
+    # if cf.set_device == 'cdaq':
+    #     sdev = InstrumentImporter.nidaqIO.IO_cDAQ(nr_channels=cf.nr_channels)
+    # else:
+    #     raise('specify set device')
     
     
+    for jj, single_input in enumerate(input_data):
+        # sdev.ramp(single_input, ramp_speed=2.)
+        InstrumentImporter.IVVIrack.setControlVoltages(ivvi, single_input)
+        output_data[ii-1,jj] = -keithley.curr()
+    
+    # sdev.ramp_zero(ramp_speed=2.)
+    
+
     
     InstrumentImporter.switch_utils.close(ser)
     
-    plt.figure()
-    plt.plot(x, output_data*1e9, '-o')
-    plt.ylabel('Output (nA)')
-    plt.xlabel('Voltage on gate %i' %cf.electrode)
-    plt.title('Device #%i' % cf.switch_device)
-    plt.show()
-    SaveLib.saveArrays(saveDirectory, outputs=output_data, inputs=input_data)
+    # plt.figure()
+    # plt.plot(x, output_data*1e9, '-o')
+    # plt.ylabel('Output (nA)')
+    # plt.xlabel('Voltage on gate %i' %cf.electrode)
+    # plt.title('Device #%i' % cf.switch_device)
+    # plt.show()
+
+    # SaveLib.saveArrays(saveDirectory, outputs=output_data, inputs=input_data)
 
 if cf.measure_device == 'keithley2400':
     keithley.output.set(0)
     keithley.close()
+
+plt.figure()
+plt.plot(output_data*1e9, '-o')
+plt.ylabel('Output (nA)')
+plt.xlabel('Voltage on gate %i' %cf.electrode)
+plt.title('Device #%i' % cf.switch_device)
+plt.show()
+
+
+InstrumentImporter.reset(0, 0)

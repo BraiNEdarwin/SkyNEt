@@ -148,6 +148,7 @@ class IO_cDAQ:
         target_state = np.array(target_state, dtype='float32')
         assert target_state.shape == (self.nr_channels,), 'ERROR: Wrong size of voltages %s, expected (%i)' % (str(target_state.shape), self.nr_channels)
         assert ramp_speed<=5., 'ERROR: For the safety of the device, ramp speed should probably be smaller than 5 V/s' 
+        assert max(abs(target_state))<5, 'ERROR: For the safety of the device, maximum voltages applied are <5 V'
         
         maximum_difference = max(abs(target_state-self.state))             # in Volt
         time_length = max(2, int(maximum_difference/ramp_speed*set_frequency))  # number of data points used to ramp with set_frequency (minimum is 2)

@@ -9,7 +9,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-nr_channels = 8
+nr_channels = 7
 cdaq = InstrumentImporter.nidaqIO.IO_cDAQ(nr_channels=nr_channels)
 
 #ramp_to_array = np.zeros(nr_channels)
