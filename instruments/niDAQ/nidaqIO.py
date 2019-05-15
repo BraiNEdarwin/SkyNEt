@@ -5,6 +5,7 @@ NI USB 6216. (Note that nidaqmx has to be installed seperately first.)
 import SkyNEt.instruments.niDAQ.nidaqmx as nidaqmx
 import SkyNEt.instruments.niDAQ.nidaqmx.constants as constants
 import SkyNEt.instruments.niDAQ.nidaqmx.system.device as device
+from SkyNEt.instruments import InstrumentImporter
 import numpy as np
 import math
 import time
@@ -14,7 +15,7 @@ def reset_device():
 	dev.reset_device()
 	
 
-def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
+def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0], highRange=False):
     '''
     Input/output function for communicating with the NI USB 6216 when measuring
     with one input and one output.
@@ -29,6 +30,16 @@ def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     -------
     data: P x M array, P input ports, M datapoints
     '''
+
+    # Sanity check on input voltages
+    if not highRange:
+        if max(abs(y) > 2):  
+            print('WARNING: input voltages exceed threshold of 2V: highest absolute voltage is ' + str(max(abs(y))))
+            print('If you want to use high range voltages, set highRange to True.')
+            print('Aborting measurement...')
+            InstrumentImporter.reset(0, 0)
+            exit() 
+
     if len(y.shape) == 1:
         n_ao = 1
     else:

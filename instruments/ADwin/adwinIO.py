@@ -6,6 +6,7 @@ output ports as 'static' control voltages. This function may need
 some refinement in the future.
 '''
 from SkyNEt.instruments.ADwin.adwin import ADwin, ADwinError
+from SkyNEt.instruments import InstrumentImporter
 import sys
 import os
 import numpy as np
@@ -44,7 +45,7 @@ def LongToFloat(x, Vmax):
     return x
 
 
-def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
+def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0], highRange = False):
     '''
     This function will write each row of array inputs on a separate
     analog output of the ADwin at the specified sample frequency Fs.
@@ -70,6 +71,15 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     -------
     P x M output array, P input ports, M datapoints
     '''
+    # Sanity check on input voltages
+    if not highRange:
+        if max(abs(y) > 2):  
+            print('WARNING: input voltages exceed threshold of 2V: highest absolute voltage is ' + str(max(abs(y))))
+            print('If you want to use high range voltages, set highRange to True.')
+            print('Aborting measurement...')
+            InstrumentImporter.reset(0, 0)
+            exit() 
+
     # Input preparation
     if len(Input.shape) == 1:
         Input = Input[np.newaxis,:]
@@ -77,9 +87,13 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     inputs = Input.copy()
     InputSize = inputs.shape[1]
     x = np.zeros((8, InputSize), dtype = int)
-    x[:inputs.shape[0], :] = inputs
+
+    # Transform all inputs to Long:
     for i in range(x.shape[0]):
-        x[i, :] = FloatToLong(list(x[i, :]), 10)
+        if i < inputs.shape[0] :
+            x[i, :] = FloatToLong(list(inputs[i, :]), 10)
+        else:
+            x[i, :] = FloatToLong(list(x[i, :]), 10)
     outputs = [[], [], [], [], [], [], [], []]  # Eight empty output lists
     lastWrite = False
 
