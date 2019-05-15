@@ -40,6 +40,7 @@ else:
 ivvi = InstrumentImporter.IVVIrack.initInstrument()
 
 output_data = np.zeros((7, cf.nr_samples))
+all_input_data = np.zeros((7,cf.nr_samples,7))
 for ii in range(1,8):
 
     
@@ -47,16 +48,17 @@ for ii in range(1,8):
     cf.electrode = ii       # electrode which to apply voltage sweep to 1-8
     
     cf.filepath = r'D:\Lennart\iv_curves_to_output\\'
-    cf.name = 'device7_curve4-%i' % cf.electrode
+    cf.name = 'device7_ALL_electrodes-%i' % cf.electrode
 
-    # saveDirectory = SaveLib.createSaveDirectory(cf.filepath,cf.name)
+    saveDirectory = SaveLib.createSaveDirectory(cf.filepath,cf.name)
     
     v_min = 0.
     v_max = 2.5
 
-    x = np.linspace(v_min, v_max, cf.nr_samples)
-    input_data = np.zeros((cf.nr_samples,7))*1000
+    x = np.linspace(v_min, v_max, cf.nr_samples)*1000
+    input_data = np.zeros((cf.nr_samples,7))
     input_data[:,cf.electrode-1] = x
+    all_input_data[ii-1] = input_data
     
     # arduino switch network
     # Initialize serial object
@@ -93,14 +95,16 @@ for ii in range(1,8):
     # plt.title('Device #%i' % cf.switch_device)
     # plt.show()
 
-    # SaveLib.saveArrays(saveDirectory, outputs=output_data, inputs=input_data)
 
 if cf.measure_device == 'keithley2400':
     keithley.output.set(0)
     keithley.close()
 
+output_data = output_data*1e9
+SaveLib.saveArrays(saveDirectory, outputs=output_data, inputs=all_input_data)
+
 plt.figure()
-plt.plot(output_data*1e9, '-o')
+plt.plot(output_data, '-o')
 plt.ylabel('Output (nA)')
 plt.xlabel('Voltage on gate %i' %cf.electrode)
 plt.title('Device #%i' % cf.switch_device)
