@@ -69,9 +69,9 @@ class experiment_config(config_class):
         # Define experiment
         self.lengths, self.slopes = [100], [10] # in 1/fs
         self.InputGen = self.input_waveform(inputs)
-        self.amplification = 100
+        self.amplification = 10
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 80
+        self.generations = 3
         self.generange = [[-1200,600], [-1200, 600], [-1200, 600], [-700, 300], [-700, 300],[1,1]]
 #        [[-1200,1200], [-1200, 1200], [-1200, 1200], [-1000, 1000], [-1000, 1000],[1.0,1.0]]
         #[[-1200, 600], [-1200, 600], [-1200, 600], [-700,300], [-700, 300],[1.0,1.0]]
@@ -81,7 +81,7 @@ class experiment_config(config_class):
         #self.input_scaling = 1.0
         print('INPUT will be SCALED with',self.generange[-1])  
 
-        self.Fitness = self.marx_fit#self.corr_fit #self.Affitness#
+        self.Fitness = self.Affitness#self.marx_fit#self.corr_fit #
 #        self.fitnessparameters = [1, 0, 0, 1]
 
         # Specify either partition or genomes
@@ -199,3 +199,23 @@ class experiment_config(config_class):
         #print(np.mean(x1), np.mean(x0))
         f = 1/(1+np.exp(-2*(dx-2)))
         return corr*f
+
+    def corr_sig_fit1(self, output, target, w):
+       if np.any(np.abs(output)>350):
+           print('Clipping value set at 350')
+           corr = -100
+           return corr
+       elif np.any(np.abs(output)<-350):
+           print('Clipping value set at -350')
+           corr = -100
+           return corr
+       else:
+           sep =  self.sep(output, target )
+           x = output[w][:,np.newaxis]
+           y = target[w][:,np.newaxis]
+           X = np.stack((x, y), axis=0)[:,:,0]
+           corr = np.corrcoef(X)[0,1]
+       return self.sig(sep)*corr
+   
+    def sig(self, x):
+       return 1/(1+np.exp(-5*(x/2.5-0.5)))+ 0.1

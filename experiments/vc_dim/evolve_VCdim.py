@@ -32,7 +32,7 @@ def evolve(inputs, binary_labels,
     t = cf.InputGen[0]  # Time array
     x = cf.InputGen[1]  # Array with P and Q signal
     w = cf.InputGen[2]  # Weight array
-    target = cf.TargetGen  # Target signal
+    target = cf.amplification*cf.TargetGen  # Target signal
     
     # np arrays to save genePools, outputs and fitness
     geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
@@ -75,11 +75,11 @@ def evolve(inputs, binary_labels,
             # Measure cf.fitnessavg times the current configuration
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to NN
-                g = np.ones_like(target)[:,np.newaxis]*genePool.pool[j,:5][:,np.newaxis].T
+                g = np.ones_like(target)[:,np.newaxis]*controlVoltages[:5,np.newaxis].T/1000.
                 x_dummy = np.concatenate((x_scaled.T,g),axis=1) # First input then genes; dims of input TxD
                 inputs = torch.from_numpy(x_dummy).type(dtype)
                 inputs = Variable(inputs)
-                pdb.set_trace()
+#                pdb.set_trace()
                 output = net.outputs(inputs)
     
                 # Plot genome
@@ -89,7 +89,7 @@ def evolve(inputs, binary_labels,
                     pass
                 
                 # Train output
-                outputAvg[avgIndex] = np.asarray(output) #cf.amplification * np.asarray(output) + noise*(3/100)*(1 + np.abs(np.asarray(output)))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
+                outputAvg[avgIndex] = cf.amplification*np.asarray(output) #cf.amplification * np.asarray(output) + noise*(3/100)*(1 + np.abs(np.asarray(output)))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
                 noisy_target = target #+ 0.001*np.random.standard_normal(output.shape)
     
                 # Calculate fitness
@@ -129,7 +129,7 @@ def evolve(inputs, binary_labels,
                                                outputArray,
                                                i + 1,
                                                t,
-                                               cf.amplification*target,
+                                               target,
                                                output,
                                                w)
         except:
