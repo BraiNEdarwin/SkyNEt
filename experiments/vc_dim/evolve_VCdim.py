@@ -10,9 +10,6 @@ import SkyNEt.modules.PlotBuilder as PlotBuilder
 import config_evolve_VCdim as config
 
 from SkyNEt.modules.Nets.staNNet import staNNet 
-
-
-
 from SkyNEt.modules.Classifiers import perceptron
 # Other imports
 import torch
@@ -22,7 +19,11 @@ import numpy as np
 import pdb
 
 #%% Function definition
-def evolve(inputs, binary_labels, noise = 0, filepath = r'../../test/evolution_test/VCdim_testing/', hush=True):
+def evolve(inputs, binary_labels, 
+           path_2_NN = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt',
+           noise = 0, 
+           filepath = r'../../test/evolution_test/VCdim_testing/',
+           hush=True):
     
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
@@ -52,10 +53,9 @@ def evolve(inputs, binary_labels, noise = 0, filepath = r'../../test/evolution_t
         mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
     
     # Initialize NN
-    main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/2018_08_07_164652_CP_FullSwipe/'
-    dtype = torch.cuda.FloatTensor
-    net = staNNet(main_dir+'lr2e-4_eps400_mb512_20180807CP.pt')   
-    
+    net = staNNet(path_2_NN) 
+#    pdb.set_trace()
+    dtype = torch.FloatTensor#torch.cuda.FloatTensor
     # Initialize genepool
     genePool = Evolution.GenePool(cf)
     
@@ -70,15 +70,16 @@ def evolve(inputs, binary_labels, noise = 0, filepath = r'../../test/evolution_t
                                         cf.generange[k], genePool.pool[j, k])
     
             # Set the input scaling
-            x_scaled = x * genePool.config_obj.input_scaling
+            x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
     
             # Measure cf.fitnessavg times the current configuration
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to NN
-                g = np.ones_like(target)[:,np.newaxis]*genePool.pool[j][:,np.newaxis].T
+                g = np.ones_like(target)[:,np.newaxis]*genePool.pool[j,:5][:,np.newaxis].T
                 x_dummy = np.concatenate((x_scaled.T,g),axis=1) # First input then genes; dims of input TxD
                 inputs = torch.from_numpy(x_dummy).type(dtype)
                 inputs = Variable(inputs)
+                pdb.set_trace()
                 output = net.outputs(inputs)
     
                 # Plot genome
@@ -88,8 +89,8 @@ def evolve(inputs, binary_labels, noise = 0, filepath = r'../../test/evolution_t
                     pass
                 
                 # Train output
-                outputAvg[avgIndex] = cf.amplification * np.asarray(output) + noise*(3/100)*(1 + np.abs(np.asarray(output)))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
-                noisy_target = target + 0.001*np.random.standard_normal(output.shape)
+                outputAvg[avgIndex] = np.asarray(output) #cf.amplification * np.asarray(output) + noise*(3/100)*(1 + np.abs(np.asarray(output)))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
+                noisy_target = target #+ 0.001*np.random.standard_normal(output.shape)
     
                 # Calculate fitness
                 fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],
@@ -164,6 +165,6 @@ def evolve(inputs, binary_labels, noise = 0, filepath = r'../../test/evolution_t
 #%% Initialization
 if __name__=='__main__':
 
-    inputs = [[-0.9,0.9,-0.9,0.9],[-0.9,-0.9,0.9,0.9]]
-    binary_labels = [0,1,1,0]
-    _,_,_,_ = evolve(inputs,binary_labels)
+    inputs = [[-1.,0.4,-1.,0.4,-0.8, 0.2],[-1.,-1.,0.4,0.4, 0., 0.]]
+    binary_labels = [1,0,1,1,0,1]
+    best_genome, best_output, max_fitness, accuracy = evolve(inputs,binary_labels,hush=False)

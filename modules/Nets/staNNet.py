@@ -79,7 +79,7 @@ class staNNet(object):
         # move info key from state_dic to self
         if state_dic.get('info') is not None:
             self.info = state_dic['info']
-            print(f'Model loaded with info dictionary containing: \n {self.info}')
+            print(f'Model loaded with info dictionary containing: \n {self.info.keys()}')
             state_dic.pop('info')
         else:
             # for backwards compatibility with objects where information is stored directly in state_dic
@@ -163,7 +163,7 @@ class staNNet(object):
         print('Model constructed with modules: \n',modules)
         self.model = nn.Sequential(*modules)
         print(f'Loss founction is defined to be {loss}')
-        if loss == 'RMSE':
+        if loss == 'RMSE' or loss == 'MSE_noisefit':
             self.a = torch.tensor([0.01900258860717661, 0.014385111570154395]).type(self.ttype)
             self.b = torch.tensor([0.21272562199413553, 0.0994027221336]).type(self.ttype)
         elif loss == 'MSE':

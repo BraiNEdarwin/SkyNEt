@@ -2,7 +2,7 @@ import numpy as np
 from SkyNEt.config.config_class import config_class
 from SkyNEt.modules.GenWaveform import GenWaveform
 from SkyNEt.modules.Classifiers import perceptron
-
+import pdb
 class experiment_config(config_class):
     '''This is the experiment configuration file to measure VC dim.
     This experiment_config class inherits from config_class default values that are known to work well with boolean logic.
@@ -69,10 +69,11 @@ class experiment_config(config_class):
         # Define experiment
         self.lengths, self.slopes = [100], [10] # in 1/fs
         self.InputGen = self.input_waveform(inputs)
-        self.amplification = 1000
+        self.amplification = 100
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
         self.generations = 80
-        self.generange = [[-1200,1200], [-1200, 1200], [-1200, 1200], [-1000, 1000], [-1000, 1000],[1.0,1.0]]
+        self.generange = [[-1200,600], [-1200, 600], [-1200, 600], [-700, 300], [-700, 300],[1,1]]
+#        [[-1200,1200], [-1200, 1200], [-1200, 1200], [-1000, 1000], [-1000, 1000],[1.0,1.0]]
         #[[-1200, 600], [-1200, 600], [-1200, 600], [-700,300], [-700, 300],[1.0,1.0]]
         # could be [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]?? this works, but best is 
         # +/-1.2 in the 3 furthest electrodes and +/-1 in the neighboring electrodes. From the latest results, for N=6
@@ -80,7 +81,7 @@ class experiment_config(config_class):
         #self.input_scaling = 1.0
         print('INPUT will be SCALED with',self.generange[-1])  
 
-        self.Fitness = self.Affitness#self.marx_fit#self.corr_fit
+        self.Fitness = self.marx_fit#self.corr_fit #self.Affitness#
 #        self.fitnessparameters = [1, 0, 0, 1]
 
         # Specify either partition or genomes
@@ -180,6 +181,7 @@ class experiment_config(config_class):
                 x1 = np.append(x1, output_weighed[i])
             else:
                 x0 = np.append(x0, output_weighed[ i])
+#        pdb.set_trace()
         Q = np.abs(min(x1) - max(x0))/2
         return corr*np.sqrt(Q)/(1-corr)
         
