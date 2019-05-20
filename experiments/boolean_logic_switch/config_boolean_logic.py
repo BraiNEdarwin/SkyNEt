@@ -72,24 +72,25 @@ class experiment_config(config_class):
         # switch network
         self.switch_comport = 'COM3'
         self.nr_channels = 7
-        self.switch_device = 7
+        self.switch_device = 6
 
         # Define experiment
         self.amplification = 1
-        self.TargetGen = self.XNOR
+        self.TargetGen = self.NAND
         self.generations = 20
-        self.generange = [[500,1500], [500, 1500], [500, 1500], [500, 1500], [1.0, 3.0]]
-        self.Fitness = self.marx_fit
+        self.redundancy = 10 # how many times the same in put is measured
+        self.generange = [[-2000,2000], [-2000, 2000], [-2000, 2000], [-2000, 2000], [-2000, 2000], [1500, 2000]]
+        self.Fitness = self.lennart_fit
         # Specify either partition or genomes
         self.partition = [5, 5, 5, 5, 5]
 #        self.genomes = 10
 
         # Documentation
-        self.genelabels = ['CV0/E2','CV1/E3','CV2/E5','CV3/E6', 'Input scaling']
+        self.genelabels = ['CV0/E2','CV1/E3','CV2/E5', 'CV3/E6', 'CV4/E8', 'Input scaling']
 
         # Save settings
-        self.filepath = r'D:\lennart\boolean_2019-05-14\\'  #Important: end path with double backslash
-        self.name = 'XNOR'
+        self.filepath = r'D:\lennart\boolean_2019-05-17_D6\\'  #Important: end path with double backslash
+        self.name = 'NAND_D6_corr_sep'
 
         ################################################
         ################# OFF-LIMITS ###################
@@ -115,7 +116,8 @@ class experiment_config(config_class):
     # These can be e.g. new fitness functions or input/output generators.
     def BoolInput(self):
         t = np.arange(4)
-        x = np.zeros((2,4))
+        x = -np.ones((2,4))
+        # x = np.zeros((2,4))
         x[0, [1,3]] = np.ones(2)
         x[1, [2,3]] = np.ones(2)
         w = np.ones(4,dtype=bool)
@@ -126,7 +128,7 @@ class experiment_config(config_class):
     def AND(self):
         t = np.arange(4)
         x = np.zeros(4)
-        x[-1] = 0.
+        x[-1] = 1.
         return t, x
     def OR(self):
         t = np.arange(4)
@@ -149,31 +151,40 @@ class experiment_config(config_class):
         t,x = self.XOR()
         return t, 1-x
     
-    def lennart_fit(self, output, target, *args, **kwargs):
-        max_v = np.max(output)
-        min_v = np.min(output)
-        diff = max_v-min_v
-        output_scaled = (output - min_v)/diff
-        return (np.log(1+diff))/(1e-6+np.mean((output_scaled-target)**2))
-    
-    def corr_fit(self, output, target, w,clpval=3.55):
-        if np.any(np.abs(output)>clpval*self.amplification):
-            #print(f'Clipping value set at {clpval}')
-            corr = -1
-        else:
-            x = output[w][:,np.newaxis]
-            y = target[w][:,np.newaxis]
-            X = np.stack((x, y), axis=0)[:,:,0]
-            corr = np.corrcoef(X)[0,1]
-    #        print('corr_fit')
+    def corr_fit(self, output, target,clpval=3.55):
+        # if np.any(np.abs(output)>clpval*self.amplification):
+        #     #print(f'Clipping value set at {clpval}')
+        #     corr = -1
+        # else:
+        x = output[:,np.newaxis]
+        y = target[:,np.newaxis]
+        X = np.stack((x, y), axis=0)[:,:,0]
+        corr = np.corrcoef(X)[0,1]
+#        print('corr_fit')
         return corr
+
+    def lennart_fit(self, output, target, w, *args, **kwargs):
+        # this function ignores w, and should only be used with 4 points
+        corr = self.corr_fit(output, target)
+        # return corr
+        indices_high = target==1
+        indices_low = target==0
+
+        # abs_diff = max(output)-min(output)
+        lowest_ones = np.min(output[indices_high])
+        highest_zeros = np.max(output[indices_low])
+        diff = lowest_ones-highest_zeros
+        # return (np.log(1+diff))/(1e-6+np.mean((output_scaled-target)**2))
+        fitness = (corr+1)/2/(1+np.exp(-diff))
+        # print(corr, diff, 1/(1+np.exp(-diff+1)), fitness)
+        return fitness
     
     def marx_fit(self, output, target, w, clpval = 3.55):
         if np.any(np.abs(output)>clpval*self.amplification):
             #print(f'Clipping value set at {clpval}')
             return -1
             
-        corr = self.corr_fit(output, target, w)
+        corr = self.corr_fit(output, target)
          # Apply weights w
         indices = np.argwhere(w)  #indices where w is nonzero (i.e. 1)
         target_weighed = np.zeros(len(indices))

@@ -19,14 +19,19 @@ def reset(signum, frame):
         - Apply zero signal to the ADwin
         '''
         reset_ivvi = False
-        for i in range(5):
-            try:
-                ivviReset = IVVIrack.initInstrument(name='ivviReset' + str(i+1), comport='COM' + str(i+1))
-                ivviReset.set_dacs_zero()
-                print('ivvi DACs set to zero')
-                reset_ivvi = True
-            except: pass
-        if not reset_ivvi:
+        # for i in range(5):
+        #     try:
+        #         ivviReset = IVVIrack.initInstrument(name='ivviReset' + str(i+1), comport='COM' + str(i+1))
+        #         ivviReset.set_dacs_zero()
+        #         print('ivvi DACs set to zero')
+        #         reset_ivvi = True
+        #     except: pass
+        # if not reset_ivvi:
+        try:
+            ivviReset = IVVIrack.initInstrument(name='ivviReset')
+            ivviReset.set_dacs_zero()
+            print('ivvi DACs set to zero')
+        except:
             print('ivvi was not initialized, so also not reset')
             
         try:

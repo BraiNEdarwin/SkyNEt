@@ -22,6 +22,7 @@ from SkyNEt.instruments.Keithley2400 import Keithley2400
 # Other imports
 import time
 import numpy as np
+np.set_printoptions(precision=2)
 
 # Initialize config object
 cf = config.experiment_config()
@@ -30,17 +31,17 @@ cf = config.experiment_config()
 t = cf.InputGen()[0]  # Time array
 x = np.asarray(cf.InputGen()[1:3])  # Array with P and Q signal
 w = cf.InputGen()[3]  # Weight array
-target = cf.TargetGen()[1]  # Target signal
+target = cf.TargetGen()[1].repeat(cf.redundancy)  # Target signal
 
 # np arrays to save genePools, outputs and fitness
 geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
-outputArray = np.zeros((cf.generations, cf.genomes, len(x[0])))
+outputArray = np.zeros((cf.generations, cf.genomes, len(x[0])*cf.redundancy))
 fitnessArray = np.zeros((cf.generations, cf.genomes))
 
 # Temporary arrays, overwritten each generation
 fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
-outputAvg = np.zeros((cf.fitnessavg, len(x[0])))
-outputTemp = np.zeros((cf.genomes, len(x[0])))
+outputAvg = np.zeros((cf.fitnessavg, len(x[0])*cf.redundancy))
+outputTemp = np.zeros((cf.genomes, len(x[0])*cf.redundancy))
 controlVoltages = np.zeros(cf.genes-1)
 
 # Initialize save directory
@@ -49,7 +50,7 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 # Initialize main figure
 #mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
 pb = PlotBuilder()
-pb.add_subplot('genes',     (0,0), (5, 1),   adaptive=True,  ylim=(-0.1,1.1), title='History of best genes',    xlabel='generations', rowspan=2, legend=cf.genelabels)
+pb.add_subplot('genes',     (0,0), (cf.genes, 1),   adaptive=True,  ylim=(-0.1,1.1), title='History of best genes',    xlabel='generations', rowspan=2, legend=cf.genelabels)
 pb.add_subplot('fitness',   (2,0), cf.genes, adaptive=True,                   title='History of best fitness',  xlabel='generations',  rowspan=2)
 pb.add_subplot('cur_output',(0,1), t.shape[0], adaptive=True,               title='Fittest device output of last generation', rowspan=2)
 pb.add_subplot('cur_genome',(2,1), cf.genes,                 ylim=(0,1),      title='Current genome voltages')
@@ -70,7 +71,8 @@ InstrumentImporter.switch_utils.connect_single_device(ser, cf.switch_device)
 # Status print
 print('INFO: Connected device %i' % cf.switch_device)
 # initialize cDAQ
-sdev = InstrumentImporter.nidaqIO.IO_cDAQ(nr_channels=cf.nr_channels)
+# sdev = InstrumentImporter.nidaqIO.IO_cDAQ(nr_channels=cf.nr_channels)
+ivvi = InstrumentImporter.IVVIrack.initInstrument(dac_step = 50, dac_delay = 0.001)
 
 # Initialize genepool
 genePool = Evolution.GenePool(cf)
@@ -82,9 +84,7 @@ for i in range(cf.generations):
         # Set the DAC voltages
         for k in range(cf.genes-1):
             controlVoltages[k] = genePool.MapGenes(
-                                    cf.generange[k], genePool.pool[j, k])/1000
-#        InstrumentImporter.IVVIrack.setControlVoltages(ivvi, controlVoltages)
-#        time.sleep(1)  # Wait after setting DACs
+                                    cf.generange[k], genePool.pool[j, k])
 
         # Set the input scaling
         x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
@@ -92,21 +92,16 @@ for i in range(cf.generations):
 
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
-            # Feed input to measurement device
-#            if(cf.device == 'nidaq'):
-#                output = InstrumentImporter.nidaqIO.IO_2D(x_scaled, cf.fs)
-#            elif(cf.device == 'adwin'):
-#                adw = InstrumentImporter.adwinIO.initInstrument()
-#                output = InstrumentImporter.adwinIO.IO_2D(adw, x_scaled, cf.fs)
-#            else:
-#                print('Specify measurement device as either adwin or nidaq')
-            output = np.zeros(4)
+            output = np.zeros(4*cf.redundancy)
             for iii in range(4):
-                # [I0, CV0, CV1, CV2, CV3, I1, 0]
-                input_voltages_switch = np.concatenate((np.array([x_scaled[0,iii]]),controlVoltages,np.array([x_scaled[1,iii], 0.])))
-                sdev.ramp(input_voltages_switch, ramp_speed=2.0)
-                output[iii] = -keithley.curr()*1e9 # in nA
-#            plot_output = np.repeat(1)
+                # [CV0, I0, CV1, CV2, CV3, CV4, I1] => insert at [1,5] NOT TRUE ANY MORE
+                input_voltages_switch = np.insert(controlVoltages, [0,4], x_scaled[:,iii])
+                # print('input: ',input_voltages_switch)
+                # sdev.ramp(input_voltages_switch, ramp_speed=2.0)
+                InstrumentImporter.IVVIrack.setControlVoltages(ivvi, input_voltages_switch)
+                # time.sleep(7)
+                for jjj in range(cf.redundancy):
+                    output[iii*cf.redundancy+jjj] = -keithley.curr()*1e9 # in nA
 
             # Plot genome
 #            PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
@@ -136,8 +131,7 @@ for i in range(cf.generations):
     genePool.fitness = fitnessTemp.min(1)  # Save fitness
 
     # Status print
-    print("Generation nr. " + str(i + 1) + " completed")
-    print("Highest fitness: " + str(max(genePool.fitness)))
+    print("Generation %2i, highest fitness %0.4f" % (i+1, max(genePool.fitness)))
 
     # Save generation data
     geneArray[i, :, :] = genePool.pool
@@ -176,9 +170,9 @@ for i in range(cf.generations):
 
 #PlotBuilder.finalMain(mainFig)
 
-#InstrumentImporter.reset(0, 0)
-sdev.ramp_zero()
+# sdev.ramp_zero()
 InstrumentImporter.switch_utils.close(ser)
 keithley.output.set(0)
 keithley.close()
+InstrumentImporter.reset(0, 0)
 
