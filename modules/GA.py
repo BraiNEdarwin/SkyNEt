@@ -28,6 +28,7 @@ from abc import ABC, abstractmethod
 #import pdb
 #import logging
 #import sys
+from SkyNEt.modules.GenWaveform import GenWaveform
 
 # Define abstract attribute
 class abstract_attribute(object):
@@ -42,34 +43,37 @@ class GA(ABC):
     ###################### Define abstract attributes and methods #############
     ###########################################################################
     ### Abstract attributes
-    genes = abstract_attribute() #Nr of genes
+    #TODO: how to implement separationof CV evolution and input affine transformation?
+    genes = abstract_attribute() #Nr of genes 
+    generange = abstract_attribute()
     genomes = abstract_attribute() #Nr of individuals in population
     partition = abstract_attribute()
     mutation_rate = abstract_attribute()
+    lengths = abstract_attribute()
+    slopes = abstract_attribute()
     ### Abstract methods    
     @abstractmethod
     def Fitness(self, output):
-        pass
-    
+        pass   
     @abstractmethod
-    def EvaluatePopulation(self,pool):
+    def EvaluatePopulation(self, pool):
         pass
     
     ##########################################################################
     ################ Concrete methods defining evolution #####################
     ##########################################################################
-    def Evolve(self, targets, generations, corr_thr=0.85):
-        
+    def Evolve(self, targets, generations):
+        #TODO: check if no. of targets is equal to no. of inputs!!
         # Initialize target
-        target_wfm = self.TargetGen(targets)  # Target signal
+        self.target_wfm = self.Target(targets)  # Target signal
         #Initialize population
         self.pool = np.random.rand(self.genomes, self.genes)
         self.fitness = np.zeros(self.genomes)
-        self.output = np.zeros((self.genomes, len(target_wfm)))
+        self.output = np.zeros((self.genomes, len(self.target_wfm)))
         
         #Define placeholders
         self.geneArray = np.zeros((generations, self.genomes, self.genes))
-        self.outputArray = np.zeros((generations, self.genomes, len(target_wfm)))
+        self.outputArray = np.zeros((generations, self.genomes, len(self.target_wfm)))
         self.fitnessArray = np.zeros((generations, self.genomes))
         
         #%% Evolution loop
@@ -77,22 +81,15 @@ class GA(ABC):
             start = time.time() 
             ####### Evaluate population (user specific) #######
             self.output, self.fitness = self.EvaluatePopulation(self.pool)
-            end = time.time()
             # Status print
-            print("Generation nr. " + str(gen + 1) + " completed; took "+str(end-start)+" sec.")
             max_fit = max(self.fitness)
             print(f"Highest fitness: {max_fit}")
-            out = self.output[self.fitness==max_fit][:,np.newaxis]
-            y = target_wfm[self.w][:,np.newaxis]
-            X = np.stack((out, y), axis=0)[:,:,0]
-            corr = np.corrcoef(X)[0,1]
-            print(f"Correlation of fittest genome: {corr}")
-            if corr >= corr_thr:
-                print(f'Very high correlation achieved, evolution will stop! \
-                      (correlaton threshold set to {corr_thr})')
+            if self.StopCondition(max_fit):
                 break
             # Evolve to the next generation
             self.NextGen()
+            end = time.time()
+            print("Generation nr. " + str(gen + 1) + " completed; took "+str(end-start)+" sec.")
                         
             #%% Save generation data (USE OBSERVER PATTERN?)
 #            self.geneArray[i, :, :] = self.pool
@@ -114,8 +111,7 @@ class GA(ABC):
         print('Max. Fitness: ', max_fitness)
         print('Best genome: ', best_genome)
         return best_genome, best_output, max_fitness
-
-        
+#%%    
     def NextGen(self):
         indices = np.argsort(self.fitness)
         indices = indices[::-1]
@@ -145,7 +141,7 @@ class GA(ABC):
 
         # Reset fitness
         self.fitness = np.zeros(self.genomes)
-
+#%%
     def Mutation(self):
         '''Mutate all genes but the first partition[0] with a triangular 
         distribution between 0 and 1 with mode=gene. The chance of mutation is 
@@ -156,11 +152,11 @@ class GA(ABC):
         self.newpool[self.partition[0]:] = ((np.ones(self.newpool[self.partition[0]:].shape) - mask)*self.newpool[self.partition[0]:] 
                                             + mask * mutatedpool)
         
-
-    def MapGenes(self,generange, gene):
-        '''Convert the gene [0,1] to the appropriate value set by generange [a,b]'''
-        return generange[0] + gene * (generange[1] - generange[0])
-
+#%%
+#    def MapGenes(self,generange, gene):
+#        '''Convert the gene [0,1] to the appropriate value set by generange [a,b]'''
+#        return generange[0] + gene * (generange[1] - generange[0])
+#%%
     def AddNoise(self):
         '''Add Gaussian noise to the fittest partition[1] genes'''
         self.newpool[sum(self.partition[:1]):sum(self.partition[:2])] = (self.pool[:self.partition[1]] +
@@ -172,25 +168,25 @@ class GA(ABC):
 
         buff = self.newpool[sum(self.partition[:1]):sum(self.partition[:2])] < 0.0
         self.newpool[sum(self.partition[:1]):sum(self.partition[:2])][buff] = 0.0
-
+#%%
     def CrossoverFitFit(self):
         '''Perform crossover between the fittest :partition[2] genomes and the
         fittest 1:partition[2]+1 genomes'''
         mask = np.random.randint(2, size=(self.partition[2], self.genes))
         self.newpool[sum(self.partition[:2]):sum(self.partition[:3])] = (mask * self.pool[:self.partition[2]]
                 + (np.ones(mask.shape) - mask) * self.pool[1:self.partition[2]+1])
-
+#%%
     def CrossoverFitRandom(self):
         '''Perform crossover between the fittest :partition[3] genomes and random
         genomes'''
         mask = np.random.randint(2, size=(self.partition[3], self.genes))
         self.newpool[sum(self.partition[:3]):sum(self.partition[:4])] = (mask * self.pool[:self.partition[3]]
                 + (np.ones(mask.shape) - mask) * self.pool[np.random.randint(self.genomes, size=(self.partition[3],))])
-
+#%%
     def AddRandom(self):
         '''Generate partition[4] random genomes'''
         self.newpool[sum(self.partition[:4]):] = np.random.rand(self.partition[4], self.genes)
-        
+#%%        
     def RemoveDuplicates(self):
         '''Check the entire pool for any duplicate genomes and replace them by 
         the genome put through a triangular distribution'''
@@ -198,3 +194,41 @@ class GA(ABC):
             for j in range(self.genomes):
                 if(j != i and np.array_equal(self.newpool[i],self.newpool[j])):
                     self.newpool[j] = np.random.triangular(0, self.newpool[j], 1)
+
+#%% ########### Helper Methods ######################
+    def StopCondition(self, max_fit):
+        return False
+    
+    def Target(self, targets):
+        target_wfrm = GenWaveform(targets, self.lengths, slopes=self.slopes)
+        return np.asarray(target_wfrm)
+    
+#%% MAIN
+if __name__=='__main__':
+    
+    #Define concrete class
+    class test(GA):
+        def __init__(self):
+            super().__init__()
+            self.w = True
+            
+        def Fitness(self, output):
+            pass
+        def EvaluatePopulation(self, pool):
+            pass
+        def StopCondition(self, max_fit, corr_thr=0.85):
+            out = self.output[self.fitness==max_fit][:,np.newaxis]
+            y = self.target_wfm[self.w][:,np.newaxis]
+            X = np.stack((out, y), axis=0)[:,:,0]
+            corr = np.corrcoef(X)[0,1]
+            print(f"Correlation of fittest genome: {corr}")
+            if corr >= corr_thr:
+                print(f'Very high correlation achieved, evolution will stop! \
+                      (correlaton threshold set to {corr_thr})')
+            return corr >= corr_thr
+
+    # Instantiate
+    t = test()
+    # Evolve
+    t.Evolve([0,0,1,1],100)
+
