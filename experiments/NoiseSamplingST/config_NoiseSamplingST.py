@@ -20,12 +20,12 @@ class experiment_config(config_class):
 
         self.samples = 1       # Amount of measurements for one CV config
         self.sampleTime = 0.1    # Sampling time (s)
-        self.name_T = 'test_set4_rand_retry'
-        self.name_S = 'SwitchMeas' + str(self.sampleTime) +'s'
+        self.name = 'test_set4_rand_retry'
 
         self.fs = 1000          # Sampling freq (Hz)
         self.rampT = int(self.fs/4) # Time to ramp up the input voltages
         self.amplification = 100
+        self.gain_info = '1MV/A'
         self.postgain = 1
         self.controls = 7
         self.filepath = 'D:\\data\\Mark\\ST_tests\\paper_chip\\'
