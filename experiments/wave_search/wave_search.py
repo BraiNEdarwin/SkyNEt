@@ -27,7 +27,7 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 data = np.zeros((int(cf.sampleTime * cf.fs), 1))
 
 batches = int(cf.fs * cf.sampleTime / cf.samplePoints)
-
+print('Starting measurement, ' + str(int(cf.samplePoints/cf.fs)) + ' seconds per minibatch')
 for i in range(0, batches):
     start_wave = time.time()
     
@@ -55,6 +55,9 @@ for i in range(0, batches):
                                 phase = cf.phase,
                                 amplitude = cf.amplitude,
                                 offset = cf.offset,
+                                amplification = cf.amplification,
+                                electrodeSetup = cf.electrodeSetup,
+                                gain_info = cf.gain_info,
                                 filename = 'training_NN_data')
     end_wave = time.time()
     print('Data collection for part ' + str(i+1) + ' of ' + str(batches) + ' took '+str(end_wave-start_wave)+' sec.')
@@ -78,6 +81,9 @@ if cf.transientTest:
                             phase = cf.phase,
                             amplitude = cf.amplitude,
                             offset = cf.offset,
+                            amplification = cf.amplification,
+                            electrodeSetup = cf.electrodeSetup,
+                            gain_info = cf.gain_info,
                             filename = 'training_NN_data')
 else:
     SaveLib.saveExperiment(cf.configSrc, saveDirectory, 
@@ -88,6 +94,9 @@ else:
                             phase = cf.phase,
                             amplitude = cf.amplitude,
                             offset = cf.offset,
+                            amplification = cf.amplification,
+                            electrodeSetup = cf.electrodeSetup,
+                            gain_info = cf.gain_info,
                             filename = 'training_NN_data')
   
 
