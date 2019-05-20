@@ -48,6 +48,7 @@ main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_03_14_143
 dtype = torch.FloatTensor
 net = staNNet(main_dir+'NN_skip3_MSE.pt')
 
+
 # Initialize genepool
 genePool = Evolution.GenePool(cf)
 
@@ -62,19 +63,19 @@ for i in range(cf.generations):
                                     cf.generange[k], genePool.pool[j, k])
 
         # Set the input scaling
-        x_scaled = x * genePool.config_obj.input_scaling
+        x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
 
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
             # Feed input to NN
-            g = np.ones_like(target)[:,np.newaxis]*genePool.pool[j][:,np.newaxis].T
+            g = np.ones_like(target)[:,np.newaxis]*genePool.pool[j,:-1][:,np.newaxis].T
             x_dummy = np.concatenate((x_scaled.T,g),axis=1) # First input then genes; dims of input TxD
             inputs = torch.from_numpy(x_dummy).type(dtype)
             inputs = Variable(inputs)
             output = net.outputs(inputs)
 
 #            # Plot genome
-#            PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
+            PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
 
             # Train output
             outputAvg[avgIndex] = cf.amplification * np.asarray(output)  # empty for now, as we have only one output node
@@ -85,12 +86,12 @@ for i in range(cf.generations):
                                                      w)
 
 #            # Plot output
-#            PlotBuilder.currentOutputEvolution(mainFig,
-#                                               t,
-#                                               target,
-#                                               output,
-#                                               j + 1, i + 1,
-#                                               fitnessTemp[j, avgIndex])
+            PlotBuilder.currentOutputEvolution(mainFig,
+                                               t,
+                                               target,
+                                               output,
+                                               j + 1, i + 1,
+                                               fitnessTemp[j, avgIndex])
 
         outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
 
@@ -106,15 +107,15 @@ for i in range(cf.generations):
     fitnessArray[i, :] = genePool.fitness
 
 #    # Update main figure
-#    PlotBuilder.updateMainFigEvolution(mainFig,
-#                                       geneArray,
-#                                       fitnessArray,
-#                                       outputArray,
-#                                       i + 1,
-#                                       t,
-#                                       cf.amplification*target,
-#                                       output,
-#                                       w)
+    PlotBuilder.updateMainFigEvolution(mainFig,
+                                       geneArray,
+                                       fitnessArray,
+                                       outputArray,
+                                       i + 1,
+                                       t,
+                                       cf.amplification*target,
+                                       output,
+                                       w)
 
     # Save generation
     #SaveLib.saveExperiment(saveDirectory,
