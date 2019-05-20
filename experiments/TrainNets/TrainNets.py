@@ -19,9 +19,9 @@ from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 
 np.random.seed(22)
 Seed = False
-main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\\'
-file_name = 'data_for_training_skip3.npz'
-data = dl(main_dir, file_name, syst='cpu', steps=3)
+main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\2019_05_17_095928_trainData_3d\data4nn\20_05_2019\\'
+file_name = 'data_for_training_lightNNet.npz'
+data = dl(main_dir, file_name, syst='cpu', steps=12)
 factor = 0.05
 #freq = torch.sqrt(torch.tensor([2,np.pi,5,7,13,17,19],dtype=torch.float32)) * factor
 freq = np.sqrt(np.array([2,np.pi,5,7,13,17,19])) * factor
@@ -40,7 +40,7 @@ phase = np.zeros(7)
 depth = 10
 width = 90
 
-learning_rate,nr_epochs,batch_size = 1e-3, 500, [512]
+learning_rate,nr_epochs,batch_size = 1e-3, 2, [512]
 
 runs = 1
 valerror = np.zeros((runs,nr_epochs))

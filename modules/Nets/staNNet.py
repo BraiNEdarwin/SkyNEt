@@ -26,7 +26,6 @@ import numpy as np
 import pdb
 
 class staNNet(object):
-    
 
     def __init__(self,*args,loss='MSE',activation='ReLU', dim_cv=5, BN=False):
         
@@ -60,42 +59,10 @@ class staNNet(object):
             
         elif len(args)==1 and type(args[0]) is str:
             self._load_model(args[0])
-            
-        elif len(args) == 9:    #data,depth,width,freq,Vmax,fs,phase
-           print('Input waves will be generated during training') 
-           data,depth,width,self.freq,self.amplitude,self.fs,self.offset,self.phase,self.noisefit = args
-           self.x_train, self.y_train = data[0]
-           self.y_train = self.y_train/10 #\\
-           self.x_val, self.y_val = data[1]
-           self.y_val = self.y_val/10 #\\
-           self.D_in = self.freq.shape[0]     
-
-           self.D_out = self.y_train.size()[1]
-           self._BN = BN
-           self.depth = depth
-           self.width = width
-           self.info = {'activation':activation, 'loss':loss, 'freq':self.freq,
-                        'amplitude':self.amplitude, 'fs':self.fs, 'offset':self.offset,
-                        'phase':self.phase, 'noisefit':self.noisefit,
-                        'conversion':10}    # Conversion means '1' from the NN means ... nA in the experiment.
-           self.loss_str = loss
-           self.activ = activation
-           self._tests()
-        
-           ################### DEFINE MODEL ######################################
-           self._contruct_model()
-           if isinstance(self.x_train.data,torch.cuda.FloatTensor): 
-               self.itype = torch.cuda.LongTensor
-               self.C.cuda()
-               self.model.cuda()
-               self.loss_fn.cuda()
-               print('Sent to GPU')
-           else: 
-               self.itype = torch.LongTensor
         else:
-            assert False, 'Arguments must be either 3 (data,depth,width) or a string to load the model!'
-            
-        
+            assert False, 'Arguments must be either 3 (data,depth,width) or a string to load the model!'      
+
+                
     def _load_model(self,data_dir):
         print('Loading the model from '+data_dir)
         if torch.cuda.is_available():
@@ -109,40 +76,7 @@ class staNNet(object):
         else:
             self._BN = False
 
-         #TODO: Add all parameters to state dic 'info'   
-        self.loss_str = state_dic['loss']
-        state_dic.pop('loss') #Remove entrie of OrderedDict
-        
-        self.activ = state_dic['activation']
-        state_dic.pop('activation')  
-          
-        try:
-            #make a loop
-            self.noisefit = state_dic['noise_fit'] 
-            state_dic.pop('noise_fit')
-            self.amplitude = state_dic['amplitude']
-            state_dic.pop('amplitude')
-            self.freq = state_dic['freq']
-            state_dic.pop('freq')
-            self.fs = state_dic['fs']
-            state_dic.pop('fs')
-            self.offset = state_dic['offset']
-            state_dic.pop('offset')
-            self.phase = state_dic['phase']
-            state_dic.pop('phase')
-        except KeyError:
-            self.noisefit = False
-            print("Sine wave input data not saved in model.")
-        if self.noisefit:
-            try:
-                self.a = state_dic['noisefit_a'] 
-                state_dic.pop('noisefit_a')
-                self.b = state_dic['noisefit_b'] 
-                state_dic.pop('noisefit_b')
-            except KeyError:
-                print('Noise fit parameters failed to load')
-
-        
+ 
         # move info key from state_dic to self
         if state_dic.get('info') is not None:
             self.info = state_dic['info']
@@ -158,7 +92,6 @@ class staNNet(object):
                 if 'bias' not in key and 'weight' not in key:
                     self.info[key] = item
                     state_dic.pop(key)
-
 
         print('NN loaded with activation %s and loss %s' % (self.info['activation'], self.info['loss']))
         loss = self.info['loss']
@@ -197,7 +130,7 @@ class staNNet(object):
             track_running_stats=False  
             print('BN tracking average: ',track_running_stats)
             self.bn_layer = nn.BatchNorm1d(self.width,track_running_stats=track_running_stats)
-        """
+        
         activation = self.info['activation']
         if activation == 'tanh':
             activ_func = nn.Tanh()
@@ -209,8 +142,8 @@ class staNNet(object):
             activ_func = None
         else:
             assert False, "Activation function ('%s') not recognized!" % activation
-        """
-        activ_func = nn.ReLU() #\\
+        
+
         if self._BN: 
             modules = [nn.BatchNorm1d(self.D_in,track_running_stats=track_running_stats),
                        self.l_in,activ_func]
@@ -230,7 +163,6 @@ class staNNet(object):
         
         print('Model constructed with modules: \n',modules)
         self.model = nn.Sequential(*modules)
-
         print(f'Loss founction is defined to be {loss}')
         if loss == 'RMSE':
             self.a = torch.tensor([0.01900258860717661, 0.014385111570154395]).type(self.ttype)
@@ -323,7 +255,6 @@ class staNNet(object):
             print('Epoch:', epoch, 'Val. Error:', self.L_val[epoch],
                   'Training Error:', self.L_train[epoch])
             self.model.train()
-
             
         print('Finished Training')
 #        plt.figure()
@@ -340,26 +271,7 @@ class staNNet(object):
         """
         self.model.eval()
         state_dic = self.model.state_dict()
-
-        #TODO: Remove this if the 'info' state dic is tested
-        state_dic['activation'] = self.activ
-        state_dic['loss'] = self.loss_str
-        state_dic['noise_fit'] = self.noisefit
-        state_dic['freq'] = self.freq
-        state_dic['amplitude'] = self.amplitude
-        state_dic['offset'] = self.offset
-        state_dic['fs'] = self.fs
-        state_dic['phase'] = self.phase
-        
-        if self.noisefit:
-            state_dic['noisefit_a'] = self.a
-            state_dic['noisefit_b'] = self.b
-            self.info['noisefit_a'] = self.a
-            self.info['noisefit_b'] = self.b
-        
-        
         state_dic['info'] = self.info
-
         torch.save(state_dic,path)
 
     def load_data(self, data):
