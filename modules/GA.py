@@ -44,7 +44,7 @@ class GA(ABC):
     ###########################################################################
     ### Abstract attributes
     #TODO: how to implement separationof CV evolution and input affine transformation?
-    genes = abstract_attribute() #Nr of genes 
+    genes = abstract_attribute() #Nr of genes include CVs and affine trafo of input 
     generange = abstract_attribute()
     genomes = abstract_attribute() #Nr of individuals in population
     partition = abstract_attribute()
@@ -54,9 +54,24 @@ class GA(ABC):
     ### Abstract methods    
     @abstractmethod
     def Fitness(self, output):
+        '''ABSTRACT METHOD: The implementation of this is enforced.
+        Implement a method that gets outputs as arguments and calculates 
+        elementwise the fitness for each member in the population.
+        Returns: numpy array of fitness values corresponding to each individal 
+        '''
         pass   
     @abstractmethod
     def EvaluatePopulation(self, pool):
+        '''
+        ABSTRACT METHOD: The implementation of this is enforced.
+        Implement a method that gets the pool of genes as argument and obtains 
+        the response of the system given the control voltages and the inputs.
+        This method should handle all the necessary components to get the output
+        needed in the GA, including the distinction between the modality of the
+        experiment (device, NN or simulator) and the separation of the affine 
+        transformation and control voltages.
+        Retruns: numpy arrays of output (waveforms) and fitness values.
+        '''
         pass
     
     ##########################################################################
@@ -229,6 +244,4 @@ if __name__=='__main__':
 
     # Instantiate
     t = test()
-    # Evolve
-    t.Evolve([0,0,1,1],100)
 
