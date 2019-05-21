@@ -66,6 +66,9 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0], highRange = False):
     Input: N x M array, N output ports, M datapoints
     Fs: sample frequency
     inputPorts**: binary list containing ones for the used input ports
+    highRange: boolean, if this is False (default) the input voltages
+        are not allowed to exceed [-2, 2]V. Only put this to True
+        if you are sure it will not harm any device.
 
     Returns
     -------
@@ -102,7 +105,9 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0], highRange = False):
             adw.Boot(str('adwin' + PROCESSORTYPE + '.btl'))
         else:
             adw.Boot('C:\\ADwin\\ADwin' + PROCESSORTYPE + '.btl')
-        adw.Load_Process('C:\\Users\\Darwin\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8Read_4Write.TB1')
+        #adw.Load_Process('C:\\Users\\Darwin\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8Read_4Write.TB1')
+        adwinPath = os.path.realpath(__file__)
+        adw.Load_Process(adwinPath + '\\ADbasic_8Read_4Write.TB1')
         adw.Set_Processdelay(1, int(300e6 / Fs))  # delay in clock cycles
         adw.Start_Process(1)
 
@@ -183,6 +188,9 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0], highRange = False):
 
 def setControlVoltages(adw, x, Fs):
     '''
+    UNMAINTAINED: this script will probably not work, feel free to fix 
+    it.
+
     x is a list of 4 values with desired control voltages in V.
     '''
 
