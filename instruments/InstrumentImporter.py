@@ -39,9 +39,6 @@ def reset(signum, frame):
             print('adwin has been reset')
         except:
             print('adwin was not initialized, so also not reset')
-
-        # Finally stop the script execution
-        sys.exit()
 	
 # Set up reset call at ctrl-C
 signal.signal(signal.SIGINT, reset)
