@@ -31,12 +31,14 @@ class staNNet(object):
         
         if len(args) == 3: #data,depth,width
            data,depth,width = args           
-           self.info = {'activation':activation, 'loss':loss}
+           self.info = {'activation':activation, 'loss':loss, 'conversion':100} #\\
            for key, item in data[2].items():
                self.info[key] = item               
            self.x_train, self.y_train = data[0]
+           self.y_train = self.y_train/self.info['conversion'] #\\
            self.x_val, self.y_val = data[1]
-           self.D_in = self.load_data(self.x_train[0]).size()[1]
+           self.y_val = self.y_val/self.info['conversion']  #\\ 
+           self.D_in = self.load_data(self.x_train[0:1]).size()[1]
            self.D_out = self.y_train.size()[1]
            self._BN = BN
            self.depth = depth
@@ -44,6 +46,7 @@ class staNNet(object):
            
            print(f'Meta-info: \n {list(self.info.keys())}')
            self.ttype = self.x_train.type()
+           
            self._tests()
         
            ################### DEFINE MODEL ######################################
@@ -172,7 +175,7 @@ class staNNet(object):
         else:
             assert False, f'Loss function ERROR! {loss} is not recognized'
         
-    def loss_fn(self, pred, targets, scaling=10):
+    def loss_fn(self, pred, targets, scaling=1):
         y = pred#targets
         sign = torch.sign(y)
         ay = (sign-1)/2 * (self.a[0] * torch.abs(y)) + (sign+1)/2 * (self.a[1] * torch.abs(y))
@@ -255,7 +258,8 @@ class staNNet(object):
             print('Epoch:', epoch, 'Val. Error:', self.L_val[epoch],
                   'Training Error:', self.L_train[epoch])
             self.model.train()
-            
+        self.info['L_train'] = self.L_train   
+        self.info['L_val'] = self.L_val   
         print('Finished Training')
 #        plt.figure()
 #        plt.plot(np.arange(nr_epochs),self.L_val)

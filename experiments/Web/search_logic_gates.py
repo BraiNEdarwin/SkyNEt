@@ -24,8 +24,8 @@ from SkyNEt.modules import SaveLib
 # ------------------------ configure ------------------------
 # load device simulation
 
-main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\\'
-data_dir = 'MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
+main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\2019_05_17_095928_trainData_3d\Nets\MSE\\'
+data_dir = 'MSE_d5w90_500ep_lr3e-3_b[2048]_b1b2_0.90.75-20-05-23h07m.pt'
 net1 = lightNNet(main_dir+data_dir)
 input_gates=[1,2]
 input_scaling = False
@@ -38,7 +38,7 @@ web.add_vertex(net1, 'A', output=True, input_gates=input_gates)
 input_lower = -0.5
 input_upper = 0.5
 
-nr_sessions = 3 # hardcoded target values of logic gates with off->lower and on->upper
+nr_sessions = 15 # hardcoded target values of logic gates with off->lower and on->upper
 
 upper = 1.
 lower = 0.
@@ -136,7 +136,7 @@ def cor_adap_loss_fn(x, y):
     corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)
     x_high_min = torch.min(x[(y == upper)]) #.item()
     x_low_max = torch.max(x[(y == lower)]) #.item()
-    return (1.1 - corr)/ ((torch.tanh((x_high_min - x_low_max)/2 - 1) + 1)/2)              #(abs(x_high_min-x_low_max)/5)**.5
+    return (1.1 - corr)/ torch.sigmoid((x_high_min - x_low_max - 4)/2) 
 
 mse_loss_fn = torch.nn.MSELoss()
 
@@ -198,7 +198,7 @@ for (i,gate) in enumerate(gates):
     if training_type == 'bin':
         cross_fn = torch.nn.CrossEntropyLoss(weight = w[i])
 
-    loss_l, best_cv, param_history = web.session_train(input_data, target_data[-1].view(-1,1),  #\\
+    loss_l, best_cv, param_history = web.session_train(input_data, target_data[i].view(-1,1),  #\\
                      beta=beta,
                      batch_size=batch_size,
                      max_epochs=max_epochs,
@@ -232,12 +232,12 @@ def print_gates():
     
         web.reset_parameters(trained_cv[i])
         web.forward(input_data)
-        output_data[:,i:i+1] = web.get_output()
+        output_data[:,i:i+1] = web.get_output()*web.info['conversion']
         
-        loss = web.error_fn(output_data[:,i:i+1], target_data[-1].view(-1,1), beta).item() #\\
+        loss = web.error_fn(output_data[:,i:i+1], target_data[i].view(-1,1), beta).item() #\\
         print("loss:", loss)
         
-        mseloss = mse_norm_loss_fn(output_data[:,i:i+1], target_data[-1].view(-1,1).float()).item() #\\
+        mseloss = mse_norm_loss_fn(output_data[:,i:i+1], target_data[i].view(-1,1).float()).item() #\\
         print("mseloss: ", mseloss)
         
         # print output network and targets
@@ -250,7 +250,7 @@ def print_gates():
             plt.plot(torch.round(torch.sigmoid(output_data)))
             legend_list.append('classification')
         else:
-            plt.plot(10*output_data[:,i:i+1].numpy())
+            plt.plot(output_data[:,i:i+1].numpy())
             legend_list.append('network '+str(round(loss, 3)))
         
         plt.legend(legend_list)
