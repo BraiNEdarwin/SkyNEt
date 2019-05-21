@@ -34,38 +34,45 @@ keithley.compliancev.set(4)
 # keithley.nplci(0.01)   # set speed (fraction of powergrid frequency)
 keithley.output.set(1)
 
-ivvi = InstrumentImporter.IVVIrack.initInstrument(dac_step = 50, dac_delay = 0.001)
+ivvi = InstrumentImporter.IVVIrack.initInstrument(dac_step = 50, dac_delay = 0.001,comport='COM5')
 
-cf.filepath = r'D:\Lennart\iv_curves_ouput_2019-05-16\\'
-cf.name = 'device6speedtestN200'
+cf.filepath = r'D:\Rik\iv_curves_ouput_2019-05-16\\'
+cf.name = 'device6e2e3statice4sweep'
 saveDirectory = SaveLib.createSaveDirectory(cf.filepath,cf.name)
+cf.switch_device = 6    # device number 1-8 on PCB
+cf.sweeppin = 4       # electrode which to apply voltage sweep to 1-8
+cf.staticpin = 3        #pin to apply static range on 1-8
+cf.measurepin = 2       # pin that gets measured 1-8
+# Initialize serial object
+ser = InstrumentImporter.switch_utils.init_serial(cf.switch_comport)
+# Switch to device
+InstrumentImporter.switch_utils.connect_single_device(ser, cf.switch_device)
+# Status print
+print('INFO: Connected device %i' % cf.switch_device)
 
+
+
+
+
+v_min = -2.0
+v_max = 2.0
 output_data = np.zeros((7, cf.nr_samples))
 all_input_data = np.zeros((7,cf.nr_samples,7))
 static_values = np.linspace(-1000,1000, 7)
 for ii in range(1,8):
 
-    
-    cf.switch_device = 6    # device number 1-8 on PCB
-    cf.electrode = 6       # electrode which to apply voltage sweep to 1-8
-    
-    
-    v_min = -2.0
-    v_max = 2.0
 
     x = np.linspace(v_min, v_max, cf.nr_samples)*1000
     input_data = np.zeros((cf.nr_samples,7))
-    input_data[:,cf.electrode-1] = x
-    input_data[:, 3] = static_values[ii-1]
+    if cf.sweeppin>cf.measurepin:
+        input_data[:,cf.sweeppin-2] = x
+    else:
+        input_data[:,cf.sweeppin-1] = x
+    input_data[:, cf.staticpin-1] = static_values[ii-1]
     all_input_data[ii-1] = input_data
     
     # arduino switch network
-    # Initialize serial object
-    ser = InstrumentImporter.switch_utils.init_serial(cf.switch_comport)
-    # Switch to device
-    InstrumentImporter.switch_utils.connect_single_device(ser, cf.switch_device)
-    # Status print
-    print('INFO: Connected device %i' % cf.switch_device)
+
     
 
     
@@ -83,7 +90,7 @@ for ii in range(1,8):
         output_data[ii-1,jj] = -keithley.curr()
     
     # sdev.ramp_zero(ramp_speed=2.)
-    print('dev %i electrode %i took %0.5f sec' % (cf.switch_device, cf.electrode, time.time()-start))
+    print('dev %i sweeppin %i took %0.5f sec' % (cf.switch_device, cf.sweeppin, time.time()-start))
 
     
     InstrumentImporter.switch_utils.close(ser)
@@ -114,4 +121,4 @@ plt.title('Device #%i' % cf.switch_device)
 plt.show()
 
 
-InstrumentImporter.reset(0, 0)
+#InstrumentImporter.reset(0, 0)
