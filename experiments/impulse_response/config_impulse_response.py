@@ -45,7 +45,7 @@ class experiment_config(config_class):
 
     def impulsegen(self, v_off, v_pulse, n_points):
         n_mid = n_points/2
-        Input = np.full(n_points, v_off)
+        Input = np.full(n_points, v_off, float)
         Input[int(n_mid-1)]= v_pulse
         
         return Input
