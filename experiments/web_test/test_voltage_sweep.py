@@ -36,13 +36,13 @@ keithley.output.set(1)
 
 ivvi = InstrumentImporter.IVVIrack.initInstrument(dac_step = 50, dac_delay = 0.001,comport='COM5')
 
-cf.filepath = r'D:\Rik\iv_curves_ouput_2019-05-16\\'
-cf.name = 'device6e2e3statice4sweep'
+cf.filepath = r'D:\Rik\iv_sweep_bram_d3\\'
+cf.name = 'device3e1e5statice2sweep'
 saveDirectory = SaveLib.createSaveDirectory(cf.filepath,cf.name)
-cf.switch_device = 6    # device number 1-8 on PCB
-cf.sweeppin = 4       # electrode which to apply voltage sweep to 1-8
-cf.staticpin = 3        #pin to apply static range on 1-8
-cf.measurepin = 2       # pin that gets measured 1-8
+cf.switch_device = 3    # device number 1-8 on PCB
+cf.staticpin = 5        #pin to apply static range on 1-8
+cf.sweeppin = 2       # electrode which to apply voltage sweep to 1-8
+cf.measurepin = 1       # pin that gets measured 1-8
 # Initialize serial object
 ser = InstrumentImporter.switch_utils.init_serial(cf.switch_comport)
 # Switch to device
@@ -68,7 +68,10 @@ for ii in range(1,8):
         input_data[:,cf.sweeppin-2] = x
     else:
         input_data[:,cf.sweeppin-1] = x
-    input_data[:, cf.staticpin-1] = static_values[ii-1]
+    if cf.sweeppin>cf.measurepin:
+        input_data[:, cf.staticpin-2] = static_values[ii-1]
+    else:
+        input_data[:, cf.staticpin-1] = static_values[ii-1]
     all_input_data[ii-1] = input_data
     
     # arduino switch network

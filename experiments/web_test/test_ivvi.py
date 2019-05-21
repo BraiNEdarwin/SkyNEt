@@ -22,8 +22,8 @@ input_data[:,electrode-1] = single_ramp_input
 output = np.zeros(N)
 
 
-filepath = r'D:\Rik\IV-newdevices\\'
-name = 'firsttest'
+filepath = r'D:\Rik\IV-bramdevices\\'
+name = 'e8e1'
 saveDirectory = SaveLib.createSaveDirectory(filepath,name)
 connect_matrix = np.zeros((8,8))
 connect_matrix[0,:] = [0, 0, 1, 1, 1, 1, 1, 0] ## C1 connects to e1 of D(fill in)
@@ -37,7 +37,7 @@ connect_matrix[7,:] = [0, 0, 1, 1, 1, 1, 1, 0] ## C8 connects to e8 of D(fill in
 
 
 ivvi = InstrumentImporter.IVVIrack.initInstrument(comport = 'COM5')
-for loop in range(3,8):
+for loop in range(2,8):
 	ser = InstrumentImporter.switch_utils.init_serial('COM3')
 	InstrumentImporter.switch_utils.connect_single_device(ser, loop)
 	#InstrumentImporter.switch_utils.connect_matrix(ser,connect_matrix)
@@ -71,6 +71,7 @@ for loop in range(3,8):
 	plt.plot(single_ramp_input, output, '-o')
 	plt.ylabel('output nA')
 	plt.xlabel('input voltage')
+	plt.title('Device #%i' % loop)
 plt.show()
 
 

@@ -89,7 +89,7 @@ for i in range(cf.generations):
             output = np.zeros(4)
             if execute:
                 for iii in range(4):
-                    # [I0, CV0, CV1, CV2, CV3, I1, 0]
+                    # [I0,I1, CV0, CV1, CV2, CV3, CV4s]
                     input_voltages_switch = np.insert(controlVoltages, [0,0], x_scaled[:,iii])
                     InstrumentImporter.IVVIrack.setControlVoltages(ivvi, input_voltages_switch)
                     output[iii] = -keithley.curr()*1e9 # in nA

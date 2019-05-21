@@ -72,13 +72,13 @@ class experiment_config(config_class):
         # switch network
         self.switch_comport = 'COM3'
         self.nr_channels = 7
-        self.switch_device = 6
+        self.switch_device = 2
 
         # Define experiment
         self.amplification = 1
         self.TargetGen = self.XOR
-        self.generations = 5
-        self.generange = [[-2000,2000], [-2000, 2000], [-2000, 2000], [-2000, 2000], [-2000,2000], [-500, 500]]
+        self.generations = 50
+        self.generange = [[0,1500], [0, 1500], [0, 1500], [0, 1500], [0,1500], [-500, 500]]
         self.Fitness = self.lennart_fit
         # Specify either partition or genomes
         self.partition = [5, 5, 5, 5, 5]
