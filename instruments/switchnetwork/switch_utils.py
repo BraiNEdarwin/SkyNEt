@@ -93,5 +93,5 @@ def connect_matrix(ser, connect_matrix):
     switch(ser,connect_matrix)
     read_serial_out(ser)
 
-def close:
+def close(ser):
 	ser.close()
