@@ -42,12 +42,13 @@ controlVoltages = np.zeros(cf.genes)
 saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
 # Initialize figure
+single_line_prop = {'color':'red', 'marker':'x'}
 pb = PlotBuilder()
-pb.add_subplot('genes',     (0,0), (5, 1),   adaptive=True,  ylim=(-0.1,1.1), title='History of best genes',    xlabel='generations', rowspan=2)
-pb.add_subplot('fitness',   (2,0), cf.genes, adaptive=True,                   title='History of best fitness',  xlabel='generations',  rowspan=2)
-pb.add_subplot('cur_output',(0,1), (2 ,t.shape[0]),          ylim=(-0.1,1.1), title='Fittest device output of last generation', legend=['target', 'device'], rowspan=2)
-pb.add_subplot('cur_genome',(2,1), cf.genes,                 ylim=(0,1),      title='Current genome voltages')
-pb.add_subplot('output',    (3,1), (2 ,t.shape[0]),          ylim=(-0.1,1.1), title='Device output', legend=['target', 'device'])
+pb.add_subplot('genes',     (0,0), (5, 1), adaptive='x', ylim=(-0.1,1.1), title='History of best genes',    xlabel='generations', rowspan=2, legend=cf.genelabels)
+pb.add_subplot('fitness',   (2,0), 1,      adaptive='both', title='History of best fitness',  xlabel='generations',  rowspan=2, lineprop=single_line_prop)
+pb.add_subplot('cur_output',(0,1), (2 ,t.shape[0]),       ylim=(-0.1,1.1), title='Fittest device output of last generation', legend=['target', 'device'], rowspan=2)
+pb.add_subplot('cur_genome',(2,1), cf.genes,              ylim=(0,1),      title='Current genome voltages', lineprop=single_line_prop)
+pb.add_subplot('output',    (3,1), (2 ,t.shape[0]),       ylim=(-0.1,1.1), title='Device output', legend=['target', 'device'])
 pb.finalize()
 
 # Initialize NN
