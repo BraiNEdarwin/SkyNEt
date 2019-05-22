@@ -17,7 +17,7 @@ y = InstrumentImporter.adwinIO.IO(adwin,
                                   inputPorts=[1, 1, 1, 1, 0, 0, 0, 0])
 
 # Detect if output is the same as input
-if(np.max(abs(x-y)) < 0.001):
+if(np.max(abs(x-y)) < 0.01):
     print('ADwin works correctly')
 
 # Final reset
