@@ -42,7 +42,7 @@ activate skynet
 ```
 
 Note that for non-windows users this will probably 
-be `conda activate skynet` instead.
+be `source activate skynet` instead.
 
 Now open up an iPython console
 
@@ -71,8 +71,8 @@ This will allow python to find the SkyNEt modules when imported.
 To do this, follow the instructions below:
 
 
-* Go to the directory ~/anaconda3/envs/skynet/lib/python3.6/site-packages
-* Make a file named 'skynet.pth' containing a line with the 
+* Go to the directory you found above, i.e. `~/this/that/site-packages/`
+* Make a file named `skynet.pth` containing a line with the 
     absolute path to the directory containing your SkyNEt repo
 * Start your python and check sys.path; 
     you should see the path to the repo there
@@ -85,21 +85,33 @@ Since Python will look for scripts on that path,
 we recommend you keep it separated from all your other scripts to 
 avoid interference.
 
-To finish off the installation process, there is one package left to install. Activate the skynet environment again and run the following command:
+To finish off the installation process, there is one package left to install.
+Activate the skynet environment again and run the following command:
 
 ```
 pip install nidaqmx
 ```
 
 Now you are done with the installation process and ready to get to work!
-
-Note: if you want to work with neural networks you have to install 
-PyTorch yourself. 
-As this is OS dependent, please have a look at the instructions on the 
-[website](https://pytorch.org/get-started/locally/)
-
 Feel free to ask any of the code maintainers 
 (listed at the bottom of this document) for help.
+
+## Neural networks
+If you want to work with neural networks, there is an extra dependency
+`PyTorch`, which you have to install yourself. 
+As this is OS dependent, please have a look at the instructions on the 
+[website](https://pytorch.org/get-started/locally/).
+Have a look at the various pages at the 
+[wiki](https://github.com/BraiNEdarwin/SkyNEt/wiki). 
+
+## Kinetic Monte Carlo
+If you want to work with the kinetic monte carlo model, there are 
+some other dependencies. The installation instructions can be found
+on the separate repository for kmc, 
+[here](https://github.com/brambozz/kmc_dn).
+
+TODO: this will be updated with submodules instructions once it is 
+setup.
 
 ## Repository structure
 
@@ -156,6 +168,31 @@ and/or load your networks.
 And please make sure you only work on your own branch, 
 but feel free to suggest any experiments you think should go into the 
 dev branch! 
+
+## Setting up a new measurement PC
+
+Usually, you will run experiments on a PC that is already setup for 
+measurements. This section shows the steps you need to take te setup
+a new measurement PC (this is unneccesary for personal PCs).
+
+First follow the installation instructions above.
+Then make sure that git can connect to the internet via the utwente 
+proxy server:
+
+* Go to C:/users/
+* Open .gitconfig
+* Add the following 
+```
+[http]
+	proxy = http://proxy.utwente.nl:3128
+```
+
+If you want to use the ADwin for measurements, additionally do the 
+following steps:
+
+* Install the ADwin software with the CD-rom in the lab
+* Install drivers for [Startech USB31000S] (https://www.startech.com/Networking-IO/usb-network-adapters/USB-3-to-Gigabit-Ethernet-NIC-Network-Adapter~USB31000S#dnlds)
+* Configure the ADwin via adconfig
 
 ## Code contribution
 
