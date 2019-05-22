@@ -40,7 +40,7 @@ class lightNNet(staNNet):
         fs:         Sample frequency of the device
         phase:      (Optional) phase offset at t=0
         '''     
-        if isinstance(t,torch.cuda.FloatTensor):
+        if torch.cuda.is_available() and isinstance(t,torch.cuda.FloatTensor):
             waves = amplitude * np.sin((2 * np.pi * np.outer(t.cpu(),freq))/ fs + phase) + np.outer(np.ones(t.shape[0]),offset)
             waves = torch.from_numpy(waves).type(torch.cuda.FloatTensor)
         else:
