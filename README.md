@@ -191,7 +191,7 @@ If you want to use the ADwin for measurements, additionally do the
 following steps:
 
 * Install the ADwin software with the CD-rom in the lab
-* Install drivers for [Startech USB31000S] (https://www.startech.com/Networking-IO/usb-network-adapters/USB-3-to-Gigabit-Ethernet-NIC-Network-Adapter~USB31000S#dnlds)
+* Install drivers for [Startech USB31000S](https://www.startech.com/Networking-IO/usb-network-adapters/USB-3-to-Gigabit-Ethernet-NIC-Network-Adapter~USB31000S#dnlds)
 * Configure the ADwin via adconfig
 
 ## Code contribution
