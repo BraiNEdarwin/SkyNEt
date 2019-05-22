@@ -78,7 +78,7 @@ class experiment_config(config_class):
         self.amplification = 1
         self.TargetGen = self.XOR
         self.generations = 50
-        self.generange = [[0,1500], [0, 1500], [0, 1500], [0, 1500], [0,1500], [-500, 500]]
+        self.generange = [[0,2000], [0, 2000], [0, 2000], [0, 2000], [0,2000], [-500, 500]]
         self.Fitness = self.lennart_fit
         # Specify either partition or genomes
         self.partition = [5, 5, 5, 5, 5]
@@ -134,10 +134,10 @@ class experiment_config(config_class):
         x[0] = 0.
         return t, x
     def XOR(self):
-        t = np.arange(4)
-        x = np.ones(4)
-        x[0] = 0.
-        x[-1] = 0.
+        t = np.arange(40)
+        x = np.ones(40)
+        x[0:9] = 0.
+        x[30:39] = 0.
         return t, x
     def NAND(self):
         t,x = self.AND()

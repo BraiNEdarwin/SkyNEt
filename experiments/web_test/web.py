@@ -86,21 +86,20 @@ for i in range(cf.generations):
 
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
-            output = np.zeros(4)
-            if execute:
-                for iii in range(4):
-                    # [I0,I1, CV0, CV1, CV2, CV3, CV4s]
-                    input_voltages_switch = np.insert(controlVoltages, [0,0], x_scaled[:,iii])
-                    InstrumentImporter.IVVIrack.setControlVoltages(ivvi, input_voltages_switch)
-                    output[iii] = -keithley.curr()*1e9 # in nA
-            else:
-                output = (np.random.rand(4)-0.5)*2*30
+            output = np.zeros(40)
+            for iii in range(4):
+                # [I0,I1, CV0, CV1, CV2, CV3, CV4]
+                input_voltages_switch = np.insert(controlVoltages, [0,0], x_scaled[:,iii])
+                print(input_voltages_switch)
+                InstrumentImporter.IVVIrack.setControlVoltages(ivvi, input_voltages_switch)
+                for jjj in range(10):
+                    output[iii*10+jjj] = -keithley.curr()*1e9 # in nA
 
             # Train output
-            outputAvg[avgIndex] = cf.amplification * np.asarray(output)  # empty for now, as we have only one output node
+            #outputAvg[avgIndex] = cf.amplification * np.asarray(output)  # empty for now, as we have only one output node
 
             # Calculate fitness
-            fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],
+            fitnessTemp[j, avgIndex]= cf.Fitness(cf.amplification * np.asarray(output),
                                                      target,
                                                      w)
             print('generation: %i, genome: %i, fitness %0.3f' % (i,j,fitnessTemp[j,avgIndex]))
