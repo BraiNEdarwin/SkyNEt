@@ -123,6 +123,7 @@ class webNNet(torch.nn.Module):
         transfer = [(lambda y: (lambda x: self.transfer(x)*(y[1]-y[0])+y[0]))(ii) for ii in voltage_bounds.t()]
         
         # keep only the values of control gates, input gate values are not used
+        input_bounds = voltage_bounds[:, input_gates]
         voltage_bounds = voltage_bounds[:, control_gates]
 
         # add parameter to model
@@ -143,7 +144,8 @@ class webNNet(torch.nn.Module):
                               'swapindices':swapindices,
                               'voltage_bounds':voltage_bounds,
                               'transfer':transfer,
-                              'evaluated':False}
+                              'evaluated':False,
+                              'input_bounds':input_bounds}
         
         if output:
             self.nr_output_vertices  += 1
@@ -246,7 +248,7 @@ class webNNet(torch.nn.Module):
         # assumes each vertex has same number of parameters (could change in future)
         dim = x.shape[1]
         # if input data is provided for each network
-        if dim+self.nr_of_params is 7*len(self.graph):
+        if dim+self.nr_of_params == 7*len(self.graph):
             i = 0
             for key,v in self.graph.items():
                 nr_columns = v['network'].D_in-v['voltage_bounds'].shape[1] # nr of columns of x to be used for this vertex
