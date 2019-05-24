@@ -66,6 +66,7 @@ class staNNet(object):
                 
     def _load_model(self,data_dir):
         print('Loading the model from '+data_dir)
+        self.ttype = torch.torch.FloatTensor
         if torch.cuda.is_available():
             state_dic = torch.load(data_dir)
             self.ttype = torch.cuda.FloatTensor
