@@ -66,7 +66,7 @@ SaveLib.saveExperiment(cf.configSrc, saveDirectory,
                             electrodeSetup = cf.electrodeSetup,
                             gain_info = cf.gain_info,
                             nr_loops = cf.nr_halfloops/2,
-                            filename = 'training_NN_data_test' + str(tests))
+                            filename = 'data')
       
 
 InstrumentImporter.reset(0,0)
