@@ -120,6 +120,13 @@ git submodule init
 git submodule update
 ```
 
+If you would like to pull the latest changes from kmc_dn, run
+the following:
+
+```
+git submodule update --remote
+```
+
 Note: at present, the kmc_dn code is only known to work on linux.
 
 ## Repository structure
