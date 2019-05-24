@@ -106,12 +106,21 @@ Have a look at the various pages at the
 
 ## Kinetic Monte Carlo
 If you want to work with the kinetic monte carlo model, there are 
-some other dependencies. The installation instructions can be found
-on the separate repository for kmc, 
-[here](https://github.com/brambozz/kmc_dn).
+some other dependencies. 
+First, follow the installation instructions which can be found
+on the separate repository for kmc on dopant networks, 
+[here](https://github.com/BraiNEdarwin/kmc_dn).
 
-TODO: this will be updated with submodules instructions once it is 
-setup.
+This repository is included in SkyNEt as a git 
+[submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules).
+To start using it, run the following two commands.
+
+```
+git submodule init
+git submodule update
+```
+
+Note: at present, the kmc_dn code is only known to work on linux.
 
 ## Repository structure
 
