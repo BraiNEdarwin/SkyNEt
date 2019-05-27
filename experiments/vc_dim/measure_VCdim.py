@@ -10,6 +10,7 @@ import time
 import numpy as np
 import pdb
 import logging
+import matplotlib.pyplot as plt
 # SkyNEt imports
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
@@ -46,7 +47,9 @@ def evolve(inputs, binary_labels, fitthr=0.9,
     x = cf.InputGen[1]  # Array with P and Q signal
     w = cf.InputGen[2]  # Weight array
     target = cf.amplification*cf.TargetGen  # Target signal
-    
+    plt.figure()
+    plt.plot(x.T)
+    plt.show()
     # np arrays to save genePools, outputs and fitness
     geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
     outputArray = np.zeros((cf.generations, cf.genomes, len(x[0])))
@@ -93,7 +96,7 @@ def evolve(inputs, binary_labels, fitthr=0.9,
                 # Feed input to niDAQ
                 if not importerror:
                     #print('x_scaled: ',x_scaled.shape)
-                    output = cf.amplification * nidaqIO.IO(x_scaled, cf.fs)
+                    output = cf.amplification * nidaqIO.IO(x_scaled, cf.fs) #adwinIO.IO(adw, x_scaled, cf.fs)#
                     output = np.array(output[0,:])
                 else:
                     output = 0.1*np.random.standard_normal(len(x[0]))

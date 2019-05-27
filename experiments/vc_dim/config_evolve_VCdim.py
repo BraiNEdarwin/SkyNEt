@@ -69,10 +69,10 @@ class experiment_config(config_class):
         # Define experiment
         self.lengths, self.slopes = [100], [10] # in 1/fs
         self.InputGen = self.input_waveform(inputs)
-        self.amplification = 10
+        self.amplification = 1000
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
         self.generations = 3
-        self.generange = [[-1200,600], [-1200, 600], [-1200, 600], [-700, 300], [-700, 300],[1,1]]
+        self.generange = [[-1200,1200], [-1200, 1200], [-1200, 1200], [-1000, 1000], [-1000, 1000],[1.0,1.0]]
 #        [[-1200,1200], [-1200, 1200], [-1200, 1200], [-1000, 1000], [-1000, 1000],[1.0,1.0]]
         #[[-1200, 600], [-1200, 600], [-1200, 600], [-700,300], [-700, 300],[1.0,1.0]]
         # could be [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]?? this works, but best is 

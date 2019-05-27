@@ -14,18 +14,20 @@ except ModuleNotFoundError:
     print(r'No module named instruments')
 
 import time
-import evolve_VCdim as vcd
-#import measure_VCdim as vcd
+#import evolve_VCdim as vcd
+import measure_VCdim as vcd
 import numpy as np
 from matplotlib import pyplot as plt
 import time
 import os
 
-inputs = [[-1.,0.4,-1.,0.4],[-1.,-1.,0.4,0.4]]
+inputs = [[-0.7,0.7,-0.7,0.7,-0.35,0.35,0.],[-0.7,-0.7,0.7,0.7,0.,0.,-1.0]]
 #[[-0.7,0.7,-0.7,0.7,-1.,1.],[-0.7,-0.7,0.7,0.7,0.,0.]]
 N=len(inputs[0])
 #Create save directory
-filepath0 = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Results/VC_dim/Model' # evolution_test/VCdim_testing'#
+filepath0 = r'D:/data/Hans/Results/VC_dim'
+#r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Results/VC_dim/Model' 
+# evolution_test/VCdim_testing'#
 filepath1 = filepath0+'/Capacity_N'+str(N)
 date = time.strftime('%Y_%m_%d_%H-%M')
 dirname = filepath1+'/'+date+'/'
@@ -43,7 +45,7 @@ else:
 #binary_labels = bintarget(N)[bad_gates].tolist() 
 binary_labels = bintarget(N).tolist()  
 
-threshold = (1-0.5/N)#1-(0.65/N)*(1+1.0/N)
+threshold = (1-0.5/N)
 print('Threshold for acceptance is set at: ',threshold)
 #Initialize container variables
 fitness_classifier = []
