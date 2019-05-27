@@ -12,13 +12,13 @@ import time
 import matplotlib.pyplot as plt
 
 def transient_test(waves, data, fs, sampleTime, n):
-    T = 4 # Amount of time of sampling one datapoint
+    T = 3 # Amount of time of sampling one datapoint
     rampT = int(fs/2)
     iterations = 1 # iterate multiple times over the test cases
     testdata = np.zeros((iterations, n, (T*fs - 2*rampT)))
     #testdata = np.zeros((n, T*fs))
     test_cases = np.random.randint(waves.shape[1], size=(1,n)) # Index for the wave
-    test_cases = np.sort(test_cases)
+    #test_cases = np.sort(test_cases)
     difference = np.zeros((iterations, n, 1))
     
     for it in range(iterations):

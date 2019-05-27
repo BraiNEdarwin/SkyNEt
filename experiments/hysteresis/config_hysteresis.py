@@ -26,14 +26,13 @@ class experiment_config(config_class):
         super().__init__() 
 
         self.waveElectrodes = 7
-        self.factor = 0.05
+        self.factor = 0.01
         self.freq2 = np.array([2,np.pi,5,7,13,17,19]) 
         self.freq = np.sqrt(self.freq2[:self.waveElectrodes])*self.factor
         self.phase = np.zeros(self.waveElectrodes)
         self.sampleTime = 105 # Sample time of the sine waves for one grid point (in seconds)
         self.fs = 200
-        self.transientTest = False
-        self.nr_halfloops = 8 #
+        self.nr_halfloops = 4 #
         self.samplePoints = int(105*self.fs) # Amount of sample points per batch measurement (sampleTime*fs/samplePoints batches)
         self.amplification = 1000
         self.gain_info = '1MV/A'
@@ -48,7 +47,7 @@ class experiment_config(config_class):
         # Save settings
         self.filepath = r'D:\data\Mark\hysteresis\paper_chip_dataset2\\'
         
-        self.name = 'hysteresis_105s'
+        self.name = 'hysteresis_105s_f_0_01'
 
         self.configSrc = os.path.dirname(os.path.abspath(__file__))        
         self.inputData = self.generateSineWave

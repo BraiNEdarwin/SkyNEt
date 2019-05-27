@@ -38,9 +38,8 @@ for j in range(wavesRamped.shape[0]):
 
 print('Starting measurement, ' + str(int(cf.samplePoints/cf.fs)) + ' seconds per minibatch')
 for i in range(cf.nr_halfloops):
-
     # Every second batch must be flipped to go back and forth
-    if i%2 == 1:
+    if True:
         wavesRamped = wavesRamped[:,::-1]
 
     start_wave = time.time()

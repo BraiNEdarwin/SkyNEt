@@ -30,12 +30,12 @@ class experiment_config(config_class):
         self.freq2 = np.array([2,np.pi,5,7,13,17,19]) 
         self.freq = np.sqrt(self.freq2[:self.waveElectrodes])*self.factor
         self.phase = np.zeros(self.waveElectrodes)
-        self.sampleTime = 105 # Sample time of the sine waves for one grid point (in seconds)
+        self.sampleTime = 110 # Sample time of the sine waves for one grid point (in seconds)
         self.fs = 200
         self.transientTest = True
-        self.nr_testbatches = 2
-        self.n = 1000 # Amount of test points for the transient test
-        self.samplePoints = int(105*self.fs) # Amount of sample points per batch measurement (sampleTime*fs/samplePoints batches)
+        self.nr_testbatches = 1
+        self.n = 50 # Amount of test points for the transient test
+        self.samplePoints = int(10*self.fs) # Amount of sample points per batch measurement (sampleTime*fs/samplePoints batches)
         self.amplification = 1000
         self.gain_info = '1MV/A'
         self.postgain = 1
@@ -49,7 +49,7 @@ class experiment_config(config_class):
         # Save settings
         self.filepath = r'D:\data\Mark\wave_search\paper_chip_dataset2\\'
         
-        self.name = 'transient_history'
+        self.name = 'transient_test_random_points'
 
         self.configSrc = os.path.dirname(os.path.abspath(__file__))        
         self.inputData = self.generateSineWave
