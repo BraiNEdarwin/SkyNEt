@@ -140,17 +140,8 @@ class resNNet(webNNet):
     
     def _Feedbacktransfer(self, x, init, sink, sink_gate):
         result = sink['input_gain'] * init + sink['feedback_gain'] * sink['transfer'][sink_gate](x).view(init.shape)
-        for i, val in enumerate(result):
-            result[i] = self._clamp(val, sink['input_bounds'])
-        return result
-    
-    def _clamp(self, v, bounds):
-        if v > bounds[1]:
-            v = bounds[1]
-        elif v < bounds[0]:
-            v = bounds[0]
-        return v
-        
+        result = torch.clamp(result, sink['input_bounds'][0], sink['input_bounds'][1])
+        return result        
         
 def Transferfunction(x):
     return torch.sigmoid(x/10)

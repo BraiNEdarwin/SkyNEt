@@ -56,7 +56,8 @@ res.add_vertex(net, '0', output = True, input_gates = [input_electrode], voltage
 res.add_feedback('0', '0', feedback_electrode, input_bounds, input_gain, feedback_gain)
 
 ## forward pass
-output = res.forward_delay(inpt_mask, tau)
+with torch.no_grad():
+    output = res.forward_delay(inpt_mask, tau)
 output_np = output.detach().numpy()
 virout = res.get_virtual_outputs(tau)
 virout_np = virout.detach().numpy()
