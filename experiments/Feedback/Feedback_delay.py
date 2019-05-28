@@ -13,26 +13,26 @@ from SkyNEt.modules.Nets.resNNet import resNNet, Transferfunction
 
 
 ## Parameters
-tau = 400
-N = 1300
+tau = 1000
+N = 10000
 vlow1, vhigh1 = -0.8, 0.2
 vlow2, vhigh2 = -1.1, 0.7
 voltage_bounds = np.repeat([[vlow1, vlow2], [vhigh1, vhigh2]], [2, 5, 2, 5]).reshape(-1, 7).astype(np.float32)
 input_electrode = 6
 feedback_electrode = 6
 input_bounds = torch.tensor(voltage_bounds[:, feedback_electrode])
-skip = 200
+skip = 0
 nodes = 100
 input_gain = 1
 feedback_gain = 1
 
 ## Input Signal
-u = torch.FloatTensor(int(N), 1).uniform_(vlow2/1.25, vhigh2/1.25)
-u = torch.load(r'C:\Users\Jardi\Desktop\BachelorOpdracht\Resultaten\Delay line\input.pt')
+u = torch.FloatTensor(int(N), 1).uniform_(vlow2/5, vhigh2/5)
+#u = torch.load(r'C:\Users\Jardi\Desktop\BachelorOpdracht\Resultaten\Delay line\input.pt')
 u_np = u.numpy()
 inpt = torch.repeat_interleave(u, tau).view(tau*N, 1)
-mask = torch.rand_like(inpt)/2 + 0.75
-mask = torch.load(r'C:\Users\Jardi\Desktop\BachelorOpdracht\Resultaten\Delay line\mask.pt')
+mask = torch.rand_like(inpt)*0.5 + 0.75
+#mask = torch.load(r'C:\Users\Jardi\Desktop\BachelorOpdracht\Resultaten\Delay line\mask1000.pt')
 inpt_mask = inpt * mask
 inpt_np = inpt.numpy()
 inpt_mask_np = inpt_mask.numpy()
@@ -74,6 +74,14 @@ MC = sum(MCk)
 plt.figure()
 x = np.linspace(1, nodes, nodes)
 plt.plot(x, MCk)
+plt.ylim([0,1.05])
+plt.title('Forgetting curve (D = ' + str(tau) + ', n_max = ' + str(N - nodes) + ', gain = ' + str(feedback_gain) + ')')
+plt.xlabel('i')
+plt.ylabel('Memory function m(i)')
+plt.grid(True)
+plt.tight_layout
+
+plt.savefig('../../../Resultaten/MC/MC_D' + str(tau) + 'N_' + str(N - nodes) + 'gain_' + str(feedback_gain) + '.svg')
 
 
 #plt.figure()
@@ -105,17 +113,17 @@ plt.plot(x, MCk)
 #plt.title('Virtual outputs')
 #plt.grid(True)
 #plt.tight_layout()
-#
-x = np.linspace(skip+nodes+1, tau*N, tau*(N-skip-nodes))
+##
+#x = np.linspace(skip+nodes+1, tau*N, tau*(N-skip-nodes))
+##
+##plt.figure()
+##plt.plot(x, inpt_np)
+##plt.plot(x, np.transpose(np.repeat(prediction, tau, axis=1)))
+##plt.title('Delayed outputs')
+##plt.grid(True)
+##plt.tight_layout()
 #
 #plt.figure()
-#plt.plot(x, inpt_np)
-#plt.plot(x, np.transpose(np.repeat(prediction, tau, axis=1)))
-#plt.title('Delayed outputs')
-#plt.grid(True)
-#plt.tight_layout()
-
-plt.figure()
-plt.plot(x, inpt_np[tau*(skip+nodes):])
-plt.plot(x, np.repeat(prediction[0,:], tau))
-plt.plot(x, np.repeat(target[:,0], tau))
+#plt.plot(x, inpt_np[tau*(skip+nodes):])
+#plt.plot(x, np.repeat(prediction[0,:], tau))
+#plt.plot(x, np.repeat(target[:,0], tau))

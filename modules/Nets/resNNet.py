@@ -66,7 +66,7 @@ class resNNet(webNNet):
                         cv_init = getattr(self, sink_name)[cv_index]
                         
                         #Update cv
-                        getattr(self, sink_name)[cv_index] = self._Feedbacktransfer(v_source['output'][:,0][0], cv_init, v_sink, sink_gate)
+                        getattr(self, sink_name)[cv_index] = self._Feedbacktransfer(v_source['output'][:,0], cv_init, v_sink, sink_gate)
                         
                 #forward pass
                 if new_x is None:
@@ -94,9 +94,13 @@ class resNNet(webNNet):
                 if sink_name == '0' and v_sink['swapindices'].index(0) == sink_gate:
                     #Sink of feedback is an input
                     new_x = self._Feedbacktransfer(v_source['output'][:,0], x[i:i+delay], v_sink, sink_gate).view(delay, x.shape[1])
-                #else:
+                else:
                     #Sink of feedback is a control voltage
-                    ##Is this possible??
+                    cv_index = v_sink['swapindices'].index(sink_gate + 1)
+                    cv_init = getattr(self, sink_name)[cv_index]
+                    
+                    out = self._Feedbacktransfer(v_source['output'][:,0], cv_init, v_sink, sink_gate)
+                    getattr(self, sink_name)[cv_index] = torch.mean(out)
             
             #forward pass
             if new_x is None:
