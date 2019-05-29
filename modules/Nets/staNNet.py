@@ -283,14 +283,13 @@ class staNNet(object):
         """
         return data
 
-    def outputs(self,inputs):
+    def outputs(self,inputs,grad=False):
         data = self.load_data(inputs)
-        return self.model(data).data.cpu().numpy()[:,0] * self.info['conversion']
+        if grad:
+          return self.model(data) * self.info['conversion']
+        else:
+          return self.model(data).data.cpu().numpy()[:,0] * self.info['conversion']
     
-    def outputs_torch(self,inputs):
-        data = self.load_data(inputs)
-        return self.model(data) * self.info['conversion']
-
 if __name__ == '__main__':
     #%%
     ###############################################################################
