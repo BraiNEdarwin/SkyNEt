@@ -260,7 +260,7 @@ class webNNet(torch.nn.Module):
         """Returns a copy of all learnable parameters of object in dictionary"""
         params = {}
         for name, param in self.named_parameters():
-            params[name] = torch.tensor(param.data, device=self.cuda)
+            params[name] = param.clone().detach()
         return params
     
     def reset_parameters(self, value = None):
@@ -279,7 +279,7 @@ class webNNet(torch.nn.Module):
                         diff = (voltage_bounds[1]-voltage_bounds[0])
                         param.data = torch.rand(len(param), device=self.cuda)*diff + voltage_bounds[0]
                     else:
-                        param.data = torch.tensor(self.custom_par[name].clone(), device=self.cuda)
+                        param.data = self.custom_par[name].clone().detach().to(device=self.cuda)
         elif isinstance(value, dict):
             assert self.get_parameters().keys() == value.keys(), "Different keys in given dict"
             with torch.no_grad():
@@ -298,8 +298,9 @@ class webNNet(torch.nn.Module):
                 print("type of given parameters (%s) is not available to set parameters of web" % type(value).__name__)
     
     def get_output(self):
-        """Returns last computed output of web"""
-        return torch.tensor(self.output_data.data, device=self.cuda)
+        """Returns copy of last computed output of web (without gradients)"""
+        if self.output_data is not None:
+            return self.output_data.clone().detach()
     
     def _clear_output(self):
         """Reset output data of graph, NOT the parameters"""
