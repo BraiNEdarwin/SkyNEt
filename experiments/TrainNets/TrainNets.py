@@ -17,9 +17,9 @@ from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 ###############################################################################
 ########################### LOAD DATA  ########################################
 ###############################################################################
-main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/NN_data_Mark/7D_train_data/data4nn/2019_04_08/'
+main_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/train set/data4nn/16_04_2019/'
 file_name = 'data_for_training.npz'
-data = dl(main_dir, file_name, syst='cpu', steps=3, test_size=0.1)
+data = dl(main_dir, file_name, syst='cpu', steps=3)
 
 #%%
 ###############################################################################
@@ -52,14 +52,14 @@ plt.show()
 now = datetime.datetime.now()
 nowstr = now.strftime('%d-%m-%Hh%Mm')
 
-plt.savefig(main_dir+f'{nowstr}-Error_lr{learning_rate}-eps{nr_epochs}-mb{batch_size}-b1{beta1}-b2{beta2}.png')
+#plt.savefig(main_dir+f'{nowstr}-Error_lr{learning_rate}-eps{nr_epochs}-mb{batch_size}-b1{beta1}-b2{beta2}.png')
 
 #%%
 ###############################################################################
 ############################## SAVE NN ########################################
 ###############################################################################
 path = main_dir+f'{nowstr}_NN.pt'
-net.save_model(path)
+#net.save_model(path)
 #Then later: net = staNNet(path)
 # Save other stuff? e.g. generalization/test error...
 
@@ -67,11 +67,11 @@ net.save_model(path)
 ###############################################################################
 ########################### LOAD NN & TEST ####################################
 ###############################################################################
-net = staNNet(path)
+#net = staNNet(path)
 
 
 ########################## TEST GENERALIZATION  ###############################
-file_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/NN_data_Mark/7D_test_sets/2019_03_19_084109_rand_test_set_100ms/data4nn/2019_04_08/'
+file_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/random_test_set/data4nn/16_04_2019/'
 inputs, targets = gtd(file_dir+'data_for_test.npz', syst='cpu') #function to load data returning torch Variable with correct form and dtype 
 prediction = net.outputs(inputs)
  
@@ -80,19 +80,21 @@ prediction = net.outputs(inputs)
 
 ### Test Error
 subsample = np.random.permutation(len(prediction))[:30000]
+subsampl_t = targets[subsample,0]
+subsampl_pred = prediction[subsample]
 plt.figure()
 plt.subplot(1,2,1)
 plt.plot(targets[subsample],prediction[subsample],'.')
 plt.xlabel('True Output')
 plt.ylabel('Predicted Output')
-min_out = np.min(np.concatenate((targets[subsample],prediction[subsample,np.newaxis])))
-max_out = np.max(np.concatenate((targets[subsample],prediction[subsample,np.newaxis])))
+min_out = np.min(np.concatenate((subsampl_t,subsampl_pred)))
+max_out = np.max(np.concatenate((subsampl_t,subsampl_pred)))
 plt.plot(np.linspace(min_out,max_out),np.linspace(min_out,max_out),'k')
 plt.title('Predicted vs True values')
 
-error = (targets[:,0]-prediction.T).T
+error = (targets-prediction[:,np.newaxis])
 print(f'MSE on Test Set: \n {np.mean(error**2)}')
 plt.subplot(1,2,2)
-plt.hist(error,100)
+plt.hist(np.reshape(error,error.size),100)
 plt.title('Scaled error histogram')
 plt.show()
