@@ -11,7 +11,17 @@ cf = config.experiment_config()
 t, x = cf.Generate_input() 
 
 adwin = InstrumentImporter.adwinIO.initInstrument()
-y = InstrumentImporter.adwinIO.IO(adwin, x, cf.fs, inputPorts=[1, 1, 1, 1, 0, 0, 0, 0])
+y = InstrumentImporter.adwinIO.IO(adwin, 
+                                  x, 
+                                  cf.fs, 
+                                  inputPorts=[1, 1, 1, 1, 0, 0, 0, 0])
+
+# Detect if output is the same as input
+if(np.max(abs(x-y)) < 0.01):
+    print('ADwin works correctly')
+
+# Final reset
+InstrumentImporter.reset(0, 0, exit=False)
 
 # Plot the output curve.
 for i in range(4):
@@ -24,5 +34,3 @@ for i in range(4):
     plt.legend()
 plt.show()
 
-# Final reset
-InstrumentImporter.reset(0, 0)

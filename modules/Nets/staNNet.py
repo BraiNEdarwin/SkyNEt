@@ -30,17 +30,17 @@ class staNNet(object):
     def __init__(self,*args,loss='MSE',activation='ReLU', dim_cv=5, BN=False):
         
         if len(args) == 3: #data,depth,width
-           data,depth,width = args
+           data,depth,width = args           
+           self.info = {'activation':activation, 'loss':loss}
+           for key, item in data[2].items():
+               self.info[key] = item               
            self.x_train, self.y_train = data[0]
            self.x_val, self.y_val = data[1]
-           self.D_in = self.x_train.size()[1]
+           self.D_in = self.load_data(self.x_train[0]).size()[1]
            self.D_out = self.y_train.size()[1]
            self._BN = BN
            self.depth = depth
            self.width = width
-           self.info = {'activation':activation, 'loss':loss}
-           for key, item in data[2].items():
-               self.info[key] = item
            print(f'Meta-info: \n {list(self.info.keys())}')
            self.ttype = self.x_train.type()
            self._tests()
@@ -212,7 +212,8 @@ class staNNet(object):
                 
                 # Forward pass: compute predicted y by passing x to the model.
                 indices = permutation[i:i+batch_size]
-                y_pred = self.model(self.x_train[indices])
+                x_train = self.load_data(self.x_train[indices])
+                y_pred = self.model(x_train)
                 
                 # Compute and print loss.
                 loss_training = self.loss_fn(y_pred, self.y_train[indices])
@@ -238,13 +239,14 @@ class staNNet(object):
             
             # Evaluate training error
             get_indices = torch.randperm(self.x_train.size()[0]).type(self.itype)[:10000]
-            x = self.x_train[get_indices]
+            x = self.load_data(self.x_train[get_indices])
             y = self.model(x)
             y_subset = self.y_train[get_indices]
             loss = self.loss_fn(y,y_subset).item()
             self.L_train[epoch] = loss
             #Evaluate Validation error
-            y = self.model(self.x_val)
+            x_val = self.load_data(self.x_val)
+            y = self.model(x_val)
             loss = self.loss_fn(y, self.y_val).item()
             self.L_val[epoch] = loss
             
@@ -270,8 +272,15 @@ class staNNet(object):
         state_dic['info'] = self.info
         torch.save(state_dic,path)
 
+    def load_data(self, data):
+        """
+        Loads data that will be fed into the NN.
+        """
+        return data
+
     def outputs(self,inputs):
-        return self.model(inputs).data.cpu().numpy()[:,0]
+        data = self.load_data(inputs)
+        return self.model(data).data.cpu().numpy()[:,0]
 
 if __name__ == '__main__':
     #%%
