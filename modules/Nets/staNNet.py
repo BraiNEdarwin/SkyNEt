@@ -26,17 +26,19 @@ import numpy as np
 import pdb
 
 class staNNet(object):
-    
-    def __init__(self,*args,loss='MSE',activation='ReLU', dim_cv=5, BN=False):
+
+    def __init__(self,*args,loss='MSE',activation='ReLU', dim_cv=5, BN=False, conversion=100):
         
         if len(args) == 3: #data,depth,width
            data,depth,width = args           
-           self.info = {'activation':activation, 'loss':loss}
+           self.info = {'activation':activation, 'loss':loss, 'conversion':conversion}
            for key, item in data[2].items():
                self.info[key] = item               
            self.x_train, self.y_train = data[0]
+           self.y_train = self.y_train/self.info['conversion']
            self.x_val, self.y_val = data[1]
-           self.D_in = self.load_data(self.x_train[0]).size()[1]
+           self.y_val = self.y_val/self.info['conversion']                                     
+           self.D_in = self.load_data(self.x_train[0:1]).size()[1]
            self.D_out = self.y_train.size()[1]
            self._BN = BN
            self.depth = depth
@@ -54,16 +56,16 @@ class staNNet(object):
                self.itype = torch.cuda.LongTensor
                self.model.cuda()
 #               self.loss_fn.cuda() apparently this is not needed if both arguments are already on gpu
-               print('Sent to GPU')
-            
+               print('Sent to GPU')           
         elif len(args)==1 and type(args[0]) is str:
             self._load_model(args[0])
         else:
-            assert False, 'Arguments must be either 3 (data,depth,width) or a string to load the model!'
-            
-        
+            assert False, 'Arguments must be either 3 (data,depth,width) or a string to load the model!'      
+
+                
     def _load_model(self,data_dir):
         print('Loading the model from '+data_dir)
+        self.ttype = torch.torch.FloatTensor
         if torch.cuda.is_available():
             state_dic = torch.load(data_dir)
             self.ttype = torch.cuda.FloatTensor
@@ -74,8 +76,8 @@ class staNNet(object):
             self._BN = True
         else:
             self._BN = False
-        
-        
+
+ 
         # move info key from state_dic to self
         if state_dic.get('info') is not None:
             self.info = state_dic['info']
@@ -129,7 +131,7 @@ class staNNet(object):
             track_running_stats=False  
             print('BN tracking average: ',track_running_stats)
             self.bn_layer = nn.BatchNorm1d(self.width,track_running_stats=track_running_stats)
-       
+        
         activation = self.info['activation']
         if activation == 'tanh':
             activ_func = nn.Tanh()
@@ -142,7 +144,7 @@ class staNNet(object):
         else:
             assert False, "Activation function ('%s') not recognized!" % activation
         
-        
+
         if self._BN: 
             modules = [nn.BatchNorm1d(self.D_in,track_running_stats=track_running_stats),
                        self.l_in,activ_func]
@@ -171,12 +173,12 @@ class staNNet(object):
         else:
             assert False, f'Loss function ERROR! {loss} is not recognized'
         
-    def loss_fn(self, pred, targets, scaling=10):
+    def loss_fn(self, pred, targets):
         y = pred#targets
         sign = torch.sign(y)
         ay = (sign-1)/2 * (self.a[0] * torch.abs(y)) + (sign+1)/2 * (self.a[1] * torch.abs(y))
         b = (sign-1)/2 * self.b[0] + (sign+1)/2 * self.b[1]
-        C = ((pred - targets/scaling) ** 2) / (ay**2 + b**2) #+ pred**2
+        C = ((pred - targets) ** 2) / (ay**2 + b**2) #+ pred**2
         r = torch.mean(C)
 #        r = torch.mean(torch.log(C))
         #pdb.set_trace()
@@ -185,6 +187,7 @@ class staNNet(object):
     def train_nn(self,learning_rate,nr_epochs,batch_size,
                  betas = (0.9, 0.999),
                  data = None, seed=False):
+
         """TO DO: 
             check if x_train, x_val and y_train and y_val are defined, if not, raise an error asking to define
         """
@@ -217,6 +220,7 @@ class staNNet(object):
                 
                 # Compute and print loss.
                 loss_training = self.loss_fn(y_pred, self.y_train[indices])
+
                 # Before the backward pass, use the optimizer object to zero all of the
                 # gradients for the variables it will update (which are the learnable
                 # weights of the model). This is because by default, gradients are
@@ -232,28 +236,27 @@ class staNNet(object):
                 # parameters
                 optimizer.step()
                 nr_minibatches += 1
-        
-            
-            
+                             
             self.model.eval()
             
             # Evaluate training error
             get_indices = torch.randperm(self.x_train.size()[0]).type(self.itype)[:10000]
             x = self.load_data(self.x_train[get_indices])
-            y = self.model(x)
-            y_subset = self.y_train[get_indices]
+            y = self.model(x) * self.info['conversion'] #\\
+            y_subset = self.y_train[get_indices] * self.info['conversion'] 
             loss = self.loss_fn(y,y_subset).item()
             self.L_train[epoch] = loss
             #Evaluate Validation error
             x_val = self.load_data(self.x_val)
-            y = self.model(x_val)
-            loss = self.loss_fn(y, self.y_val).item()
+            y = self.model(x_val) * self.info['conversion']
+            loss = self.loss_fn(y, self.y_val * self.info['conversion']).item() 
             self.L_val[epoch] = loss
             
             print('Epoch:', epoch, 'Val. Error:', self.L_val[epoch],
                   'Training Error:', self.L_train[epoch])
             self.model.train()
-            
+        self.info['L_train'] = self.L_train
+        self.info['L_val'] = self.L_val
         print('Finished Training')
 #        plt.figure()
 #        plt.plot(np.arange(nr_epochs),self.L_val)
@@ -278,10 +281,13 @@ class staNNet(object):
         """
         return data
 
-    def outputs(self,inputs):
+    def outputs(self,inputs,grad=False):
         data = self.load_data(inputs)
-        return self.model(data).data.cpu().numpy()[:,0]
-
+        if grad:
+          return self.model(data) * self.info['conversion']
+        else:
+          return self.model(data).data.cpu().numpy()[:,0] * self.info['conversion']
+    
 if __name__ == '__main__':
     #%%
     ###############################################################################
