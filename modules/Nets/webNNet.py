@@ -81,7 +81,7 @@ class webNNet(torch.nn.Module):
     def add_vertex(self, network, name, output=False, input_gates=None, voltage_bounds=None):
         """Adds neural network as a vertex to the graph.
         Args:
-            network:        (object with attribute D_in and method output()) vertex
+            network:        (object with attribute D_in and method outputs(inputs, grad=true)) vertex node
             name:           (str) key of graph dictionary in which vertex is created (str)
             output:         (bool) wheter of not this vertex' output is output of complete graph (boolean)
             input_gates:    (list) numbers of gates which should be used as inputs
@@ -228,7 +228,7 @@ class webNNet(torch.nn.Module):
                     # insert data from arc into control voltage parameters with correct transfer function
                     data[:, sink_gate] = v['transfer'][sink_gate](self.graph[source_name]['output'][:,0])
             # feed through network
-            v['output'] = v['network'].model(data)
+            v['output'] = v['network'].outputs(data, grad=True)
             v['evaluated'] = True
     
     def error_fn(self, y_pred, y, beta):

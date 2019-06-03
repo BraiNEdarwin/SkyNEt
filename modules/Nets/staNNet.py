@@ -94,6 +94,8 @@ class staNNet(object):
                 if 'bias' not in key and 'weight' not in key:
                     self.info[key] = item
                     state_dic.pop(key)
+            if 'conversion' not in self.info.keys():
+                self.info['conversion'] = 1.0
 
         print('NN loaded with activation %s and loss %s' % (self.info['activation'], self.info['loss']))
         loss = self.info['loss']
