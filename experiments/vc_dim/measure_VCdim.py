@@ -47,9 +47,9 @@ def evolve(inputs, binary_labels, fitthr=0.9,
     x = cf.InputGen[1]  # Array with P and Q signal
     w = cf.InputGen[2]  # Weight array
     target = cf.amplification*cf.TargetGen  # Target signal
-    plt.figure()
-    plt.plot(x.T)
-    plt.show()
+    #plt.figure()
+    #plt.plot(x.T)
+    #plt.show()
     # np arrays to save genePools, outputs and fitness
     geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
     outputArray = np.zeros((cf.generations, cf.genomes, len(x[0])))
@@ -87,7 +87,7 @@ def evolve(inputs, binary_labels, fitthr=0.9,
                                         cf.generange[k], genePool.pool[j, k])
             if not importerror:
                 IVVIrack.setControlVoltages(ivvi, controlVoltages)
-                time.sleep(1)  # Wait after setting DACs
+                #time.sleep(0.1)  # Wait after setting DACs
 
             # Set the input scaling
             x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
@@ -224,6 +224,7 @@ def reset(signum, frame):
         
 #%% MAIN
 if __name__=='__main__':
-    inputs = [[-0.7,0.7,-0.7,0.7,-1,1],[-0.7,-0.7,0.7,0.7,0,0]]
-    binary_labels = [1,0,1,1,0,1]
-    best_genome, best_output, max_fitness, accuracy = evolve(inputs,binary_labels,hush=False)
+    inputs = [[-0.7,0.7,-0.7,0.7,-0.35,0.35,0.,0.],[-0.7,-0.7,0.7,0.7,0.,0.,-1.0,1.0]]
+    #[[-0.7,0.7,-0.7,0.7,-1,1,0.35],[-0.7,-0.7,0.7,0.7,0,0,-0.35]]
+    binary_labels = [1,0,1,1,0,1,0,1]
+    best_genome, best_output, max_fitness, accuracy = evolve(inputs,binary_labels,hush=True)
