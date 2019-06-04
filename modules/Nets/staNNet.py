@@ -72,6 +72,7 @@ class staNNet(object):
             self.ttype = torch.cuda.FloatTensor
         else:
             state_dic = torch.load(data_dir, map_location='cpu')
+            self.ttype = torch.FloatTensor
         if list(filter(lambda x: 'running_mean' in x,state_dic.keys())):
             print('BN active in loaded model')
             self._BN = True

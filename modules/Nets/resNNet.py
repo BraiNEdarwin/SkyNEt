@@ -108,6 +108,7 @@ class resNNet(webNNet):
             
             super(resNNet, self).forward(new_x)
             output[i:i+delay,:] = self._collect_outputs(delay)
+            #output[i:i+delay,:] = torch.from_numpy(np.tanh(new_x.numpy())).float()
         
         self.output = output
         return output
@@ -125,13 +126,14 @@ class resNNet(webNNet):
         self.output = out
         return out
     
-    def train_weights(self, x, L, skip):
+    def train_weights(self, x, L, skip, out = None):
         x = np.delete(x, np.s_[:skip])
         target = np.full((len(x), L), np.nan)
         for i in range(L):
             target[:,i] = np.roll(x, i+1).reshape((len(x),))
         #target = np.transpose(target)
-        out = self.output.detach().numpy()
+        if out is None:
+            out = self.output.detach().numpy()
         self.trained_weights = np.transpose(np.dot(np.linalg.pinv(out[skip+L:]), target[L:]))
         return self.trained_weights, target[L:]
             
@@ -139,8 +141,9 @@ class resNNet(webNNet):
         return torch.cat((x[-delay:], x[:-delay]))
     
     def _Feedbacktransfer(self, x, init, sink, sink_gate):
-        result = sink['input_gain'] * init + sink['feedback_gain'] * sink['transfer'][sink_gate](x).view(init.shape)
-        result = torch.clamp(result, sink['input_bounds'][0], sink['input_bounds'][1])
+        out = x * 3/25 - 0.6
+        result = sink['input_gain'] * init + sink['feedback_gain'] * out.view(init.shape)
+        #result = torch.clamp(result, sink['input_bounds'][0], sink['input_bounds'][1])
         return result        
         
 def Transferfunction(x):

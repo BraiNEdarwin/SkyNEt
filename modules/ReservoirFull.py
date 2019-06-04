@@ -8,6 +8,9 @@ can be trained to output a desired signal.
 # Libraries
 # Third-party libraries
 import numpy as np
+import torch
+from SkyNEt.modules.Nets.staNNet import staNNet
+from SkyNEt.modules.Nets.webNNet import webNNet
 
 
 class Network(object):
@@ -33,13 +36,21 @@ class Network(object):
         # print("Spectral radius of the weight matrix is " +
         #       str(np.linalg.norm(
         #           max(np.linalg.eigvals(self.reservoir_weights)))))
+        
+        main_dir = r'C:/Users/Jardi/Desktop/BachelorOpdracht/NNModel/'
+        data_dir = 'MSE_n_d5w90_500ep_lr3e-3_b2048.pt'
+        self.net = staNNet(main_dir+data_dir)
+        self.node = webNNet()
+        self.node.add_vertex(self.net, 'A', True, [0])
+        
 
     def update_reservoir(self, input_val):
         # Build the input for each reservoir node
         input_arr = np.dot(self.input_weights, input_val)
-        activation = np.dot(self.reservoir_weights, self.state) + input_arr
+        activation = np.dot(self.reservoir_weights, self.state)*3/25 -0.6 + input_arr
         # Calculate the new state
-        self.state = tanh(activation)
+        #self.state = tanh(activation)
+        self.state = self.node.forward(torch.from_numpy(activation).float()).detach().numpy()
         self.reservoir_output = tanh(
             np.dot(self.output_weights, self.state))
         # Collect the states
