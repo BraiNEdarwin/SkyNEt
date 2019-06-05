@@ -80,7 +80,7 @@ class resNNet(webNNet):
             #no feedback
             return super(resNNet, self).forward(x)
         
-    def forward_delay(self, x, delay):
+    def forward_delay(self, x, delay, theta):
         #evaluate the graph once before applying input to set the initial output values
         super(resNNet, self).forward(torch.zeros(delay, x.shape[1]))
         output = torch.full((len(x[:,0]), len(self.graph)), np.nan)
@@ -107,8 +107,16 @@ class resNNet(webNNet):
                 new_x = x[i:i+delay].view(delay, x.shape[1])
             
             super(resNNet, self).forward(new_x)
-            output[i:i+delay,:] = self._collect_outputs(delay)
-            #output[i:i+delay,:] = torch.from_numpy(np.tanh(new_x.numpy())).float()
+            f = self._collect_outputs(delay)
+            #output[i:i+delay,:] = self._collect_outputs(delay)
+            if i == 0:
+                output[0,:] = f[0]
+                for ii in range(1,delay):
+                    output[ii,:] = output[ii-1]/np.e**theta + (1-1/np.e**theta)*f[ii]
+            else:
+                for ii in range(delay):
+                    output[i+ii,:] = output[i+ii-1]/np.e + (1-1/np.e)*f[ii]
+            self.graph['0']['output'] = output[i:i+delay,:]
         
         self.output = output
         return output
@@ -136,19 +144,38 @@ class resNNet(webNNet):
             out = self.output.detach().numpy()
         self.trained_weights = np.transpose(np.dot(np.linalg.pinv(out[skip+L:]), target[L:]))
         return self.trained_weights, target[L:]
+    
+    def train_weights_RR(self, x, L, skip, alpha, out = None):
+        x = np.delete(x, np.s_[:skip])
+        target = np.full((len(x), L), np.nan)
+        for i in range(L):
+            target[:,i] = np.roll(x, i+1).reshape((len(x),))
+        #target = np.transpose(target)
+        if out is None:
+            out = self.output.detach().numpy()
+        R = np.dot(out[skip+L:].transpose(), out[skip+L:])
+        P = np.dot(out[skip+L:].transpose(), target[L:])
+        print(R.shape)
+        print(P.shape)
+        print((R + alpha**2).shape)
+        print(out.shape)
+        print(target.shape)
+        #Id = np.identity(R.size)
+        self.trained_weights = np.transpose(np.dot(np.linalg.inv(R + alpha ** 2), P))
+        return self.trained_weights, target[L:]
             
     def _delay(self, x, delay):
         return torch.cat((x[-delay:], x[:-delay]))
     
     def _Feedbacktransfer(self, x, init, sink, sink_gate):
-        out = x * 3/25 - 0.6
+        out = sink['transfer'][sink_gate](x)/2
         result = sink['input_gain'] * init + sink['feedback_gain'] * out.view(init.shape)
         #result = torch.clamp(result, sink['input_bounds'][0], sink['input_bounds'][1])
         return result        
         
 def Transferfunction(x):
-    return torch.sigmoid(x/10)
-    #return (torch.clamp(x + 30, 0, 60))/60
+    out = (x+50)/100
+    return torch.clamp(out, 0, 1)
 
 #def Feedbacktransfer(x, init, bounds, input_gain = 1, feedback_gain = 0.5):
 #    result = input_gain * init + Transferfunction(feedback_gain * x)

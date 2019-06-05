@@ -41,16 +41,17 @@ class Network(object):
         data_dir = 'MSE_n_d5w90_500ep_lr3e-3_b2048.pt'
         self.net = staNNet(main_dir+data_dir)
         self.node = webNNet()
-        self.node.add_vertex(self.net, 'A', True, [0])
+        self.node.add_vertex(self.net, 'A', True, [4])
         
 
     def update_reservoir(self, input_val):
         # Build the input for each reservoir node
         input_arr = np.dot(self.input_weights, input_val)
-        activation = np.dot(self.reservoir_weights, self.state)*3/25 -0.6 + input_arr
+        activation = np.dot(self.reservoir_weights, self.state) + input_arr
+        #activation = Transferfunction(np.dot(self.reservoir_weights, self.state)) + input_arr
         # Calculate the new state
-        #self.state = tanh(activation)
-        self.state = self.node.forward(torch.from_numpy(activation).float()).detach().numpy()
+        self.state = tanh(activation)
+        #self.state = self.node.forward(torch.from_numpy(activation).float()).detach().numpy()
         self.reservoir_output = tanh(
             np.dot(self.output_weights, self.state))
         # Collect the states
@@ -86,3 +87,9 @@ def sigmoid(z):
 
 def tanh(z):
     return np.tanh(z)
+
+def Transferfunction(x):
+    #return torch.sigmoid((x/1.2-3))
+    out = (x+1)/11
+    out = np.clip(out, 0, 1)
+    return out*1.2 - 0.6
