@@ -15,19 +15,19 @@ import time
 start = time.time()
 
 ## Parameters
-vir_nodes = 250
-theta = 0.5
+vir_nodes = 25
+theta = 1
 tau = int(vir_nodes * theta)
-N = 10000
-vlow1, vhigh1 = -0.7, 0.3
-vlow2, vhigh2 = -1.2, 0.6
+N = 1000
+vlow1, vhigh1 = -1, 1
+vlow2, vhigh2 = -1.2, 1.2
 voltage_bounds = np.repeat([[vlow2, vlow1], [vhigh2, vhigh1]], [5, 2, 5, 2]).reshape(-1, 7).astype(np.float32)
 input_electrode = 4
 feedback_electrode = input_electrode
 input_bounds = torch.tensor(voltage_bounds[:, feedback_electrode])
 skip = 200
 nodes = 50
-input_gain = 1
+input_gain = 2
 feedback_gain = 0.98
 
 ## Input Signal
@@ -43,7 +43,7 @@ inpt_mask_np = inpt_mask.numpy()
 
 ## Load neural net
 main_dir = r'C:/Users/Jardi/Desktop/BachelorOpdracht/NNModel/'
-data_dir = 'MSE_d5w90_500ep_lr1e-3_b2048_b1b2_0.90.75-11-05-21h48m.pt'
+data_dir = 'MSE_n_d5w90_500ep_lr3e-3_b2048.pt'
 net = staNNet(main_dir+data_dir)
 
 ## Initialise reservoir
@@ -84,10 +84,10 @@ virout_np = virout.detach().numpy()
 #for i in range(vir_nodes):
 #    virout_np[:,i] = output[i::vir_nodes].reshape(N,)
 
-u_np = np.load(r"..\..\..\Resultaten\u.npy")
-virout_np = np.load(r"..\..\..\Resultaten\virout.npy")
-bias = np.ones((virout_np.shape[0], 1))
-virout_np = np.append(virout_np, bias, axis=1)
+#u_np = np.load(r"..\..\..\Resultaten\u.npy")
+#virout_np = np.load(r"..\..\..\Resultaten\virout.npy")
+#bias = np.ones((virout_np.shape[0], 1))
+#virout_np = np.append(virout_np, bias, axis=1)
 
 weights, target = res.train_weights(u_np, nodes, skip, virout_np)
 
@@ -144,7 +144,7 @@ plt.figure()
 x = np.linspace(1, nodes, nodes)
 plt.plot(x, MCk)
 plt.ylim([0,1.05])
-plt.title('Forgetting curve (D = ' + str(vir_nodes) + ', n_max = ' + str(N - nodes) + ', gain = ' + str(feedback_gain) + ')')
+plt.title('Forgetting curve (D = ' + str(vir_nodes) + ', n_max = ' + str(N - nodes - skip) + ', gain = ' + str(feedback_gain) + ')')
 plt.xlabel('i')
 plt.ylabel('Memory function m(i)')
 plt.grid(True)
@@ -155,7 +155,7 @@ plt.tight_layout
 #plt.savefig('../../../Resultaten/MC/MC_D' + str(vir_nodes) + 'N_' + str(N - nodes) + 'gain_' + str(feedback_gain) + '.svg')
 
 plt.figure()
-x2 = np.linspace(-60, 60, 1000)
+x2 = np.linspace(-5, 20, 1000)
 y = res.graph['0']['transfer'][0](torch.from_numpy(x2)).numpy()
 plt.plot(x2, y)
 plt.grid(True)

@@ -8,8 +8,9 @@ Created on Mon May  6 15:13:26 2019
 import torch
 import numpy as np
 from collections import OrderedDict as odict
-from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
+import SkyNEt.modules.Evolution as Evolution
+import time
 
 class resNNet(webNNet):
     
@@ -85,7 +86,7 @@ class resNNet(webNNet):
         super(resNNet, self).forward(torch.zeros(delay, x.shape[1]))
         output = torch.full((len(x[:,0]), len(self.graph)), np.nan)
         for i in range(0, len(x[delay:,0])+1, delay):
-            print(i)
+            #print(i)
             new_x = None
             for sink, source_name in self.feedback_arcs.items():
                 sink_name, sink_gate = sink
@@ -127,10 +128,12 @@ class resNNet(webNNet):
             output[:,i:i+delay] = self.graph[val]['output']
         return output
     
-    def get_virtual_outputs(self, tau):
+    def get_virtual_outputs(self, tau, output = None):
         out = torch.full((int(len(self.output)/tau), tau), np.nan)
+        if output is None:
+            output = self.output
         for i in range(tau):
-            out[:,i] = self.output[i::tau].view((len(out),))
+            out[:,i] = output[i::tau].view((len(out),))
         self.output = out
         return out
     
@@ -155,11 +158,6 @@ class resNNet(webNNet):
             out = self.output.detach().numpy()
         R = np.dot(out[skip+L:].transpose(), out[skip+L:])
         P = np.dot(out[skip+L:].transpose(), target[L:])
-        print(R.shape)
-        print(P.shape)
-        print((R + alpha**2).shape)
-        print(out.shape)
-        print(target.shape)
         #Id = np.identity(R.size)
         self.trained_weights = np.transpose(np.dot(np.linalg.inv(R + alpha ** 2), P))
         return self.trained_weights, target[L:]
@@ -171,10 +169,67 @@ class resNNet(webNNet):
         out = sink['transfer'][sink_gate](x)/2
         result = sink['input_gain'] * init + sink['feedback_gain'] * out.view(init.shape)
         #result = torch.clamp(result, sink['input_bounds'][0], sink['input_bounds'][1])
-        return result        
+        return result
+
+    def trainGA(self, train_data, cf, verbose = False):
+        # initialize genepool
+        genepool = Evolution.GenePool(cf)
+        
+        # np arrays to save genePools, outputs and fitness
+        geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
+        outputArray = np.zeros((cf.generations, cf.genomes, train_data.shape[0]*cf.vir_nodes))
+        fitnessArray = np.zeros((cf.generations, cf.genomes))
+        
+        # Temporary arrays, overwritten each generation
+        fitnessTemp = np.zeros(cf.genomes)
+        outputTemp = torch.zeros(cf.genomes, train_data.shape[0]*cf.vir_nodes, self.nr_output_vertices, device=self.cuda)
+    
+        for i in range(cf.generations):
+            #Time multiplex data
+            start = time.time()
+            N = train_data.shape[0]
+            inpt = torch.repeat_interleave(train_data, cf.vir_nodes).view(cf.vir_nodes*N, 1)
+            mask = torch.rand(cf.vir_nodes).repeat(N).view(inpt.shape) - 0.5
+            inpt_masked = inpt * mask
+            for j in range(cf.genomes):
+                # update parameters of each network
+                self.set_parameters_from_pool(genepool.pool[j], cf, genepool)
+                with torch.no_grad():
+                    outputTemp[j] = self.forward_delay(inpt_masked, cf.vir_nodes, cf.theta)
+                virout = self.get_virtual_outputs(cf.vir_nodes).detach().numpy()
+                
+                weights, targets = self.train_weights(train_data, cf.output_nodes, cf.skip)
+                fitnessTemp[j] = cf.Fitness(virout, weights, targets)
+            
+            genepool.fitness = fitnessTemp  # Save best fitness
+    
+            # Save generation data
+            geneArray[i, :, :] = genepool.pool
+            outputArray[i, :, :] = outputTemp.detach().numpy().reshape(cf.genomes, train_data.shape[0]*cf.vir_nodes)
+            fitnessArray[i, :] = genepool.fitness
+    
+            if verbose:
+                print("Generation nr. " + str(i + 1) + " completed in " + str((time.time() - start)/60) + " minutes")
+                print("Best fitness: " + str(np.amax(genepool.fitness)))
+            
+            genepool.NextGen()
+    
+        return geneArray, outputArray, fitnessArray
+    
+    def set_parameters_from_pool(self, pool, cf, genepool):
+        genes = np.full(pool.shape, np.nan)
+        for i, gene in enumerate(pool):
+            genes[i] = genepool.MapGenes(cf.generange[i], pool[i])
+        for i in range(6):
+            getattr(self, '0')[i] = genes[i]
+        self.graph['0']['input_gain'] = genes[6]
+        self.graph['0']['feedback_gain'] = genes[7]
+        cf.theta = genes[8]
+        
         
 def Transferfunction(x):
-    out = (x+50)/100
+    #out = (x+50)/100
+    out = (x+1)/11
     return torch.clamp(out, 0, 1)
 
 #def Feedbacktransfer(x, init, bounds, input_gain = 1, feedback_gain = 0.5):
