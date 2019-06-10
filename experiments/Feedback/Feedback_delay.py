@@ -15,10 +15,10 @@ import time
 start = time.time()
 
 ## Parameters
-vir_nodes = 25
+vir_nodes = 100
 theta = 1
 tau = int(vir_nodes * theta)
-N = 1000
+N = 5250
 vlow1, vhigh1 = -1, 1
 vlow2, vhigh2 = -1.2, 1.2
 voltage_bounds = np.repeat([[vlow2, vlow1], [vhigh2, vhigh1]], [5, 2, 5, 2]).reshape(-1, 7).astype(np.float32)
@@ -42,7 +42,7 @@ inpt_np = inpt.numpy()
 inpt_mask_np = inpt_mask.numpy()
 
 ## Load neural net
-main_dir = r'C:/Users/Jardi/Desktop/BachelorOpdracht/NNModel/'
+main_dir = r'D:/Jardi/NNModels/'
 data_dir = 'MSE_n_d5w90_500ep_lr3e-3_b2048.pt'
 net = staNNet(main_dir+data_dir)
 

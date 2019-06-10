@@ -27,7 +27,7 @@ class config_feedback_GA(config.experiment_config):
         self.input_electrode = 3
         self.theta = 1
         
-        self.Fitness = self.getMC
+        self.Fitness = self.fitnessMC
 
         # Documentation
         self.genelabels = ['CV1','CV2','CV3','CV4','CV5','CV6','Input_gain','Feedback_gain','theta']
@@ -46,4 +46,10 @@ class config_feedback_GA(config.experiment_config):
         for i in range(self.output_nodes):
             MCk[i] = np.corrcoef(targets[:,i], prediction[i,:])[0,1]**2
         return sum(MCk), MCk
+    
+    def fitnessMC(self, outputs, weights, targets):
+        _, MCk = self.getMC(outputs, weights, targets)
+        a = np.linspace(1, 3, self.output_nodes)
+        weights = np.exp(a)-np.e+1
+        return sum(np.multiply(MCk, weights)), MCk
         

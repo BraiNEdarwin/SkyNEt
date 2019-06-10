@@ -129,9 +129,11 @@ class resNNet(webNNet):
         return output
     
     def get_virtual_outputs(self, tau, output = None):
-        out = torch.full((int(len(self.output)/tau), tau), np.nan)
         if output is None:
             output = self.output
+        else:
+            output = torch.from_numpy(output).t()
+        out = torch.full((int(len(output)/tau), tau), np.nan)
         for i in range(tau):
             out[:,i] = output[i::tau].view((len(out),))
         self.output = out
@@ -171,18 +173,21 @@ class resNNet(webNNet):
         #result = torch.clamp(result, sink['input_bounds'][0], sink['input_bounds'][1])
         return result
 
-    def trainGA(self, train_data, cf, verbose = False):
+    def trainGA(self, train_data, cf, verbose = False, output = True):
         # initialize genepool
         genepool = Evolution.GenePool(cf)
         
         # np arrays to save genePools, outputs and fitness
         geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
-        outputArray = np.zeros((cf.generations, cf.genomes, train_data.shape[0]*cf.vir_nodes))
+        if output:
+            outputArray = np.zeros((cf.generations, cf.genomes, train_data.shape[0]*cf.vir_nodes))
         fitnessArray = np.zeros((cf.generations, cf.genomes))
+        memoryArray = np.zeros((cf.generations, cf.genomes, cf.output_nodes))
         
         # Temporary arrays, overwritten each generation
         fitnessTemp = np.zeros(cf.genomes)
         outputTemp = torch.zeros(cf.genomes, train_data.shape[0]*cf.vir_nodes, self.nr_output_vertices, device=self.cuda)
+        memoryTemp = np.zeros((cf.genomes, cf.output_nodes))
     
         for i in range(cf.generations):
             #Time multiplex data
@@ -199,14 +204,16 @@ class resNNet(webNNet):
                 virout = self.get_virtual_outputs(cf.vir_nodes).detach().numpy()
                 
                 weights, targets = self.train_weights(train_data, cf.output_nodes, cf.skip)
-                fitnessTemp[j] = cf.Fitness(virout, weights, targets)
+                fitnessTemp[j], memoryTemp[j] = cf.Fitness(virout, weights, targets)
             
             genepool.fitness = fitnessTemp  # Save best fitness
     
             # Save generation data
             geneArray[i, :, :] = genepool.pool
-            outputArray[i, :, :] = outputTemp.detach().numpy().reshape(cf.genomes, train_data.shape[0]*cf.vir_nodes)
+            if output:
+                outputArray[i, :, :] = outputTemp.detach().numpy().reshape(cf.genomes, train_data.shape[0]*cf.vir_nodes)
             fitnessArray[i, :] = genepool.fitness
+            memoryArray[i, :, :] = memoryTemp
     
             if verbose:
                 print("Generation nr. " + str(i + 1) + " completed in " + str((time.time() - start)/60) + " minutes")
@@ -214,7 +221,10 @@ class resNNet(webNNet):
             
             genepool.NextGen()
     
-        return geneArray, outputArray, fitnessArray
+        if output:
+            return geneArray, fitnessArray, memoryArray, outputArray
+        else:
+            return geneArray, fitnessArray, memoryArray
     
     def set_parameters_from_pool(self, pool, cf, genepool):
         genes = np.full(pool.shape, np.nan)
