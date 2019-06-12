@@ -57,13 +57,13 @@ norm_valerror = valerror
 ###############################################################################
 ########################### LOAD NN & TEST ####################################
 ###############################################################################
-generate_input = False
+generate_input = True
 
 #file_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\testsets\2019_05_20_123116_test_set_7h\test_set_skip12.npz'
-file_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\testsets\2019_05_20_202552_testset1_40k\testset1_40k.npz'
+file_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\testsets\testset_sines_skip12.npz'
 
-NN_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\2019_05_17_095928_trainData_3d\Nets\MSE\\'
-NN_file = 'MSE_d5w90_500ep_lr3e-3_b[2048]_b1b2_0.90.75-21-05-04h05m.pt'
+NN_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\2019_05_17_095928_trainData_3d\Nets\MSE_n\\'
+NN_file = 'MSE_n_d5w90_500ep_lr3e-3_b[2048]_b1b2_0.90.75-23-05-16h49m.pt'
 
 if generate_input:
     net = lightNNet(NN_dir + NN_file)
@@ -74,15 +74,15 @@ else:
 ########################## TEST GENERALIZATION  ###############################
 inputs, targets = gtd(file_dir, syst='cpu') #function to load data returning torch Variable with correct form and dtype 
 targets = targets
-prediction = net.outputs(inputs)*net.info['conversion']
+prediction = net.outputs(inputs)
 
 
 ### Training profile
-#plt.figure()
-#plt.plot(np.arange(net.info['L_val'].shape[0]),net.info['L_val'].T)
-#plt.title('Validation MSE Profile while Training')
-#plt.xlabel('Epochs')
-#plt.show()
+plt.figure()
+plt.plot(np.arange(net.info['L_val'].shape[0]),net.info['L_val'].T)
+plt.title('Validation MSE Profile while Training')
+plt.xlabel('Epochs')
+plt.show()
 
 ### Test Error
 subsample = np.random.permutation(len(prediction))[:100000]
@@ -100,7 +100,7 @@ error = (targets[:]-prediction[:]).T#/np.sqrt(baseline_var)
 print(f'MSE on Test Set: \n {np.mean(error**2)}')
 
 plt.subplot(1,2,2)
-plt.hist(error[subsample],100)
+plt.hist(error[subsample],300)
 plt.xlabel('error (nA)')
 plt.ylabel('nr. of samples')
 #plt.title('Scaled error histogram')

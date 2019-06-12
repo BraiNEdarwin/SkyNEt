@@ -31,13 +31,13 @@ class staNNet(object):
         
         if len(args) == 3: #data,depth,width
            data,depth,width = args           
-           self.info = {'activation':activation, 'loss':loss, 'conversion':100} #\\
+           self.info = {'activation':activation, 'loss':loss, 'conversion':100}
            for key, item in data[2].items():
                self.info[key] = item               
            self.x_train, self.y_train = data[0]
-           self.y_train = self.y_train/self.info['conversion'] #\\
+           self.y_train = self.y_train/self.info['conversion']
            self.x_val, self.y_val = data[1]
-           self.y_val = self.y_val/self.info['conversion']  #\\ 
+           self.y_val = self.y_val/self.info['conversion']                                     
            self.D_in = self.load_data(self.x_train[0:1]).size()[1]
            self.D_out = self.y_train.size()[1]
            self._BN = BN
@@ -46,7 +46,6 @@ class staNNet(object):
            
            print(f'Meta-info: \n {list(self.info.keys())}')
            self.ttype = self.x_train.type()
-           
            self._tests()
         
            ################### DEFINE MODEL ######################################
@@ -68,6 +67,7 @@ class staNNet(object):
                 
     def _load_model(self,data_dir):
         print('Loading the model from '+data_dir)
+        self.ttype = torch.torch.FloatTensor
         if torch.cuda.is_available():
             state_dic = torch.load(data_dir)
             self.ttype = torch.cuda.FloatTensor
@@ -168,19 +168,19 @@ class staNNet(object):
         self.model = nn.Sequential(*modules)
         print(f'Loss founction is defined to be {loss}')
         if loss == 'RMSE':
-            self.a = torch.tensor([0.01900258860717661, 0.014385111570154395]).type(self.ttype)
-            self.b = torch.tensor([0.21272562199413553, 0.0994027221336]).type(self.ttype)
+            self.a = torch.tensor([0.0238498, 0.03450377]).type(self.ttype)
+            self.b = torch.tensor([0.32410645108428926, 0.14673028534396296]).type(self.ttype)
         elif loss == 'MSE':
             self.loss_fn = nn.MSELoss()
         else:
             assert False, f'Loss function ERROR! {loss} is not recognized'
         
-    def loss_fn(self, pred, targets, scaling=1):
+    def loss_fn(self, pred, targets):
         y = pred#targets
         sign = torch.sign(y)
-        ay = (sign-1)/2 * (self.a[0] * torch.abs(y)) + (sign+1)/2 * (self.a[1] * torch.abs(y))
-        b = (sign-1)/2 * self.b[0] + (sign+1)/2 * self.b[1]
-        C = ((pred - targets/scaling) ** 2) / (ay**2 + b**2) #+ pred**2
+        ay = -1*(sign-1)/2 * (self.a[0] * torch.abs(y)) + (sign+1)/2 * (self.a[1] * torch.abs(y))
+        b = -1*(sign-1)/2 * self.b[0] + (sign+1)/2 * self.b[1]
+        C = ((pred - targets) ** 2) / (ay + b) #+ pred**2
         r = torch.mean(C)
 #        r = torch.mean(torch.log(C))
         #pdb.set_trace()
@@ -244,22 +244,22 @@ class staNNet(object):
             # Evaluate training error
             get_indices = torch.randperm(self.x_train.size()[0]).type(self.itype)[:10000]
             x = self.load_data(self.x_train[get_indices])
-            y = self.model(x)
-            y_subset = self.y_train[get_indices]
+            y = self.model(x) * self.info['conversion'] 
+            y_subset = self.y_train[get_indices] * self.info['conversion'] 
             loss = self.loss_fn(y,y_subset).item()
             self.L_train[epoch] = loss
             
             #Evaluate Validation error
             x_val = self.load_data(self.x_val)
-            y = self.model(x_val)
-            loss = self.loss_fn(y, self.y_val).item()
+            y = self.model(x_val) * self.info['conversion'] 
+            loss = self.loss_fn(y, self.y_val * self.info['conversion']).item() 
             self.L_val[epoch] = loss
             
             print('Epoch:', epoch, 'Val. Error:', self.L_val[epoch],
                   'Training Error:', self.L_train[epoch])
             self.model.train()
-        self.info['L_train'] = self.L_train   
-        self.info['L_val'] = self.L_val   
+        self.info['L_train'] = self.L_train
+        self.info['L_val'] = self.L_val
         print('Finished Training')
 #        plt.figure()
 #        plt.plot(np.arange(nr_epochs),self.L_val)
@@ -286,7 +286,11 @@ class staNNet(object):
 
     def outputs(self,inputs):
         data = self.load_data(inputs)
-        return self.model(data).data.cpu().numpy()[:,0]
+        return self.model(data).data.cpu().numpy()[:,0] * self.info['conversion']
+    
+    def outputs_torch(self,inputs):
+        data = self.load_data(inputs)
+        return self.model(data) * self.info['conversion']
 
 if __name__ == '__main__':
     #%%
