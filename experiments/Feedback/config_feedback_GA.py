@@ -15,7 +15,7 @@ class config_feedback_GA(config.experiment_config):
         
         self.generations = 10
         self.mutationrate = 0.1
-        self.generange = [[-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1,1], [-1,1], [-2, 2], [-5, 5], [0, 100]]
+        self.generange = [[-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1,1], [-1,1], [-5, 5], [-5, 5], [0, 2]]
 #        self.input_scaling = 0.9
 
         # Specify either partition or genomes
@@ -45,11 +45,15 @@ class config_feedback_GA(config.experiment_config):
         MCk = np.full(self.output_nodes, np.nan)
         for i in range(self.output_nodes):
             MCk[i] = np.corrcoef(targets[:,i], prediction[i,:])[0,1]**2
+            if np.isnan(MCk[i]):
+                MCk[i] = 0
         return sum(MCk), MCk
     
     def fitnessMC(self, outputs, weights, targets):
         _, MCk = self.getMC(outputs, weights, targets)
-        a = np.linspace(1, 3, self.output_nodes)
-        weights = np.exp(a)-np.e+1
+        a = np.linspace(1, self.output_nodes, self.output_nodes)
+        weights = np.flip(self.output_nodes*(1-np.exp(-2*a/self.output_nodes)), 0)
+        #a = np.linspace(1, 3, self.output_nodes)
+        #weights = np.flip(np.exp(a)-np.e+1, 0)
         return sum(np.multiply(MCk, weights)), MCk
         

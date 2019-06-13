@@ -4,7 +4,7 @@ Created on Fri Jun  7 15:44:47 2019
 
 @author: Jardi
 """
-
+##TODO: update fitness function
 import torch
 import numpy as np
 import SkyNEt.experiments.Feedback.config_feedback_GA as config
@@ -15,22 +15,23 @@ import matplotlib.pyplot as plt
 cf = config.config_feedback_GA()
 
 ## Parameters
-cf.vir_nodes = 100
+cf.vir_nodes = 10
 cf.theta = 1
 cf.input_electrode = 3
 cf.skip = 200
 cf.output_nodes = 50
-cf.generations = 10
+cf.generations = 50
 cf.mutationrate = 0.1
 output = False
 
-N = 5250
+N = 1250
 vlow1, vhigh1 = -1, 1
 vlow2, vhigh2 = -1.2, 1.2
 voltage_bounds = np.repeat([[vlow2, vlow1], [vhigh2, vhigh1]], [5, 2, 5, 2]).reshape(-1, 7).astype(np.float32)
 input_bounds = torch.tensor(voltage_bounds[:, cf.input_electrode])
 
 u = torch.FloatTensor(int(N), 1).uniform_(vlow2, vhigh2)
+inpt = torch.repeat_interleave(u, cf.vir_nodes).view(cf.vir_nodes*N, 1)
 
 ## Load neural net
 main_dir = r'D:/Jardi/NNModels/'
@@ -46,8 +47,14 @@ res.add_vertex(net, '0', output = True, input_gates = [cf.input_electrode], volt
 res.add_feedback('0', '0', cf.input_electrode, input_bounds)
 
 ## Train with GA
-geneArray, fitnessArray, memoryArray = res.trainGA(u, cf, True, output)
+geneArray, fitnessArray, memoryArray = res.trainGA(u, inpt, cf, True, output)
+
+for i, val in enumerate(cf.generange):
+    geneArray[:, :, i] = (val[1]-val[0])*geneArray[:, :, i] + val[0]
 save_dir = r"D:/Jardi/Resultaten/"
+np.save(save_dir + "geneArray_Vir" + str(cf.vir_nodes) + "_Out" + str(cf.output_nodes) + "_2", geneArray)
+np.save(save_dir + "fitnessArray_Vir" + str(cf.vir_nodes) + "_Out" + str(cf.output_nodes) + "_2", fitnessArray)
+np.save(save_dir + "memoryArray_Vir" + str(cf.vir_nodes) + "_Out" + str(cf.output_nodes) + "_2", memoryArray)
 
 ## Plot best fitness
 indices = np.where(fitnessArray == np.amax(fitnessArray))
@@ -61,7 +68,7 @@ genes = geneArray[indices[0], indices[1], :]
 ## plot stuff
 plt.figure()
 x = np.linspace(1, cf.output_nodes, cf.output_nodes)
-plt.plot(x, memoryArray[indices[0], indices[1], :].reshape((50,)))
+plt.plot(x, memoryArray[45, 2, :].reshape((cf.output_nodes,)))
 plt.ylim([0,1.05])
 plt.title('Forgetting curve (D = ' + str(cf.vir_nodes) + ', n_max = ' + str(N - cf.output_nodes - cf.skip) + ')')
 plt.xlabel('i')

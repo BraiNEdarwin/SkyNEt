@@ -84,6 +84,9 @@ class resNNet(webNNet):
     def forward_delay(self, x, delay, theta):
         #evaluate the graph once before applying input to set the initial output values
         super(resNNet, self).forward(torch.zeros(delay, x.shape[1]))
+        node_range = np.linspace(1,delay, delay)
+        omega = torch.from_numpy(np.exp(-node_range*theta)).float().view(delay, 1)
+        delta = torch.from_numpy((1-np.exp(-theta))*np.triu(np.exp(-theta*(node_range-np.meshgrid(node_range,node_range)[1])))).float()
         output = torch.full((len(x[:,0]), len(self.graph)), np.nan)
         for i in range(0, len(x[delay:,0])+1, delay):
             #print(i)
@@ -107,16 +110,18 @@ class resNNet(webNNet):
             if new_x is None:
                 new_x = x[i:i+delay].view(delay, x.shape[1])
             
+            x_old = v_source['output'][delay-1].item()  
             super(resNNet, self).forward(new_x)
             f = self._collect_outputs(delay)
+            output[i:i+delay,:] = omega*x_old + torch.sum(delta*f, 0).view(delay, 1)
             #output[i:i+delay,:] = self._collect_outputs(delay)
-            if i == 0:
-                output[0,:] = f[0]
-                for ii in range(1,delay):
-                    output[ii,:] = output[ii-1]/np.e**theta + (1-1/np.e**theta)*f[ii]
-            else:
-                for ii in range(delay):
-                    output[i+ii,:] = output[i+ii-1]/np.e + (1-1/np.e)*f[ii]
+#            if i == 0:
+#                output[0,:] = f[0]
+#                for ii in range(1,delay):
+#                    output[ii,:] = output[ii-1]/np.e**theta + (1-1/np.e**theta)*f[ii]
+#            else:
+#                for ii in range(delay):
+#                    output[i+ii,:] = output[i+ii-1]/np.e + (1-1/np.e)*f[ii]
             self.graph['0']['output'] = output[i:i+delay,:]
         
         self.output = output
@@ -169,31 +174,34 @@ class resNNet(webNNet):
     
     def _Feedbacktransfer(self, x, init, sink, sink_gate):
         out = sink['transfer'][sink_gate](x)/2
-        result = sink['input_gain'] * init + sink['feedback_gain'] * out.view(init.shape)
-        #result = torch.clamp(result, sink['input_bounds'][0], sink['input_bounds'][1])
+        if sink['input_gain'] + sink['feedback_gain'] > 2:
+            scaling = 2/(sink['input_gain'] + sink['feedback_gain'])
+        else:
+            scaling = 1
+        result = scaling * (sink['input_gain'] * init + sink['feedback_gain'] * out.view(init.shape))
+        result = torch.clamp(result, sink['input_bounds'][0], sink['input_bounds'][1])
         return result
 
-    def trainGA(self, train_data, cf, verbose = False, output = True):
+    def trainGA(self, train_data, inpt, cf, verbose = False, output = True):
         # initialize genepool
         genepool = Evolution.GenePool(cf)
         
         # np arrays to save genePools, outputs and fitness
         geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
         if output:
-            outputArray = np.zeros((cf.generations, cf.genomes, train_data.shape[0]*cf.vir_nodes))
+            outputArray = np.zeros((cf.generations, cf.genomes, inpt.shape[0]))
         fitnessArray = np.zeros((cf.generations, cf.genomes))
         memoryArray = np.zeros((cf.generations, cf.genomes, cf.output_nodes))
         
         # Temporary arrays, overwritten each generation
         fitnessTemp = np.zeros(cf.genomes)
-        outputTemp = torch.zeros(cf.genomes, train_data.shape[0]*cf.vir_nodes, self.nr_output_vertices, device=self.cuda)
+        outputTemp = torch.zeros(cf.genomes, inpt.shape[0], self.nr_output_vertices, device=self.cuda)
         memoryTemp = np.zeros((cf.genomes, cf.output_nodes))
     
         for i in range(cf.generations):
             #Time multiplex data
             start = time.time()
             N = train_data.shape[0]
-            inpt = torch.repeat_interleave(train_data, cf.vir_nodes).view(cf.vir_nodes*N, 1)
             mask = torch.rand(cf.vir_nodes).repeat(N).view(inpt.shape) - 0.5
             inpt_masked = inpt * mask
             for j in range(cf.genomes):
@@ -211,13 +219,14 @@ class resNNet(webNNet):
             # Save generation data
             geneArray[i, :, :] = genepool.pool
             if output:
-                outputArray[i, :, :] = outputTemp.detach().numpy().reshape(cf.genomes, train_data.shape[0]*cf.vir_nodes)
+                outputArray[i, :, :] = outputTemp.detach().numpy().reshape(cf.genomes, inpt.shape[0])
             fitnessArray[i, :] = genepool.fitness
             memoryArray[i, :, :] = memoryTemp
     
             if verbose:
                 print("Generation nr. " + str(i + 1) + " completed in " + str((time.time() - start)/60) + " minutes")
                 print("Best fitness: " + str(np.amax(genepool.fitness)))
+                print("Memory Capacity: " + str(sum(memoryTemp[np.where(fitnessTemp == np.amax(genepool.fitness))][0])))
             
             genepool.NextGen()
     

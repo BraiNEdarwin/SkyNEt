@@ -15,10 +15,10 @@ import time
 start = time.time()
 
 ## Parameters
-vir_nodes = 100
+vir_nodes = 10
 theta = 1
 tau = int(vir_nodes * theta)
-N = 5250
+N = 7700
 vlow1, vhigh1 = -1, 1
 vlow2, vhigh2 = -1.2, 1.2
 voltage_bounds = np.repeat([[vlow2, vlow1], [vhigh2, vhigh1]], [5, 2, 5, 2]).reshape(-1, 7).astype(np.float32)
