@@ -35,9 +35,9 @@ class staNNet(object):
            for key, item in data[2].items():
                self.info[key] = item               
            self.x_train, self.y_train = data[0]
-           self.y_train = self.y_train/self.info['amplification']
+           self.y_train = self.y_train/torch.from_numpy(self.info['amplification'])
            self.x_val, self.y_val = data[1]
-           self.y_val = self.y_val/self.info['amplification']                                     
+           self.y_val = self.y_val/torch.from_numpy(self.info['amplification'])                                     
            self.D_in = self.load_data(self.x_train[0:1]).size()[1]
            self.D_out = self.y_train.size()[1]
            self._BN = BN
@@ -243,15 +243,15 @@ class staNNet(object):
             # Evaluate training error
             get_indices = torch.randperm(self.x_train.size()[0]).type(self.itype)[:10000]
             x = self.load_data(self.x_train[get_indices])
-            y = self.model(x) * self.info['amplification'] #\\
-            y_subset = self.y_train[get_indices] * self.info['amplification'] 
+            y = self.model(x) * torch.from_numpy(self.info['amplification'])
+            y_subset = self.y_train[get_indices] * torch.from_numpy(self.info['amplification'])
             loss = self.loss_fn(y,y_subset).item()
             self.L_train[epoch] = loss
             
             #Evaluate Validation error
             x_val = self.load_data(self.x_val)
-            y = self.model(x_val) * self.info['amplification']
-            loss = self.loss_fn(y, self.y_val * self.info['amplification']).item() 
+            y = self.model(x_val) * torch.from_numpy(self.info['amplification'])
+            loss = self.loss_fn(y, self.y_val * torch.from_numpy(self.info['amplification'])).item() 
             self.L_val[epoch] = loss
             
             print('Epoch:', epoch, 'Val. Error:', self.L_val[epoch],
@@ -286,7 +286,7 @@ class staNNet(object):
     def outputs(self,inputs,grad=False):
         data = self.load_data(inputs)
         if grad:
-          return self.model(data) * self.info['amplification']
+          return self.model(data) * torch.from_numpy(self.info['amplification'])
         else:
           return self.model(data).data.cpu().numpy()[:,0] * self.info['amplification']
     
