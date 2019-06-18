@@ -28,17 +28,17 @@ import pdb
 
 class staNNet(object):
 
-    def __init__(self,*args,loss='MSE',activation='ReLU', dim_cv=5, BN=False, conversion=100):
+    def __init__(self,*args,loss='MSE',activation='ReLU', dim_cv=5, BN=False):
         
         if len(args) == 3: #data,depth,width
            data,depth,width = args           
-           self.info = {'activation':activation, 'loss':loss, 'conversion':conversion}
+           self.info = {'activation':activation, 'loss':loss}
            for key, item in data[2].items():
                self.info[key] = item               
            self.x_train, self.y_train = data[0]
-           self.y_train = self.y_train/self.info['conversion']
+           self.y_train = self.y_train/self.info['amplification'].item()
            self.x_val, self.y_val = data[1]
-           self.y_val = self.y_val/self.info['conversion']                                     
+           self.y_val = self.y_val/self.info['amplification'].item()                                     
            self.D_in = self.load_data(self.x_train[0:1]).size()[1]
            self.D_out = self.y_train.size()[1]
            self._BN = BN
@@ -244,15 +244,15 @@ class staNNet(object):
             # Evaluate training error
             get_indices = torch.randperm(self.x_train.size()[0]).type(self.itype)[:int(len(self.x_val)/10)]
             x = self.load_data(self.x_train[get_indices])
-            y = self.model(x) * self.info['conversion'] #\\
-            y_subset = self.y_train[get_indices] * self.info['conversion'] 
+            y = self.model(x) *self.info['amplification'].item()
+            y_subset = self.y_train[get_indices] * self.info['amplification'].item()
             loss = self.loss_fn(y,y_subset).item()
             self.L_train[epoch] = loss
             #Evaluate Validation error
             get_indices = torch.randperm(self.x_val.size()[0]).type(self.itype)[:int(len(self.x_val)/10)]
             x_val = self.load_data(self.x_val[get_indices])
-            y = self.model(x_val) * self.info['conversion']
-            loss = self.loss_fn(y, self.y_val[get_indices] * self.info['conversion']).item() 
+            y = self.model(x_val) * self.info['amplification'].item()
+            loss = self.loss_fn(y, self.y_val[get_indices] * self.info['amplification'].item()).item() 
             self.L_val[epoch] = loss
             
             if epoch % 10 == 0:
@@ -292,9 +292,9 @@ class staNNet(object):
     def outputs(self,inputs,grad=False):
         data = self.load_data(inputs)
         if grad:
-          return self.model(data) * self.info['conversion']
+          return self.model(data) * self.info['amplification'].item()
         else:
-          return self.model(data).data.cpu().numpy()[:,0] * self.info['conversion']
+          return self.model(data).data.cpu().numpy()[:,0] * self.info['amplification'].item()
     
 if __name__ == '__main__':
     #%%
