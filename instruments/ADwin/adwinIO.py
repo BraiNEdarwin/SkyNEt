@@ -76,7 +76,7 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0], highRange = False):
     '''
     # Sanity check on input voltages
     if not highRange:
-        if max(abs(y) > 2):  
+        if np.max(abs(Input)) > 2:  
             print('WARNING: input voltages exceed threshold of 2V: highest absolute voltage is ' + str(max(abs(y))))
             print('If you want to use high range voltages, set highRange to True.')
             print('Aborting measurement...')
@@ -107,6 +107,7 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0], highRange = False):
             adw.Boot('C:\\ADwin\\ADwin' + PROCESSORTYPE + '.btl')
         #adw.Load_Process('C:\\Users\\Darwin\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8Read_4Write.TB1')
         adwinPath = os.path.realpath(__file__)
+        adwinPath = adwinPath[:-11]
         adw.Load_Process(adwinPath + '\\ADbasic_8Read_4Write.TB1')
         adw.Set_Processdelay(1, int(300e6 / Fs))  # delay in clock cycles
         adw.Start_Process(1)

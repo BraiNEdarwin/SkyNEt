@@ -9,17 +9,21 @@ data into training and validation sets and returns a tensor object used by the N
 
 import numpy as np
 import datetime
+import matplotlib
+matplotlib.use('agg')
 from matplotlib import pyplot as plt
 from SkyNEt.modules.Nets.staNNet import staNNet
+from SkyNEt.modules.Nets.lightNNet import lightNNet
 from SkyNEt.modules.Nets.DataHandler import DataLoader as dl
 from SkyNEt.modules.Nets.DataHandler import GetData as gtd
 #%%
 ###############################################################################
 ########################### LOAD DATA  ########################################
 ###############################################################################
-main_dir = r'../../test/NN_test/data4nn/16_04_2019/'
+main_dir = r'../NN_data/paper_device_27_04_2019/data4nn/12_06_2019_with_sines/'
+save_dir = r'../NN_data/paper_device_27_04_2019/Nets/MSE/'
 file_name = 'data_for_training.npz'
-data = dl(main_dir, file_name, syst='cpu', steps=3)
+data = dl(main_dir, file_name, syst='cuda', steps=3)
 
 #%%
 ###############################################################################
@@ -27,16 +31,27 @@ data = dl(main_dir, file_name, syst='cpu', steps=3)
 ###############################################################################
 depth = 5
 width = 90
-learning_rate,nr_epochs,batch_size = 3e-4, 5, 64
+learning_rate,nr_epochs,batch_size = 1e-5, 1500, 128
 beta1,beta2 = 0.9, 0.75
 runs = 1
+light = False
+
 valerror = np.zeros((runs,nr_epochs))
 trainerror = np.zeros((runs,nr_epochs))
 for i in range(runs):
-    net = staNNet(data,depth,width)
+    if light:
+        net = lightNNet(data,depth,width)
+    else:
+        net = staNNet(data,depth,width)
     net.train_nn(learning_rate,nr_epochs,batch_size,betas=(beta1,beta2))
     valerror[i] = net.L_val
     trainerror[i] = net.L_train
+    
+    now = datetime.datetime.now()
+    nowstr = now.strftime('%d-%m-%Hh%Mm')
+    plt.savefig(save_dir+f'{nowstr}-Error_lr{learning_rate}-eps{nr_epochs}-mb{batch_size}-b1{beta1}-b2{beta2}.png')
+    path = save_dir+f'{nowstr}_NN.pt'
+    net.save_model(path)
     print('Run nr. ',i)
 
 
@@ -49,30 +64,20 @@ plt.xlabel('Epochs')
 plt.legend()
 plt.show()
 
-now = datetime.datetime.now()
-nowstr = now.strftime('%d-%m-%Hh%Mm')
-
-plt.savefig(main_dir+f'{nowstr}-Error_lr{learning_rate}-eps{nr_epochs}-mb{batch_size}-b1{beta1}-b2{beta2}.png')
-
-#%%
-###############################################################################
-############################## SAVE NN ########################################
-###############################################################################
-path = main_dir+f'{nowstr}_NN.pt'
-net.save_model(path)
-#Then later: net = staNNet(path)
-# Save other stuff? e.g. generalization/test error...
 
 #%%
 ###############################################################################
 ########################### LOAD NN & TEST ####################################
 ###############################################################################
-net = staNNet(path)
+if light:
+    net = lightNNet(path)
+else:
+    net = staNNet(path)
 
 
 ########################## TEST GENERALIZATION  ###############################
-file_dir = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/NN_data_Mark/7D_test_sets/2019_03_19_084109_rand_test_set_100ms/data4nn/2019_04_08/'
-inputs, targets = gtd(file_dir+'data_for_test.npz', syst='cpu') #function to load data returning torch Variable with correct form and dtype 
+file_dir = r'../NN_data/paper_device_27_04_2019/test_set_sines.npz'
+inputs, targets = gtd(file_dir, syst='cuda') #function to load data returning torch Variable with correct form and dtype 
 prediction = net.outputs(inputs)
  
 
