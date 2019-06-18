@@ -256,7 +256,7 @@ def DataLoader(data_dir, file_name,
     x_val = torch.from_numpy(inputs_val).type(dtype)
     y_val = torch.from_numpy(outputs_val).type(dtype)
 
-    return [(x_train,y_train),(x_val,y_val),meta]
+    return [[x_train,y_train],[x_val,y_val],meta]
 
 #%% EXTRA: Just load data and return as torch.tensor
 def GetData(dir_file, syst = 'cuda'):
