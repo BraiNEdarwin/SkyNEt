@@ -185,7 +185,7 @@ def DataLoader(data_dir, file_name,
     assert isinstance(batch_size,int), 'Minibatch Size is not integer!!'
     print('Loading data from: \n'+data_dir+file_name)
     
-    with np.load(data_dir+file_name,allow_pickle=True) as data:
+    with np.load(data_dir+file_name) as data:
         meta = data['meta'].tolist()
 #        print(type(meta))
         print('Metainfo about data:\n',meta)
