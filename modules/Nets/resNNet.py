@@ -81,7 +81,7 @@ class resNNet(webNNet):
             #no feedback
             return super(resNNet, self).forward(x)
         
-    def forward_delay(self, x, delay, theta):
+    def forward_delay(self, x, delay, theta, gain):
         #evaluate the graph once before applying input to set the initial output values
         super(resNNet, self).forward(torch.zeros(delay, x.shape[1]))
         node_range = np.linspace(1,delay, delay)
@@ -113,7 +113,7 @@ class resNNet(webNNet):
             x_old = v_source['output'][delay-1].item()  
             super(resNNet, self).forward(new_x)
             f = self._collect_outputs(delay)
-            output[i:i+delay,:] = omega*x_old + torch.sum(delta*f, 0).view(delay, 1)
+            output[i:i+delay,:] = omega*x_old + gain*torch.sum(delta*f, 0).view(delay, 1)
             #output[i:i+delay,:] = self._collect_outputs(delay)
 #            if i == 0:
 #                output[0,:] = f[0]
@@ -191,42 +191,46 @@ class resNNet(webNNet):
         if output:
             outputArray = np.zeros((cf.generations, cf.genomes, inpt.shape[0]))
         fitnessArray = np.zeros((cf.generations, cf.genomes))
-        memoryArray = np.zeros((cf.generations, cf.genomes, cf.output_nodes))
+        memoryArray = np.zeros((cf.generations, cf.genomes))
         
         # Temporary arrays, overwritten each generation
-        fitnessTemp = np.zeros(cf.genomes)
-        outputTemp = torch.zeros(cf.genomes, inpt.shape[0], self.nr_output_vertices, device=self.cuda)
-        memoryTemp = np.zeros((cf.genomes, cf.output_nodes))
+        fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
+        outputAvg = torch.zeros(cf.fitnessavg, int(inpt.shape[0]/cf.fitnessavg), self.nr_output_vertices, device=self.cuda)
+        outputTemp = torch.zeros(cf.genomes, int(inpt.shape[0]/cf.fitnessavg), self.nr_output_vertices, device=self.cuda)
+        memoryTemp = np.zeros((cf.genomes, cf.fitnessavg))
     
         for i in range(cf.generations):
             #Time multiplex data
             start = time.time()
-            N = train_data.shape[0]
-            mask = torch.rand(cf.vir_nodes).repeat(N).view(inpt.shape) - 0.5
+            N = train_data.shape[0]/cf.fitnessavg
+            mask = torch.rand(cf.vir_nodes).repeat(int(N*cf.fitnessavg)).view(inpt.shape) - 0.5
             inpt_masked = inpt * mask
             for j in range(cf.genomes):
-                # update parameters of each network
-                self.set_parameters_from_pool(genepool.pool[j], cf, genepool)
-                with torch.no_grad():
-                    outputTemp[j] = self.forward_delay(inpt_masked, cf.vir_nodes, cf.theta)
-                virout = self.get_virtual_outputs(cf.vir_nodes).detach().numpy()
-                
-                weights, targets = self.train_weights(train_data, cf.output_nodes, cf.skip)
-                fitnessTemp[j], memoryTemp[j] = cf.Fitness(virout, weights, targets)
+                for avgIndex in range(cf.fitnessavg):
+                    # update parameters of each network
+                    self.set_parameters_from_pool(genepool.pool[j], cf, genepool)
+                    with torch.no_grad():
+                        outputAvg[avgIndex] = self.forward_delay(inpt_masked[int(avgIndex*N*cf.vir_nodes):int((avgIndex+1)*N*cf.vir_nodes)], cf.vir_nodes, cf.theta, cf.gain)
+                    virout = self.get_virtual_outputs(cf.vir_nodes).detach().numpy()
+                    
+                    weights, targets = self.train_weights(train_data[int(avgIndex*N):int((avgIndex+1)*N)], cf.output_nodes, cf.skip)
+                    fitnessTemp[j, avgIndex], memoryTemp[j, avgIndex] = cf.Fitness(virout, weights, targets)
+                    
+                outputTemp[j] = outputAvg[np.argmax(fitnessTemp[j])]
             
-            genepool.fitness = fitnessTemp  # Save best fitness
+            genepool.fitness = fitnessTemp.mean(1)  # Save best fitness
     
             # Save generation data
             geneArray[i, :, :] = genepool.pool
             if output:
-                outputArray[i, :, :] = outputTemp.detach().numpy().reshape(cf.genomes, inpt.shape[0])
+                outputArray[i, :, :] = outputTemp.detach().numpy().reshape(cf.genomes, int(inpt.shape[0]/cf.fitnessavg))
             fitnessArray[i, :] = genepool.fitness
-            memoryArray[i, :, :] = memoryTemp
+            memoryArray[i, :] = memoryTemp.mean(1)
     
             if verbose:
                 print("Generation nr. " + str(i + 1) + " completed in " + str((time.time() - start)/60) + " minutes")
                 print("Best fitness: " + str(np.amax(genepool.fitness)))
-                print("Memory Capacity: " + str(sum(memoryTemp[np.where(fitnessTemp == np.amax(genepool.fitness))][0])))
+                print("Memory Capacity: " + str(memoryTemp[np.where(genepool.fitness == np.amax(genepool.fitness))][0].mean()))
             
             genepool.NextGen()
     
@@ -244,6 +248,7 @@ class resNNet(webNNet):
         self.graph['0']['input_gain'] = genes[6]
         self.graph['0']['feedback_gain'] = genes[7]
         cf.theta = genes[8]
+        cf.gain = genes[9]
         
         
 def Transferfunction(x):

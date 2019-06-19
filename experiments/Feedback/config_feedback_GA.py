@@ -15,7 +15,8 @@ class config_feedback_GA(config.experiment_config):
         
         self.generations = 10
         self.mutationrate = 0.1
-        self.generange = [[-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1,1], [-1,1], [-5, 5], [-5, 5], [0, 2]]
+        self.fitnessavg = 1
+        self.generange = [[-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1,1], [-1,1], [-5, 5], [-5, 5], [0, 2], [-5, 5]]
 #        self.input_scaling = 0.9
 
         # Specify either partition or genomes
@@ -26,11 +27,12 @@ class config_feedback_GA(config.experiment_config):
         self.output_nodes = 50
         self.input_electrode = 3
         self.theta = 1
+        self.gain = 1
         
         self.Fitness = self.fitnessMC
 
         # Documentation
-        self.genelabels = ['CV1','CV2','CV3','CV4','CV5','CV6','Input_gain','Feedback_gain','theta']
+        self.genelabels = ['CV1','CV2','CV3','CV4','CV5','CV6','Input_gain','Feedback_gain','theta','Nonlinearity_gain']
 
         # Save settings
         self.filepath = r'../../../Resultaten/GA/'
@@ -50,10 +52,10 @@ class config_feedback_GA(config.experiment_config):
         return sum(MCk), MCk
     
     def fitnessMC(self, outputs, weights, targets):
-        _, MCk = self.getMC(outputs, weights, targets)
+        MC, MCk = self.getMC(outputs, weights, targets)
         a = np.linspace(1, self.output_nodes, self.output_nodes)
         weights = np.flip(self.output_nodes*(1-np.exp(-2*a/self.output_nodes)), 0)
         #a = np.linspace(1, 3, self.output_nodes)
         #weights = np.flip(np.exp(a)-np.e+1, 0)
-        return sum(np.multiply(MCk, weights)), MCk
+        return sum(np.multiply(MCk, weights)), MC
         

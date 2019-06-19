@@ -15,10 +15,10 @@ import time
 start = time.time()
 
 ## Parameters
-vir_nodes = 10
-theta = 1
+vir_nodes = 100
+theta = 0.37668741
 tau = int(vir_nodes * theta)
-N = 7700
+N = 5300
 vlow1, vhigh1 = -1, 1
 vlow2, vhigh2 = -1.2, 1.2
 voltage_bounds = np.repeat([[vlow2, vlow1], [vhigh2, vhigh1]], [5, 2, 5, 2]).reshape(-1, 7).astype(np.float32)
@@ -26,9 +26,10 @@ input_electrode = 4
 feedback_electrode = input_electrode
 input_bounds = torch.tensor(voltage_bounds[:, feedback_electrode])
 skip = 200
-nodes = 50
-input_gain = 2
-feedback_gain = 0.98
+nodes = 100
+input_gain = -0.12342481
+feedback_gain = 4.86875437
+nonlinear_gain = 3.93680934
 
 ## Input Signal
 u = torch.FloatTensor(int(N), 1).uniform_(vlow2, vhigh2)
@@ -59,9 +60,15 @@ res.transfer = Transferfunction
 res.add_vertex(net, '0', output = True, input_gates = [input_electrode], voltage_bounds = voltage_bounds)
 res.add_feedback('0', '0', feedback_electrode, input_bounds, input_gain, feedback_gain)
 
+#cvs = np.array([-0.62019978, -0.22513563, 0.85174519, 0.0061291, 0.96584976, -0.24035166]) #10 nodes
+cvs = np.array([-0.75814799, -0.52293706,  0.50786779,  0.95651859,  0.84188576, 0.50251109]) #100 nodes
+
+for i, val in enumerate(cvs):
+    getattr(res, '0')[i] = val
+
 ## forward pass
 with torch.no_grad():
-    output = res.forward_delay(inpt_mask, vir_nodes, theta)
+    output = res.forward_delay(inpt_mask, vir_nodes, theta, nonlinear_gain)
 output_np = output.detach().numpy()
 virout = res.get_virtual_outputs(vir_nodes)
 virout_np = virout.detach().numpy()
@@ -96,6 +103,8 @@ prediction = np.dot(weights, np.transpose(virout_np[skip+nodes:,:]))
 MCk = np.full(nodes, np.nan)
 for i in range(nodes):
     MCk[i] = np.corrcoef(target[:,i], prediction[i,:])[0,1]**2
+    if np.isnan(MCk[i]):
+        MCk[i] = 0
 MC = sum(MCk)
 
 print(time.time()-start)
