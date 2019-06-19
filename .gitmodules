@@ -1,0 +1,3 @@
+[submodule "kmc_dn"]
+	path = kmc_dn
+	url = https://github.com/BraiNEdarwin/kmc_dn

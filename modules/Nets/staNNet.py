@@ -22,6 +22,7 @@ TO DO:
 import torch
 import torch.nn as nn
 import numpy as np 
+import os
 #from matplotlib import pyplot as plt
 import pdb
 
@@ -35,15 +36,14 @@ class staNNet(object):
            for key, item in data[2].items():
                self.info[key] = item               
            self.x_train, self.y_train = data[0]
-           self.y_train = self.y_train/self.info['conversion']
+           self.y_train = self.y_train/self.info['amplification'].item()
            self.x_val, self.y_val = data[1]
-           self.y_val = self.y_val/self.info['conversion']                                     
+           self.y_val = self.y_val/self.info['amplification'].item()                                     
            self.D_in = self.load_data(self.x_train[0:1]).size()[1]
            self.D_out = self.y_train.size()[1]
            self._BN = BN
            self.depth = depth
            self.width = width
-           
            print(f'Meta-info: \n {list(self.info.keys())}')
            self.ttype = self.x_train.type()
            self._tests()
@@ -57,8 +57,7 @@ class staNNet(object):
                self.itype = torch.cuda.LongTensor
                self.model.cuda()
 #               self.loss_fn.cuda() apparently this is not needed if both arguments are already on gpu
-               print('Sent to GPU')
-            
+               print('Sent to GPU')           
         elif len(args)==1 and type(args[0]) is str:
             self._load_model(args[0])
         else:
@@ -83,7 +82,7 @@ class staNNet(object):
         # move info key from state_dic to self
         if state_dic.get('info') is not None:
             self.info = state_dic['info']
-            print(f'Model loaded with info dictionary containing: \n {self.info}')
+            print(f'Model loaded with info dictionary containing: \n {self.info.keys()}')
             state_dic.pop('info')
         else:
             # for backwards compatibility with objects where information is stored directly in state_dic
@@ -127,7 +126,6 @@ class staNNet(object):
         
         self.l_in = nn.Linear(self.D_in, self.width)
         self.l_out = nn.Linear(self.width, self.D_out)
-        self.l_hid = nn.Linear(self.width,self.width)
 
         if self._BN: 
             track_running_stats=False  
@@ -158,7 +156,8 @@ class staNNet(object):
                 modules.append(self.bn_layer) 
                 #BN before activation (like in paper) doesn't make much difference; 
                 #before the linearity also not much difference vs non-BN model
-            modules.append(self.l_hid)
+            hidden = nn.Linear(self.width,self.width)
+            modules.append(hidden)
             modules.append(activ_func)
         
         modules.append(self.l_out)
@@ -167,15 +166,17 @@ class staNNet(object):
         print('Model constructed with modules: \n',modules)
         self.model = nn.Sequential(*modules)
         print(f'Loss founction is defined to be {loss}')
-        if loss == 'RMSE':
-            self.a = torch.tensor([0.0238498, 0.03450377]).type(self.ttype)
-            self.b = torch.tensor([0.32410645108428926, 0.14673028534396296]).type(self.ttype)
+        if loss == 'RMSE' or loss == 'MSE_noisefit':
+            self.a = torch.tensor([0.01900258860717661, 0.014385111570154395]).type(self.ttype)
+            self.b = torch.tensor([0.21272562199413553, 0.0994027221336]).type(self.ttype)
+            self.loss_fn = self.nMSE
+
         elif loss == 'MSE':
             self.loss_fn = nn.MSELoss()
         else:
             assert False, f'Loss function ERROR! {loss} is not recognized'
         
-    def loss_fn(self, pred, targets):
+    def nMSE(self, pred, targets):
         y = pred#targets
         sign = torch.sign(y)
         ay = -1*(sign-1)/2 * (self.a[0] * torch.abs(y)) + (sign+1)/2 * (self.a[1] * torch.abs(y))
@@ -242,18 +243,23 @@ class staNNet(object):
             self.model.eval()
             
             # Evaluate training error
-            get_indices = torch.randperm(self.x_train.size()[0]).type(self.itype)[:10000]
+            get_indices = torch.randperm(self.x_train.size()[0]).type(self.itype)[:int(len(self.x_val)/10)]
             x = self.load_data(self.x_train[get_indices])
-            y = self.model(x) * self.info['conversion'] 
-            y_subset = self.y_train[get_indices] * self.info['conversion'] 
+            y = self.model(x) *self.info['amplification'].item()
+            y_subset = self.y_train[get_indices] * self.info['amplification'].item()
             loss = self.loss_fn(y,y_subset).item()
             self.L_train[epoch] = loss
-            
             #Evaluate Validation error
-            x_val = self.load_data(self.x_val)
-            y = self.model(x_val) * self.info['conversion'] 
-            loss = self.loss_fn(y, self.y_val * self.info['conversion']).item() 
+            get_indices = torch.randperm(self.x_val.size()[0]).type(self.itype)[:int(len(self.x_val)/10)]
+            x_val = self.load_data(self.x_val[get_indices])
+            y = self.model(x_val) * self.info['amplification'].item()
+            loss = self.loss_fn(y, self.y_val[get_indices] * self.info['amplification'].item()).item() 
             self.L_val[epoch] = loss
+            
+            if epoch % 10 == 0:
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                print(current_dir)
+                self.save_model(current_dir+'/checkpoint.pt')
             
             print('Epoch:', epoch, 'Val. Error:', self.L_val[epoch],
                   'Training Error:', self.L_train[epoch])
@@ -284,14 +290,13 @@ class staNNet(object):
         """
         return data
 
-    def outputs(self,inputs):
+    def outputs(self,inputs,grad=False):
         data = self.load_data(inputs)
-        return self.model(data).data.cpu().numpy()[:,0] * self.info['conversion']
+        if grad:
+          return self.model(data) * self.info['amplification'].item()
+        else:
+          return self.model(data).data.cpu().numpy()[:,0] * self.info['amplification'].item()
     
-    def outputs_torch(self,inputs):
-        data = self.load_data(inputs)
-        return self.model(data) * self.info['conversion']
-
 if __name__ == '__main__':
     #%%
     ###############################################################################
