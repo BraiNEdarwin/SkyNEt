@@ -16,9 +16,9 @@ start = time.time()
 
 ## Parameters
 vir_nodes = 100
-theta = 0.37668741
+theta = 0.54862484
 tau = int(vir_nodes * theta)
-N = 5300
+N = 15300
 vlow1, vhigh1 = -1, 1
 vlow2, vhigh2 = -1.2, 1.2
 voltage_bounds = np.repeat([[vlow2, vlow1], [vhigh2, vhigh1]], [5, 2, 5, 2]).reshape(-1, 7).astype(np.float32)
@@ -27,9 +27,9 @@ feedback_electrode = input_electrode
 input_bounds = torch.tensor(voltage_bounds[:, feedback_electrode])
 skip = 200
 nodes = 100
-input_gain = -0.12342481
-feedback_gain = 4.86875437
-nonlinear_gain = 3.93680934
+input_gain = -0.02146256
+feedback_gain = 4.3035872
+nonlinear_gain = 2.32160725
 
 ## Input Signal
 u = torch.FloatTensor(int(N), 1).uniform_(vlow2, vhigh2)
@@ -61,7 +61,7 @@ res.add_vertex(net, '0', output = True, input_gates = [input_electrode], voltage
 res.add_feedback('0', '0', feedback_electrode, input_bounds, input_gain, feedback_gain)
 
 #cvs = np.array([-0.62019978, -0.22513563, 0.85174519, 0.0061291, 0.96584976, -0.24035166]) #10 nodes
-cvs = np.array([-0.75814799, -0.52293706,  0.50786779,  0.95651859,  0.84188576, 0.50251109]) #100 nodes
+cvs = np.array([0.37763108, -0.36737889,  0.05985396,  0.3276643 ,  1, 0.00824895]) #100 nodes
 
 for i, val in enumerate(cvs):
     getattr(res, '0')[i] = val

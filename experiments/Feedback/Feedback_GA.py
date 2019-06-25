@@ -13,18 +13,20 @@ from SkyNEt.modules.Nets.resNNet import resNNet, Transferfunction
 import matplotlib.pyplot as plt
 
 cf = config.config_feedback_GA()
-
 ## Parameters
-cf.vir_nodes = 100
-cf.input_electrode = 3
+cf.vir_nodes = 10
+cf.input_electrode = 6
 cf.skip = 200
-cf.output_nodes = 100
-cf.generations = 100
+cf.output_nodes = 50
+cf.generations = 30
 cf.mutationrate = 0.1
-cf.fitnessavg = 5
+cf.fitnessavg = 1
 output = False
 
-N = 5300
+if cf.input_electrode == 5 or cf.input_electrode == 6:
+    cf.generange = [[-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1,1], [-1,1], [-5, 5], [-15, 15], [0, 2], [-5, 5]]
+
+N = 1250
 vlow1, vhigh1 = -1, 1
 vlow2, vhigh2 = -1.2, 1.2
 voltage_bounds = np.repeat([[vlow2, vlow1], [vhigh2, vhigh1]], [5, 2, 5, 2]).reshape(-1, 7).astype(np.float32)
@@ -52,9 +54,9 @@ geneArray, fitnessArray, memoryArray = res.trainGA(u, inpt, cf, True, output)
 for i, val in enumerate(cf.generange):
     geneArray[:, :, i] = (val[1]-val[0])*geneArray[:, :, i] + val[0]
 save_dir = r"D:/Jardi/Resultaten/"
-np.save(save_dir + "geneArray_Vir" + str(cf.vir_nodes) + "_Out" + str(cf.output_nodes) + "_avg" + str(cf.fitnessavg) + "_gain" + "_generations" + str(cf.generations), geneArray)
-np.save(save_dir + "fitnessArray_Vir" + str(cf.vir_nodes) + "_Out" + str(cf.output_nodes) + "_avg" + str(cf.fitnessavg) + "_gain" + "_generations" + str(cf.generations), fitnessArray)
-np.save(save_dir + "memoryArray_Vir" + str(cf.vir_nodes) + "_Out" + str(cf.output_nodes) + "_avg" + str(cf.fitnessavg) + "_gain" + "_generations" + str(cf.generations), memoryArray)
+np.save(save_dir + "geneArray_Vir" + str(cf.vir_nodes) + "_Out" + str(cf.output_nodes) + "_avg" + str(cf.fitnessavg) + "_gain" + "_generations" + str(cf.generations) + "_inpt" + str(cf.input_electrode), geneArray)
+np.save(save_dir + "fitnessArray_Vir" + str(cf.vir_nodes) + "_Out" + str(cf.output_nodes) + "_avg" + str(cf.fitnessavg) + "_gain" + "_generations" + str(cf.generations) + "_inpt" + str(cf.input_electrode), fitnessArray)
+np.save(save_dir + "memoryArray_Vir" + str(cf.vir_nodes) + "_Out" + str(cf.output_nodes) + "_avg" + str(cf.fitnessavg) + "_gain" + "_generations" + str(cf.generations) + "_inpt" + str(cf.input_electrode), memoryArray)
 
 ## Plot best fitness
 indices = np.where(fitnessArray == np.amax(fitnessArray))

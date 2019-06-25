@@ -174,8 +174,8 @@ class resNNet(webNNet):
     
     def _Feedbacktransfer(self, x, init, sink, sink_gate):
         out = sink['transfer'][sink_gate](x)/2
-        if sink['input_gain'] + sink['feedback_gain'] > 2:
-            scaling = 2/(sink['input_gain'] + sink['feedback_gain'])
+        if abs(sink['input_gain']) + abs(sink['feedback_gain']) > 2:
+            scaling = 2/(abs(sink['input_gain']) + abs(sink['feedback_gain']))
         else:
             scaling = 1
         result = scaling * (sink['input_gain'] * init + sink['feedback_gain'] * out.view(init.shape))

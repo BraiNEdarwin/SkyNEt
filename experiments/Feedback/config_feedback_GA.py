@@ -16,7 +16,7 @@ class config_feedback_GA(config.experiment_config):
         self.generations = 10
         self.mutationrate = 0.1
         self.fitnessavg = 1
-        self.generange = [[-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1,1], [-1,1], [-5, 5], [-5, 5], [0, 2], [-5, 5]]
+        self.generange = [[-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1.2,1.2], [-1,1], [-1,1], [-5, 5], [-15, 15], [0, 2], [-5, 5]]
 #        self.input_scaling = 0.9
 
         # Specify either partition or genomes
