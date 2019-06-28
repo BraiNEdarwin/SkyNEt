@@ -40,7 +40,7 @@ class MeasureNet:
         else:
             assert False, 'Incorrect measurement device'
     
-    def model(self, input_data):
+    def outputs(self, input_data, grad=True):
         """
         input_data      torch tensor (N, 7), control voltages to set
         returns         torch tensor (N, 1), measured output current in nA of device
