@@ -30,26 +30,26 @@ class experiment_config(config_class):
         self.freq2 = np.array([2,np.pi,5,7,13,17,19]) 
         self.freq = np.sqrt(self.freq2[:self.waveElectrodes])*self.factor
         self.phase = np.zeros(self.waveElectrodes)
-        self.sampleTime = 110 # Sample time of the sine waves for one grid point (in seconds)
-        self.fs = 200
-        self.transientTest = True
+        self.sampleTime = 50 # Sample time of the sine waves for one grid point (in seconds)
+        self.fs = 50
+        self.transientTest = False
         self.nr_testbatches = 1
         self.n = 50 # Amount of test points for the transient test
-        self.samplePoints = int(10*self.fs) # Amount of sample points per batch measurement (sampleTime*fs/samplePoints batches)
-        self.amplification = 1000
-        self.gain_info = '1MV/A'
+        self.samplePoints = int(50*self.fs) # Amount of sample points per batch measurement (sampleTime*fs/samplePoints batches)
+        self.amplification = 100
+        self.gain_info = '10MV/A'
         self.postgain = 1
-        self.amplitude = np.array([1.2, 1.2, 1.2, 1.2, 1.2, 1., 1.]) # Maximum amount of voltage for the inputs
-        self.offset = np.zeros(7) #np.array([-0.2,-0.2,-0.2,-0.2,-0.2,-0.2,-0.2]) # Optional offset for the sine waves
+        self.amplitude = np.array([0.9, 0.9, 0.9, 0.9, 0.9, 0.5, 0.5]) # Maximum amount of voltage for the inputs
+        self.offset = np.array([-0.3,-0.3,-0.3,-0.3,-0.3,-0.2,-0.2]) # Optional offset for the sine waves
 
         self.keithley_address = 'GPIB0::17::INSTR'
         #                               Summing module S2d      Matrix module           device
-        self.electrodeSetup = [['ao5','ao3','ao1''ao0','a02','ao4','ao6','out'],[1,3,5,6,11,13,15,17],[5,6,7,8,1,2,3,4]]
+        self.electrodeSetup = [['ao5','ao3','ao1','ao0','a02','ao4','ao6','out'],[1,3,5,6,11,13,15,17],[5,6,7,8,1,2,3,4]]
 
         # Save settings
-        self.filepath = r'D:\data\Mark\wave_search\paper_chip_dataset2\\'
+        self.filepath = r'D:\data\Mark\wave_search\paper_chip\\'
         
-        self.name = 'transient_test_random_points'
+        self.name = 'consistency_check_50s'
 
         self.configSrc = os.path.dirname(os.path.abspath(__file__))        
         self.inputData = self.generateSineWave
