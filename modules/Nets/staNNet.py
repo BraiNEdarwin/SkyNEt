@@ -82,6 +82,8 @@ class staNNet(object):
         # move info key from state_dic to self
         if state_dic.get('info') is not None:
             self.info = state_dic['info']
+            if self.info.get('conversion') is not None:
+                self.info['amplification'] = np.array(self.info.pop('conversion'))
             print(f'Model loaded with info dictionary containing: \n {self.info.keys()}')
             state_dic.pop('info')
         else:

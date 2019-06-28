@@ -91,10 +91,101 @@ def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0], highRange=False):
     return data
 
 
+def IO_cDAQ(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
+    '''
+    Input/output function for sampling with the NI 9264 in the NI 9171 chassis and measuring with NI USB 6216.
+    Warning: The synchronization is far from ideal.
+    Writing is first initialized and directly afterwards read is initialized.
+    An output signal is used that spikes 50ms after start writing and on the actual input signal
+    50 datapoints of zeros are added. After the measurement the first X datapoints are cut from the read data,
+    where X is the amount of datapoints that are read before reading the spike.
+    This way the read/write is synchronized, but ao wil always first write zeros to the system which might be
+    undesirable for certain experiments.
+    To use this script, always connect ao7 of the cDAQ to ai7 of the NI 6216 for the reference spike.
+    Input arugments
+    ---------------
+    y: N x M array, N output ports, M datapoints
+    Fs: sample frequency
+    n_ai: number of input ports
+    Return
+    -------
+    data: P x M array, P input ports, M datapoints
+    '''
+    if len(y.shape) == 1:
+        n_ao = 1
+    else:
+        n_ao = y.shape[0]
+
+    if n_ao == 1:
+        if (len(y.shape) == 2): # This means that the input is a 2D array
+            y = y[0]
+        N = len(y)
+    if n_ao >= 2:
+        N = y.shape[1]
+
+    with nidaqmx.Task() as output_task, nidaqmx.Task() as input_task:
+      # Define ao/ai channels
+        for i in range(n_ao):
+            output_task.ao_channels.add_ao_voltage_chan('cDAQ1Mod1/ao'+str(i)+'', 'ao'+str(i)+'', -5, 5)
+        for i in range(len(inputPorts)):
+            if(inputPorts[i] == 1):
+                input_task.ai_channels.add_ai_voltage_chan('Dev1/ai'+str(i)+'') 
+
+        y = np.asarray(y)
+        if len(y.shape) == 1:
+            y = y[np.newaxis,:]
+        # Define ao7 as sync signal for the NI 6216 ai0
+        output_task.ao_channels.add_ao_voltage_chan('cDAQ1Mod1/ao7', 'ao7', -5, 5)
+        input_task.ai_channels.add_ai_voltage_chan('Dev1/ai7') 
+
+        # Append some zeros to the initial signal such that no input data is lost
+        # This should be handled with proper synchronization
+        y_corr = np.zeros((y.shape[0], y.shape[1] + int(Fs*0.2))) # Add 200ms of reaction in terms of zeros
+        y_corr[:,int(Fs*0.2):] = y[:]
+        if len(y_corr.shape) == 1:
+            y_corr = np.concatenate((y_corr[np.newaxis], np.zeros((1,y_corr.shape[1]))))   # Set the trigger
+        else:
+            y_corr = np.concatenate((y_corr, np.zeros((1,y_corr.shape[1]))))   # Set the trigger
+        y_corr[-1,int(Fs*0.2)] = 1 # Start input data
+
+        # Configure sample rate and set acquisition mode to finite
+        output_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan =y_corr.shape[1])
+        input_task.timing.cfg_samp_clk_timing(Fs, sample_mode=constants.AcquisitionType.FINITE, samps_per_chan = y_corr.shape[1])
+
+        output_task.write(y_corr)
+
+        # Start tasks
+        output_task.start()
+
+        read_data = input_task.read(y_corr.shape[1], math.ceil(y_corr.shape[1]/Fs)+1) 
+
+        read_data = np.asarray(read_data)
+        cut_value = 0
+        if len(read_data.shape) == 1:
+            read_data = read_data[np.newaxis,:]
+        for i in range(0,int(Fs*0.2)+1):
+            if read_data[-1,i] >= 0.5:
+                cut_value = i
+                break
+        if cut_value == 0:
+            print('Warning: initialize spike not recognized')
+        #trim off the first datapoints, read lags some samples behind write
+        data = read_data[:-1,cut_value:N+cut_value] 
+        if data.shape[1] != y.shape[1]:
+            print('Warning: output data not same size as input data. Output: ' + str(data.shape[1]) + ' points, input: ' + str(y.shape[1]) + ' points.')
+        # Stop and close the tasks
+        input_task.stop()     
+        output_task.stop()
+
+    return data
+
+"""
 class IO_cDAQ:
     '''
     Edited by Lennart:
-        class to set and ramp up to voltages on the cdaq
+        Built for switch network, probably doesnt work anymore on recent instrument drivers on dev
+        changed from function to class to set and ramp up to voltages on the cdaq
+        Used only to set once, then the voltages stay on that value
         voltages are kept at their values indefinitely if you don't ramp down to zero by yourself
     
     Input/output function for sampling with the NI 9264 in the NI 9171 chassis and measuring with NI USB 6216.
@@ -122,12 +213,12 @@ class IO_cDAQ:
         self.set_state(self.state)
     
     def set_state(self, state):
-        """ 
+        '''
         WARNING, DONT USE THIS TO FUNCTION DIRECTLY!
         Always ramp to values if your devices to not break.
         
         Sets single state of channels instantly.
-        """
+        '''
         assert state.shape == (self.nr_channels,), "State shape %s incorrect, expecting (%i,)" % (state.shape, self.nr_channels)
         
         with nidaqmx.Task() as output_task:
@@ -139,10 +230,10 @@ class IO_cDAQ:
             output_task.stop()
     
     def ramp(self, target_state, ramp_speed=1., set_frequency=1000):
-        """
+        '''
         slowly ramp to target_state with ramp speed and set frequency and will make script wait untill the ramping is complete
         ramp_speed:     Maximum V/s which is used to ramp to target values
-        """
+        '''
         target_state = np.array(target_state, dtype='float32')
         assert target_state.shape == (self.nr_channels,), 'ERROR: Wrong size of voltages %s, expected (%i)' % (str(target_state.shape), self.nr_channels)
         assert ramp_speed<=5., 'ERROR: For the safety of the device, ramp speed should probably be smaller than 5 V/s' 
@@ -168,7 +259,7 @@ class IO_cDAQ:
         self.state = target_state
     
     def ramp_zero(self, **kwargs):
-        """ Ramps back down to zero """
+        ''' Ramps back down to zero '''
         self.ramp(np.zeros(self.nr_channels), **kwargs)
            
-
+"""

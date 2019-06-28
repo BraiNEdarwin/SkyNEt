@@ -228,7 +228,7 @@ class webNNet(torch.nn.Module):
                     # insert data from arc into control voltage parameters with correct transfer function
                     data[:, sink_gate] = v['transfer'][sink_gate](self.graph[source_name]['output'][:,0])
             # feed through network
-            v['output'] = v['network'].model(data)
+            v['output'] = v['network'].outputs(data, grad=True)
             v['evaluated'] = True
     
     def error_fn(self, y_pred, y, beta):
