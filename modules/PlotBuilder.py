@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
 import math
+import time 
 
 
 def mapGenes(generange, gene):
@@ -56,7 +57,7 @@ def bigDaddyMain(mainFig, geneArray, fitnessArray, currentGeneration):
         bigDaddyArray[i, :] = geneArray[i, np.argmax(fitnessArray[i, :])]
 
     for i in range(genes):
-        mainFig.axes[i * 2].plot(range(1, currentGeneration + 1),
+        mainFig.axes[i].plot(range(1, currentGeneration + 1),
                              bigDaddyArray[0:currentGeneration, i], 'r-x')
 
     plt.pause(0.01)
@@ -77,6 +78,7 @@ def fitnessMainEvolution(mainFig, fitnessArray, currentGeneration):
 
 def outputMain(mainFig, t, target, outputArray, fitnessArray, currentGeneration):
     mainFig.axes[-1].lines.clear()
+    
     mainFig.axes[-1].plot(t, outputArray[currentGeneration - 1,
                                          :, np.argmax(fitnessArray[currentGeneration - 1])], 'r')
     mainFig.axes[-1].plot(t, target, 'b--')
@@ -96,7 +98,7 @@ def outputMainEvolution(mainFig, t, target, outputArray, fitnessArray, currentGe
         x_weighed[i] = x[indices[i]]
         target_weighed[i] = target[indices[i]]
         t_weighed[i] = t[indices[i]]
-
+   
     mainFig.axes[-2].lines.clear()
     mainFig.axes[-2].plot(x_weighed, 'r')
     mainFig.axes[-2].plot(target_weighed, 'b--')
@@ -125,11 +127,19 @@ def outputMainClassification(mainFig, outputArray, win, fitnessArray, currentGen
     plt.pause(0.01)
 
 def currentOutputEvolution(mainFig, t, target, currentOutput, genome, currentGeneration, fitness):
+     # clipping
+    buff = currentOutput < -38
+    currentOutput[buff] = -38
+    buff = currentOutput > 35
+    currentOutput[buff] = 35
     mainFig.axes[-1].lines.clear()
     mainFig.axes[-1].plot(t, currentOutput, 'r')
     mainFig.axes[-1].plot(t, target, 'b--')
     mainFig.axes[-1].legend(['Current output', 'Target'], loc = 1)
-    mainFig.axes[-1].set_title('Genome ' + str(genome) + '/Generation ' + str(currentGeneration) + '/fitness ' + '{0:.2f}'.format(fitness))
+    if fitness != -100:
+        mainFig.axes[-1].set_title('Genome ' + str(genome) + '/Generation ' + str(currentGeneration) + '/fitness ' + '{0:.2f}'.format(fitness))
+    else:
+        mainFig.axes[-1].set_title('Genome ' + str(genome) + '/Generation ' + str(currentGeneration) + '/Clipping' )
     plt.pause(0.01)
 
 def currentOutputClassification(mainFig, out, win, genome, currentGeneration, fitness, marker):
@@ -177,17 +187,23 @@ def initMainFig(genes, generations, genelabels, generange):
     for i in range(genes):
         ax = mainFig.add_subplot(spec[i, 0])
         ax.set_xlim(1, generations)
-        ax.set_ylim(-1.2,0.8)
+        low = generange[i][0]
+        high = generange[i][1]
+        diff = (high - low ) * 0.1
+        low = low - diff
+        high = high + diff
+        ax.set_ylim(low,high)
         ax.grid()
         ax.set_title(genelabels[i])
 
-        twinax = ax.twinx()
-        twinax.set_ylim(mapGenes(generange[i], 0), mapGenes(generange[i], 1))
-        twinax.tick_params('y', colors='r')
+#        twinax = ax.twinx()
+#        twinax.set_ylim(mapGenes(generange[i], 0), mapGenes(generange[i], 1))
+#        twinax.tick_params('y', colors='r')
 
     axFitness = mainFig.add_subplot(
         spec[0:math.floor(genes / 2), 1:])  # fitness history
     axFitness.set_xlim(1, generations)
+    axFitness.set_ylim([0,1])
     axFitness.grid()
     axFitness.set_title('Fitness')
 
@@ -197,7 +213,7 @@ def initMainFig(genes, generations, genelabels, generange):
     axOutput.set_title('Best output of last generation')
 
 
-    mainFig.subplots_adjust(hspace=0.4, wspace=0.4)
+    mainFig.subplots_adjust(hspace=1, wspace=0.4)
     plt.pause(0.01)
     return mainFig
 
@@ -211,30 +227,41 @@ def initMainFigEvolution(genes, generations, genelabels, generange):
     spec = gridspec.GridSpec(ncols=3, nrows=genes + 1)
     
     # big daddy (i.e. best genom) plots
-    for i in range(genes-1):
+    for i in range(genes):
         ax = mainFig.add_subplot(spec[i, 0])
         ax.set_xlim(1, generations)
-        ax.set_ylim(-1.2,0.8)
+        low = generange[i][0] 
+        high = generange[i][1]
+        diff = (high - low ) * 0.1
+        low = low - diff
+        high = high + diff
+        ax.set_ylim(low,high)
         ax.grid()
         ax.set_title(genelabels[i])
 
-        twinax = ax.twinx()
-        twinax.set_ylim(mapGenes(generange[i], 0), mapGenes(generange[genes-1], 1))
-        twinax.tick_params('y', colors='r')
-    ax = mainFig.add_subplot(spec[genes-1, 0])
-    ax.set_xlim(1, generations)
-    ax.set_ylim(0,1)
-    ax.grid()
-    ax.set_title(genelabels[genes-1])
+#        twinax = ax.twinx()
+#        twinax.set_ylim(mapGenes(generange[i], 0), mapGenes(generange[genes-1], 1))
+#        twinax.tick_params('y', colors='r')
+#    ax = mainFig.add_subplot(spec[genes-1, 0])
+#    ax.set_xlim(1, generations)
+#    ax.set_ylim(0,1)
+#    ax.grid()
+#    ax.set_title(genelabels[genes-1])
 
-    twinax = ax.twinx()
-    twinax.set_ylim(mapGenes(generange[genes-1], 0), mapGenes(generange[genes-1], 1))
-    twinax.tick_params('y', colors='r')
+#    twinax = ax.twinx()
+#    twinax.set_ylim(mapGenes(generange[genes-1], 0), mapGenes(generange[genes-1], 1))
+#    twinax.tick_params('y', colors='r')
     
     # current genome plot
     ax = mainFig.add_subplot(spec[genes, 0])
     ax.set_xlim(1, genes)
-    ax.set_ylim(-1.2,0.8)
+    low = min(min(generange))
+    high = max(max(generange))
+    
+    diff = (high - low ) * 0.1
+    low = low - diff
+    high = high + diff
+    ax.set_ylim(low,high)
     ax.grid()
     ax.set_title('Current genome')
 
@@ -242,6 +269,7 @@ def initMainFigEvolution(genes, generations, genelabels, generange):
     axFitness = mainFig.add_subplot(
         spec[0:math.floor(genes / 3) + 1, 1:])  # fitness history
     axFitness.set_xlim(1, generations)
+    axFitness.set_ylim([0,1])
     axFitness.grid()
     axFitness.set_title('Fitness')
 
@@ -257,7 +285,7 @@ def initMainFigEvolution(genes, generations, genelabels, generange):
     axCurrentOutput.grid()
     axCurrentOutput.set_title('Current genome output')
 
-    mainFig.subplots_adjust(hspace=0.8, wspace=0.8)
+    mainFig.subplots_adjust(hspace=1.1, wspace=0.8)
     plt.pause(0.01)
     return mainFig
 

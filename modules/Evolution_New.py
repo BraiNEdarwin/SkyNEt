@@ -2,6 +2,7 @@
 A Class definition that defines a genetic algorithm. 
 '''
 import numpy as np
+import time
 
 
 class GenePool(object):
@@ -41,6 +42,8 @@ class GenePool(object):
 
         # Mutation over all new partitions
         self.Mutation()
+      
+        
         
         # Check for duplicate genomes
         self.RemoveDuplicates()
@@ -60,17 +63,19 @@ class GenePool(object):
         mutatedpool = np.zeros((self.genomes-self.partition[0], self.genes))
     
         for i in range(0,self.genes):
-          
-            mutatedpool[:,i] = np.random.triangular(self.generange[i][0], self.newpool[self.partition[0]:,i], self.generange[i][1])
+            if self.generange[i][0] == self.generange[i][1]:
+                mutatedpool[:,i] = self.generange[i][0]*np.ones(mutatedpool[:,i].shape)
+            else:
+                mutatedpool[:,i] = np.random.triangular(self.generange[i][0], self.newpool[self.partition[0]:,i], self.generange[i][1])
             
         self.newpool[self.partition[0]:] = ((np.ones(self.newpool[self.partition[0]:].shape) - mask)*self.newpool[self.partition[0]:] 
                                             + mask * mutatedpool)
         
         #check if its is in the range 
         for i in range(0,self.genes):
-            buff = self.newpool[self.partition[0]:] < self.generange[i][0]
+            buff = self.newpool[self.partition[0]:,i] < self.generange[i][0]
             self.newpool[self.partition[0]:][buff] = self.generange[i][0]
-            buff = self.newpool[self.partition[1]:] > self.generange[i][1]
+            buff = self.newpool[self.partition[1]:,i] > self.generange[i][1]
             self.newpool[self.partition[1]:][buff] = self.generange[i][1]
         
 
@@ -118,6 +123,11 @@ class GenePool(object):
             for j in range(self.genomes):
                 if(j != i and np.array_equal(self.newpool[i],self.newpool[j])):
                     for k in range(0,self.genes):
-                       self.newpool[j][k] = np.random.triangular(self.generange[k][0], self.newpool[j][k], self.generange[k][1])
+                        if self.generange[k][0] != self.generange[k][1]:
+                            self.newpool[j][k] = np.random.triangular(self.generange[k][0], self.newpool[j][k], self.generange[k][1])
+                        else: 
+                            self.newpool[j][k] = self.generange[k][0]
+        
+                     
         
             

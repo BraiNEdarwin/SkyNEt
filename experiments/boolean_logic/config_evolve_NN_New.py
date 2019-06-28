@@ -72,7 +72,7 @@ class experiment_config(config_class):
         self.generations = 2
         
         #Generange and inputrange in Volts 
-        self.generange = [[-1.1, 0.7], [-1.1, 0.7], [-1.1, 0.7], [-1.1, 0.7],[-1.1, 0.7], [0.3, 0.7]]
+        self.generange = [[-1.1, 0.7], [-1.1, 0.7], [-1.1, 0.7], [-1.1, 0.7],[-1.1, 0.7], [0.1, 0.9]]
         self.inputrange = [-0.8,0.2]
         #self.input_scaling = 0.9
      

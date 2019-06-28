@@ -69,6 +69,7 @@ for i in range(cf.generations):
         # Measure cf.fitnessavg times the current configuration
         for avgIndex in range(cf.fitnessavg):
             # Feed input to NN
+            # You only want to feed the control voltages and the input (remove input scaling)
             g = np.ones_like(target)[:,np.newaxis]*genePool.pool[j,:-1][:,np.newaxis].T
             x_dummy = np.concatenate((x_scaled.T,g),axis=1) # First input then genes; dims of input TxD
             inputs = torch.from_numpy(x_dummy).type(dtype)
