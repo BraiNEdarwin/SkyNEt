@@ -13,7 +13,7 @@ class experiment_config(object):
 
     def __init__(self):
         self.fs = 10000
-        self.n_points = 50000
+        self.n_points = 5000
         self.frequency = 10  # Hz
 
     def Generate_input(self):

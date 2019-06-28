@@ -11,9 +11,8 @@ import math
 import time
 
 def reset_device():
-	dev = device.Device(name='Dev1')
-	dev.reset_device()
-	
+    dev = device.Device(name='Dev1')
+    dev.reset_device()
 
 def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0], highRange=False):
     '''
@@ -33,12 +32,11 @@ def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0], highRange=False):
 
     # Sanity check on input voltages
     if not highRange:
-        if max(abs(y) > 2):  
+        if np.max(abs(y)) > 2:  
             print('WARNING: input voltages exceed threshold of 2V: highest absolute voltage is ' + str(max(abs(y))))
             print('If you want to use high range voltages, set highRange to True.')
             print('Aborting measurement...')
             InstrumentImporter.reset(0, 0)
-            exit() 
 
     if len(y.shape) == 1:
         n_ao = 1

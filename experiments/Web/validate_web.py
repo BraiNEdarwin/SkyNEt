@@ -15,6 +15,20 @@ from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 from SkyNEt.instruments import InstrumentImporter
 
+# input voltages of boolean inputs (on/upper, off/lower)
+input_lower = -0.7
+input_upper = 0.1
+
+N = 100 # number of data points of one of four input cases of boolean logic
+
+set_frequency = 1000 # Hz
+ramp_speed = 50 # V/s
+
+# load device simulation
+main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
+data_dir = 'NN_skip3_MSE.pt'
+net = staNNet(main_dir+data_dir)
+
 class MeasureNet:
     """ Alternative class of staNNet to measure input data of a single device """
     
@@ -68,7 +82,12 @@ for w,n in zip([web, mweb], [net, mnet]):
     w.add_arc('B', 'A', 4)
     w.add_arc('C', 'A', 5)
 
-cv = {'A': tensor([-1.1410,  0.0939, -1.0543,  0.4253,  0.3122]), 'scale': tensor([ 1.8859, -3.0174]), 'bias': tensor([-23.1769,  -5.6604])}
+
+#cv = {'A': tensor([-1.1410,  0.0939, -1.0543,  0.4253,  0.3122]), 'scale': tensor([ 1.8859, -3.0174]), 'bias': tensor([-23.1769,  -5.6604])}
+
+cv = {'A': tensor([ 0.1174, -0.5477,  0.3110,  0.1646,  0.4120,  0.5261,  0.5301]),
+  'B': tensor([ 0.1508, -0.0177, -0.2225,  0.0073, -0.2982]),
+  'C': tensor([-0.3451, -0.4791,  0.4497, -0.5789, -0.0036])}
 
 keys = cv.keys()
 
