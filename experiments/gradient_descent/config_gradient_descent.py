@@ -50,7 +50,7 @@ class experiment_config(config_class):
         
         #self.fft_N = self.fs*self.signallength//self.inputCases       
         self.phase_thres = 90 # in degrees
-        self.eta = 6E-2          # Learn rate 
+        self.eta = 6E-1          # Learn rate 
         self.gradFunct =  self.cor_sigmoid_grad
         self.errorFunct = self.cor_sigmoid_loss
         self.keithley_address = 'GPIB0::17::INSTR'

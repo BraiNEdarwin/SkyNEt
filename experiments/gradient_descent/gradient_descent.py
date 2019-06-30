@@ -72,7 +72,7 @@ for i in range(cf.n + 1):
     
     # Add ramping up and ramping down the voltages at start and end of iteration (if measuring on real device)
     if cf.device == 'chip':
-        for j in range(inputs.shape[0]):
+        for j in range(inputs.shape[1]):
             inputs[i, j, 0:int(cf.fs*cf.rampT)] = np.linspace(0, inputs[i, j, int(cf.fs*cf.rampT)], int(cf.fs*cf.rampT))
             inputs[i, j, -int(cf.fs*cf.rampT):] = np.linspace(inputs[i, j, -int(cf.fs*cf.rampT)], 0, int(cf.fs*cf.rampT))    
         
@@ -91,16 +91,19 @@ for i in range(cf.n + 1):
     target_split = np.zeros((cf.inputCases, int(cf.fs*cf.signallength/cf.inputCases)))
     sign = np.zeros((cf.inputCases, controls.shape[1]))
     
+    # Lock-in technique to determine gradients
+    x_ref = np.arange(0.0, cf.signallength, 1/cf.fs)
+    #TODO: This is wrong! the input wave isn't 'reset' for each case, so phases are wrong
+    # Solve this by either letting x_ref contain all cases, or by defining the input waves on the control
+    # as phase=0 at every start of an input case.
+    
     for k in range(cf.inputCases):
         data_split[k] = data[i, round(k*cf.fs*(cf.edgelength + cf.signallength/cf.inputCases)) : round(cf.fs*(k*cf.edgelength + (k+1)*cf.signallength/cf.inputCases))]
         target_split[k] = target[round(k*cf.fs*(cf.edgelength + cf.signallength/cf.inputCases)) : round(cf.fs*(k*cf.edgelength + (k+1)*cf.signallength/cf.inputCases))]
-        
-        # Lock-in technique to determine gradients
-        x_ref = np.arange(0.0, cf.signallength/cf.inputCases, 1/cf.fs)       
-        
+                       
         for j in range(controls.shape[1]):
-            y_ref1 = np.sin(cf.freq[j] * 2.0*np.pi*x_ref)           # Reference signal 1 (phase = 0)
-            y_ref2 = np.sin(cf.freq[j] * 2.0*np.pi*x_ref + np.pi/2) # Reference signal 2 (phase = pi/2)
+            y_ref1 = np.sin(cf.freq[j] * 2.0*np.pi*x_ref[k*int(cf.fs*cf.signallength/cf.inputCases) : (k+1)*int(cf.fs*cf.signallength/cf.inputCases)])          # Reference signal 1 (phase = 0)
+            y_ref2 = np.sin(cf.freq[j] * 2.0*np.pi*x_ref[k*int(cf.fs*cf.signallength/cf.inputCases) : (k+1)*int(cf.fs*cf.signallength/cf.inputCases)] + np.pi/2) # Reference signal 2 (phase = pi/2)
         
             y1_out = y_ref1*(data_split[k] - np.mean(data_split[k]))
             y2_out = y_ref2*(data_split[k] - np.mean(data_split[k]))
@@ -148,28 +151,15 @@ for i in range(cf.n + 1):
                                              i + 1)
 
 
-# Measure last iteration without additional sine waves
-inputs[cf.n, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] = controls[cf.n-1,:][:,np.newaxis] * np.ones(x.shape[1])
-# Add ramping up and ramping down the voltages at start and end of iteration (if measuring on real device)
-if cf.device == 'chip':
-    for j in range(inputs.shape[0]):
-        inputs[cf.n, j, 0:int(cf.fs*cf.rampT)] = np.linspace(0, inputs[cf.n, j, int(cf.fs*cf.rampT)], int(cf.fs*cf.rampT))
-        inputs[cf.n, j, -int(cf.fs*cf.rampT):] = np.linspace(inputs[cf.n, j, -int(cf.fs*cf.rampT)], 0, int(cf.fs*cf.rampT))    
-    
-# Measure output
-if cf.device == 'chip':
-    dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(inputs[cf.n,:,:], cf.fs) * cf.gainFactor
-    data[cf.n,:] = dataRamped[0, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)]   # Cut off the ramping up and down part
-elif cf.device == 'NN':
-    data[cf.n,:] = net.outputs(torch.from_numpy(inputs[i,:,int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)].T).to(torch.float))
-
-
 SaveLib.saveExperiment(cf.configSrc, saveDirectory,
                        controls = controls,
                        output = data,
                        t = t,
                        x_scaled = x_scaled,
-                       error = error)
+                       error = error,
+                       IVgrad = IVgrad,
+                       EVgrad = EVgrad,
+                       EIgrad = EIgrad)
     
 PlotBuilder.finalMain(mainFig)
 
