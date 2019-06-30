@@ -102,8 +102,8 @@ for i in range(cf.n + 1):
             y_ref1 = np.sin(cf.freq[j] * 2.0*np.pi*x_ref)           # Reference signal 1 (phase = 0)
             y_ref2 = np.sin(cf.freq[j] * 2.0*np.pi*x_ref + np.pi/2) # Reference signal 2 (phase = pi/2)
         
-            y1_out = y_ref1*data_split[k]
-            y2_out = y_ref2*data_split[k]
+            y1_out = y_ref1*(data_split[k] - np.mean(data_split[k]))
+            y2_out = y_ref2*(data_split[k] - np.mean(data_split[k]))
             
             amp1 = np.mean(y1_out)
             amp2 = np.mean(y2_out)
