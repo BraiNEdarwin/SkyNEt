@@ -44,7 +44,7 @@ class experiment_config(config_class):
         # rest parameters #
         ###################
         # parameters for methods
-        self.signallength = 9*4  #in seconds
+        self.signallength = 4*4  #in seconds
         self.edgelength = 0.01  #in seconds
         self.inputCases = 4     #amount of cases measured (4 in the case of Boolean logic)
         
