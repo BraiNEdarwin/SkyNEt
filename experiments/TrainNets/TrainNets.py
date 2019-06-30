@@ -22,25 +22,18 @@ Seed = False
 main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\2019_05_17_095928_trainData_3d\data4nn\20_05_2019\\'
 file_name = 'data_for_training_lightNNet.npz'
 data = dl(main_dir, file_name, syst='cpu', steps=12)
-factor = 0.05
-#freq = torch.sqrt(torch.tensor([2,np.pi,5,7,13,17,19],dtype=torch.float32)) * factor
-freq = np.sqrt(np.array([2,np.pi,5,7,13,17,19])) * factor
-amplitude = np.array([0.9, 0.9, 0.9, 0.9, 0.9, 0.5, 0.5])
-offset = np.array([-0.3, -0.3, -0.3, -0.3, -0.3, -0.2, -0.2])
-fs = 50
+
 generate_input = True
 noisefit = False
-phase = np.zeros(7)
-#phase = torch.zeros(7,dtype=torch.float32)
 
 #%%
 ###############################################################################
 ############################ DEFINE NN and RUN ################################
 ###############################################################################
-depth = 10
+depth = 5
 width = 90
 
-learning_rate,nr_epochs,batch_size = 1e-3, 2, [512]
+learning_rate,nr_epochs,batch_size = 3e-3, 10, [2048]
 
 runs = 1
 valerror = np.zeros((runs,nr_epochs))
@@ -49,7 +42,7 @@ beta1 = 0.9
 beta2 = 0.75
 for i in range(runs):
     if generate_input:
-        net = lightNNet(data,depth,width,freq,amplitude,fs,offset,phase,noisefit)
+        net = lightNNet(data,depth,width)
     else:
         net = staNNet(data,depth,width)
     net.train_nn(learning_rate,nr_epochs,batch_size[i],betas=(beta1, beta2),seed=Seed)
@@ -57,47 +50,42 @@ for i in range(runs):
     trainerror[i] = net.L_train
     print('Run nr. ',i)
     # Save every run so that they can be used to determine test error
-    net.save_model(main_dir+'MSE_d'+ str(depth) + 'w90_'+str(nr_epochs)+'ep_lr1e-3_b'+str(batch_size[i])+'_b1b2_'+str(beta1) + str(beta2) + '.pt')
+    net.save_model(main_dir+'MSE_d'+ str(depth) + 'w90_'+str(nr_epochs)+'ep_lr3e-3_b'+str(batch_size[i])+'_b1b2_'+str(beta1) + str(beta2) + '.pt')
 norm_valerror = valerror
 
 #%%
 ###############################################################################
 ########################### LOAD NN & TEST ####################################
 ###############################################################################
+generate_input = True
+
+#file_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\testsets\2019_05_20_123116_test_set_7h\test_set_skip12.npz'
+file_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\testsets\testset_sines_skip12.npz'
+
+NN_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\2019_05_17_095928_trainData_3d\Nets\MSE_n\\'
+NN_file = 'MSE_n_d5w90_500ep_lr3e-3_b[2048]_b1b2_0.90.75-23-05-16h49m.pt'
+
 if generate_input:
-    net = lightNNet(main_dir+'MSE_n_d'+ str(depth) + 'w90_300ep_lr3e-3_b'+str(batch_size[i])+'_b1b2_'+str(beta1) + str(beta2) + '_seed.pt')
+    net = lightNNet(NN_dir + NN_file)
+    net.info['phase'] = np.ones(7)
 else:
-    net = staNNet(main_dir+'MSE_n_d'+ str(depth) + 'w90_300ep_lr3e-3_b'+str(batch_size[i])+'_b1b2_'+str(beta1) + str(beta2) + '_seed.pt')
+    net = staNNet(NN_dir + NN_file)
 
 ########################## TEST GENERALIZATION  ###############################
-
-#file_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_29_133910_test_data_5h_f_0_05\test_set_skip3.npz'
-file_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_29_195754_test_set_rand\test_set.npz'
-factor = 0.05
-freq = np.sqrt(np.array([2, np.pi, 5, 7, 13, 17, 19])) * factor
-amplitude = np.array([0.9, 0.9, 0.9, 0.9, 0.9, 0.5, 0.5])
-offset = np.array([-0.3, -0.3, -0.3, -0.3, -0.3, -0.2, -0.2])
-phase = np.ones(7)
-fs = 50
-#phase = np.zeros(7)
-generate_input = False
-
-inputs, targets = gtd(file_dir) #function to load data returning torch Variable with correct form and dtype 
+inputs, targets = gtd(file_dir, syst='cpu') #function to load data returning torch Variable with correct form and dtype 
 targets = targets
-if generate_input:
-    prediction = net.outputs(inputs,freq,amplitude,fs,offset,phase)*10
-else:
-    prediction = net.outputs(inputs)*10
+prediction = net.outputs(inputs)
+
 
 ### Training profile
 plt.figure()
-plt.plot(np.arange(nr_epochs),valerror.T)
+plt.plot(np.arange(net.info['L_val'].shape[0]),net.info['L_val'].T)
 plt.title('Validation MSE Profile while Training')
 plt.xlabel('Epochs')
 plt.show()
 
 ### Test Error
-subsample = np.random.permutation(len(prediction))[:20000]
+subsample = np.random.permutation(len(prediction))[:100000]
 plt.figure()
 plt.subplot(1,2,1)
 plt.plot(targets[subsample],prediction[subsample],'.')
@@ -112,7 +100,7 @@ error = (targets[:]-prediction[:]).T#/np.sqrt(baseline_var)
 print(f'MSE on Test Set: \n {np.mean(error**2)}')
 
 plt.subplot(1,2,2)
-plt.hist(error[subsample],100)
+plt.hist(error[subsample],300)
 plt.xlabel('error (nA)')
 plt.ylabel('nr. of samples')
 #plt.title('Scaled error histogram')

@@ -39,8 +39,13 @@ class lightNNet(staNNet):
         amplitude:  Amplitude of the sine wave (Vmax in this case)
         fs:         Sample frequency of the device
         phase:      (Optional) phase offset at t=0
-        '''     
 
-        waves = amplitude * np.sin((2 * np.pi * np.outer(t,freq))/ fs + phase) + np.outer(np.ones(t.shape[0]),offset)
-        waves = torch.from_numpy(waves).type(torch.float32)
+        '''     
+        if torch.cuda.is_available() and isinstance(t,torch.cuda.FloatTensor):
+            waves = amplitude * np.sin((2 * np.pi * np.outer(t.cpu(),freq))/ fs + phase) + np.outer(np.ones(t.shape[0]),offset)
+            waves = torch.from_numpy(waves).type(torch.cuda.FloatTensor)
+        else:
+            waves = amplitude * np.sin((2 * np.pi * np.outer(t,freq))/ fs + phase) + np.outer(np.ones(t.shape[0]),offset)
+            waves = torch.from_numpy(waves).type(torch.float32)     
+            
         return  waves    

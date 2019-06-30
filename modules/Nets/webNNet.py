@@ -86,6 +86,7 @@ class webNNet(torch.nn.Module):
             output:         (bool) wheter of not this vertex' output is output of complete graph (boolean)
             input_gates:    (list) numbers of gates which should be used as inputs
             voltage_bounds: (2 by D_in tensor) first row are lower bounds of all control voltages, second row are upper bounds
+            evaluated:      (bool) flag indicating if vertex has already been evaluated
         """
         
         assert not hasattr(self, name), "Name %s already in use, choose other name for vertex!" % name
@@ -141,7 +142,8 @@ class webNNet(torch.nn.Module):
                               'isoutput':output,
                               'swapindices':swapindices,
                               'voltage_bounds':voltage_bounds,
-                              'transfer':transfer}
+                              'transfer':transfer,
+                              'evaluated':False}
         
         if output:
             self.nr_output_vertices  += 1
@@ -207,7 +209,7 @@ class webNNet(torch.nn.Module):
         v = self.graph[vertex]
         
         # skip if vertex is already evaluated
-        if 'output' not in v:
+        if not v['evaluated']:
             # control voltages, repeated to match batch size of train_data
             cv_data = getattr(self, vertex).repeat(self._batch_size, 1)
             
@@ -231,7 +233,10 @@ class webNNet(torch.nn.Module):
                     # insert data from arc into control voltage parameters with correct transfer function
                     data[:, sink_gate] = v['transfer'][sink_gate](self.graph[source_name]['output'][:,0])
             # feed through network
-            v['output'] = v['network'].model(data)
+
+            v['output'] = v['network'].outputs(data,grad=True)
+            v['evaluated'] = True
+
     
     def error_fn(self, y_pred, y, beta):
         """Error function: loss function with added regularization"""        
@@ -310,8 +315,8 @@ class webNNet(torch.nn.Module):
         """Reset output data of graph, NOT the parameters"""
         self.output_data = None
         for v in self.graph.values():
-            # remove output data of vertex, return None if key does not exist
-            v.pop('output', None)
+            # reset evaluated flag
+            v['evaluated'] = False
 
     def check_cuda(self, *args):
         """Converts tensors that are going to be used to cuda"""

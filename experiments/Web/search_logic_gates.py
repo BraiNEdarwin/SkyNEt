@@ -17,16 +17,17 @@ I0 I1    AND NAND OR NOR XOR XNOR
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from SkyNEt.modules.Nets.lightNNet import lightNNet
+from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
-from SkyNEt.modules import SaveLib
+from SkyNEt.modules.SaveLib import saveArrays
 
 # ------------------------ configure ------------------------
 # load device simulation
 
-main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\\'
-data_dir = 'MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
-net1 = lightNNet(main_dir+data_dir)
+main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\2019_05_17_095928_trainData_3d\Nets\MSE_n\\'
+data_dir = 'MSE_n_d5w90_500ep_lr3e-3_b[2048]_b1b2_0.90.75-23-05-21h56m.pt'
+
+net1 = staNNet(main_dir+data_dir)
 input_gates=[1,2]
 input_scaling = False
 
@@ -35,10 +36,10 @@ web = webNNet()
 web.add_vertex(net1, 'A', output=True, input_gates=input_gates)
 
 # input voltages of boolean inputs (on/upper, off/lower)
-input_lower = -0.5
-input_upper = 0.5
+input_lower = -1.
+input_upper = 1.
 
-nr_sessions = 3 # hardcoded target values of logic gates with off->lower and on->upper
+nr_sessions = 10 # hardcoded target values of logic gates with off->lower and on->upper
 
 upper = 1.
 lower = 0.
@@ -49,7 +50,7 @@ N = 100 # number of data points of one of four input cases, total 4*N
 
 batch_size = 150
 max_epochs = 600
-lr = 0.08
+lr = 0.03
 beta = 10
 cv_reset = 'rand'
 
@@ -136,7 +137,7 @@ def cor_adap_loss_fn(x, y):
     corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)
     x_high_min = torch.min(x[(y == upper)]) #.item()
     x_low_max = torch.max(x[(y == lower)]) #.item()
-    return (1.1 - corr)/ ((torch.tanh((x_high_min - x_low_max)/2 - 1) + 1)/2)              #(abs(x_high_min-x_low_max)/5)**.5
+    return (1.1 - corr)/ torch.sigmoid((x_high_min - x_low_max - 4)/20) 
 
 mse_loss_fn = torch.nn.MSELoss()
 
@@ -198,7 +199,7 @@ for (i,gate) in enumerate(gates):
     if training_type == 'bin':
         cross_fn = torch.nn.CrossEntropyLoss(weight = w[i])
 
-    loss_l, best_cv, param_history = web.session_train(input_data, target_data[-1].view(-1,1),  #\\
+    loss_l, best_cv, param_history = web.session_train(input_data, target_data[i].view(-1,1),  #\\
                      beta=beta,
                      batch_size=batch_size,
                      max_epochs=max_epochs,
@@ -234,10 +235,10 @@ def print_gates():
         web.forward(input_data)
         output_data[:,i:i+1] = web.get_output()
         
-        loss = web.error_fn(output_data[:,i:i+1], target_data[-1].view(-1,1), beta).item() #\\
+        loss = web.error_fn(output_data[:,i:i+1], target_data[i].view(-1,1), beta).item() #\\
         print("loss:", loss)
         
-        mseloss = mse_norm_loss_fn(output_data[:,i:i+1], target_data[-1].view(-1,1).float()).item() #\\
+        mseloss = mse_norm_loss_fn(output_data[:,i:i+1], target_data[i].view(-1,1).float()).item() #\\
         print("mseloss: ", mseloss)
         
         # print output network and targets
@@ -250,7 +251,7 @@ def print_gates():
             plt.plot(torch.round(torch.sigmoid(output_data)))
             legend_list.append('classification')
         else:
-            plt.plot(10*output_data[:,i:i+1].numpy())
+            plt.plot(output_data[:,i:i+1].numpy())
             legend_list.append('network '+str(round(loss, 3)))
         
         plt.legend(legend_list)
@@ -265,4 +266,5 @@ CV = np.zeros((6,5))
 for i in range(len(trained_cv)):
     CV[i] = trained_cv[i]['A'].numpy()
 
-#saveArrays(r'C:\..\..\..\..\\', filename="results_NAME",max_epochs = max_epochs, nr_sessions=nr_sessions,sigma=sigma,CV=CV,training_type=training_type,upper=upper,lower=lower,lr=lr,input_upper=input_upper,input_lower=input_lower,input_gates=input_gates,pred=output_data,losslist=losslist)
+#saveArrays(r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\2019_05_17_095928_trainData_3d\predictions\Gates\\', filename="results_NAME",max_epochs = max_epochs, nr_sessions=nr_sessions,sigma=sigma,CV=CV,training_type=training_type,upper=upper,lower=lower,lr=lr,input_upper=input_upper,input_lower=input_lower,input_gates=input_gates,pred=output_data,losslist=losslist,main_dir=main_dir,data_dir=data_dir)
+    

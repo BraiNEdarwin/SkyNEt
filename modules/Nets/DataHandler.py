@@ -56,7 +56,7 @@ def generate_inpsines(info):
     offset = info['offset']
     fs = info['fs']
     phase = info['phase']
-    sine_waves = amplitude*np.sin((2*np.pi*indices*freq + phase)/fs) + offset #Tel mark phase should be outside the brackets?
+    sine_waves = amplitude*np.sin((2*np.pi*indices*freq)/fs + phase) + offset 
 
     return sine_waves
     
