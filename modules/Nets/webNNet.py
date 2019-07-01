@@ -112,6 +112,7 @@ class webNNet(torch.nn.Module):
                 voltage_bounds = torch.cat((torch.FloatTensor(info['offset']-info['amplitude']),
                                             torch.FloatTensor(info['offset']+info['amplitude']))).view(-1,D_in)
             else:
+                print('WARNING: transfer output range defaults to [0,1]!')
                 # default to [[zeros], [ones]]
                 voltage_bounds = torch.cat((torch.zeros(D_in), torch.ones(D_in))).view(-1,D_in)
         else:

@@ -24,6 +24,8 @@ class MeasureNet:
         self.D_in = 7
         self.voltage_max = voltage_max
         self.voltage_min= voltage_min
+        diff = (voltage_max-voltage_min)/2
+        self.info = {'offset': diff+voltage_min, 'amplitude':diff}
         self.set_frequency=set_frequency
         self.amplification = amplification
         if device=='cdaq':
@@ -45,10 +47,13 @@ class MeasureNet:
         for i in range(input_data.shape[1]):
             over = input_data[:,i] > self.voltage_max[i]
             under = input_data[:,i] < self.voltage_min[i]
-            if np.sum(over)>0 or np.sum(under)>0:
-                print('WARN: input range exceeded, clipping input voltages')
+            if np.sum(over)>0:
+                print('WARN: max input range exceeded, clipping input voltages: %.3f' % np.max(input_data[over, i]))
+            if np.sum(under)>0:
+                print('WARN: min input range exceeded, clipping input voltages: %.3f' % np.min(input_data[under, i]))
             input_data[over,i] = self.voltage_max[i]
             input_data[under,i] = self.voltage_min[i]
+            print('min: %.3f, max: %.3f' % (input_data[:,i].min(), input_data[:,i].max()))
         return input_data
     
     def cdaq(self, input_data):
@@ -63,14 +68,14 @@ class MeasureNet:
 
 # ---------------------------- START configure ---------------------------- #
 
-    
 
 # test script without measuring: random, use cdaq: cdaq
 execute = 'cdaq'
 amplification = 100 # on ivvi rack
 
 save_location = r'D:/data/lennart/web_validation/'
-save_name = 'boolean_v2_2-1_random'
+#save_location = r'/home/lennart/Dropbox/afstuderen/results/measurements/'
+save_name = 'boolean_v2_1_test'
 
 
 # voltage bounds which should never be exceeded: (checked in MeasureNet)
@@ -89,52 +94,58 @@ ramp_speed = 50 # V/s
 
 # load device simulation
 main_dir = r'C:/Users/PNPNteam/Documents/GitHub/pytorch_models/'
+#main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
 data_dir = 'MSE_d5w90_500ep_lr1e-3_b2048_b1b2_0.90.75-11-05-21h48m.pt'
 net = staNNet(main_dir+data_dir)
 
+def cust_sig(x):
+    print('cust_sig')
+    return torch.sigmoid(x/15*2)
 
 mnet = MeasureNet(voltage_max, voltage_min, device=execute, set_frequency=set_frequency, amplification=amplification)
 
 web = webNNet()
 mweb = webNNet()
+web.transfer = cust_sig
+mweb.transfer = cust_sig
 
 # define web for both NN model and measuring
 for w,n in zip([web, mweb], [net, mnet]):
-#    w.add_vertex(n, 'A', output=True, input_gates=[1,2])
-    w.add_vertex(n, 'A', output=True, input_gates=[])
-    w.add_vertex(n, 'B', input_gates=[1,2])
-    w.add_vertex(n, 'C', input_gates=[1,2])
-    w.add_arc('B', 'A', 1)
-    w.add_arc('C', 'A', 2)
+    w.add_vertex(n, 'A', output=True, input_gates=[1,2])
+#    w.add_vertex(n, 'A', output=True, input_gates=[])
+#    w.add_vertex(n, 'B', input_gates=[1,2])
+#    w.add_vertex(n, 'C', input_gates=[1,2])
+#    w.add_arc('B', 'A', 1)
+#    w.add_arc('C', 'A', 2)
 
 
 
 gates = ['AND', 'NAND', 'OR', 'NOR', 'XOR', 'XNOR']
-#bool_cvs = [{'A': tensor([-1.1825,  0.2760, -0.3523,  0.2719, -0.4826])},
-# {'A': tensor([ 0.2996, -0.8808, -0.5958, -0.2585,  0.1529])},
-# {'A': tensor([-1.1245,  0.5861, -0.2215, -0.5269, -0.3841])},
-# {'A': tensor([0.5000, 0.5838, 0.4203, 0.0130, 0.2996])},
-# {'A': tensor([ 0.0724, -0.5670,  0.0325, -0.5061,  0.0676])},
-# {'A': tensor([-1.1441,  0.1646, -0.7877,  0.3000, -0.2061])}]
+bool_cvs = [{'A': tensor([-1.1825,  0.2760, -0.3523,  0.2719, -0.4826])},
+ {'A': tensor([ 0.2996, -0.8808, -0.5958, -0.2585,  0.1529])},
+ {'A': tensor([-1.1245,  0.5861, -0.2215, -0.5269, -0.3841])},
+ {'A': tensor([0.5000, 0.5838, 0.4203, 0.0130, 0.2996])},
+ {'A': tensor([ 0.0724, -0.5670,  0.0325, -0.5061,  0.0676])},
+ {'A': tensor([-1.1441,  0.1646, -0.7877,  0.3000, -0.2061])}]
 
-bool_cvs = [{'A': tensor([ 0.2498, -0.3319, -1.0923, -0.1691, -1.1776, -0.0609,  0.0169]),
-  'B': tensor([-1.0331, -0.2191, -1.1111, -0.1877, -0.6405]),
-  'C': tensor([-0.2440, -0.8852,  0.0559,  0.0966,  0.2144])},
- {'A': tensor([ 0.0937,  0.3562, -0.8781, -1.1184,  0.0669, -0.6141,  0.0881]),
-  'B': tensor([-0.7568,  0.3931,  0.1475,  0.2175,  0.0151]),
-  'C': tensor([-0.7577, -0.3734, -0.2696, -0.5682,  0.2370])},
- {'A': tensor([-0.2924,  0.1317,  0.0832, -0.0645, -0.2500,  0.1185, -0.2103]),
-  'B': tensor([-1.0824, -0.8645, -0.3586, -0.6862,  0.2656]),
-  'C': tensor([-0.2053, -0.4878,  0.4077,  0.0027,  0.2233])},
- {'A': tensor([-0.5843,  0.4526, -0.5074, -0.1753,  0.2017, -0.1571,  0.1874]),
-  'B': tensor([-1.0227, -0.9396, -0.0977, -0.4615, -0.2419]),
-  'C': tensor([ 0.3603, -0.0894, -0.4416,  0.1514, -0.0895])},
- {'A': tensor([-0.9051, -0.7379, -0.5636, -0.3715, -0.8637, -0.6866,  0.1454]),
-  'B': tensor([ 0.1546,  0.5784, -0.9241, -0.0073, -0.4881]),
-  'C': tensor([ 0.2132, -0.0492, -0.9695, -0.4396, -0.0183])},
- {'A': tensor([ 0.0177, -0.3942, -0.6297, -1.1114,  0.3203, -0.2144,  0.1504]),
-  'B': tensor([ 0.2061,  0.5553, -0.9211,  0.0597, -0.4676]),
-  'C': tensor([ 0.5525,  0.2775, -0.8929, -0.3988, -0.3507])}]
+#bool_cvs = [{'A': tensor([ 0.2498, -0.3319, -1.0923, -0.1691, -1.1776, -0.0609,  0.0169]),
+#  'B': tensor([-1.0331, -0.2191, -1.1111, -0.1877, -0.6405]),
+#  'C': tensor([-0.2440, -0.8852,  0.0559,  0.0966,  0.2144])},
+# {'A': tensor([ 0.0937,  0.3562, -0.8781, -1.1184,  0.0669, -0.6141,  0.0881]),
+#  'B': tensor([-0.7568,  0.3931,  0.1475,  0.2175,  0.0151]),
+#  'C': tensor([-0.7577, -0.3734, -0.2696, -0.5682,  0.2370])},
+# {'A': tensor([-0.2924,  0.1317,  0.0832, -0.0645, -0.2500,  0.1185, -0.2103]),
+#  'B': tensor([-1.0824, -0.8645, -0.3586, -0.6862,  0.2656]),
+#  'C': tensor([-0.2053, -0.4878,  0.4077,  0.0027,  0.2233])},
+# {'A': tensor([-0.5843,  0.4526, -0.5074, -0.1753,  0.2017, -0.1571,  0.1874]),
+#  'B': tensor([-1.0227, -0.9396, -0.0977, -0.4615, -0.2419]),
+#  'C': tensor([ 0.3603, -0.0894, -0.4416,  0.1514, -0.0895])},
+# {'A': tensor([-0.9051, -0.7379, -0.5636, -0.3715, -0.8637, -0.6866,  0.1454]),
+#  'B': tensor([ 0.1546,  0.5784, -0.9241, -0.0073, -0.4881]),
+#  'C': tensor([ 0.2132, -0.0492, -0.9695, -0.4396, -0.0183])},
+# {'A': tensor([ 0.0177, -0.3942, -0.6297, -1.1114,  0.3203, -0.2144,  0.1504]),
+#  'B': tensor([ 0.2061,  0.5553, -0.9211,  0.0597, -0.4676]),
+#  'C': tensor([ 0.5525,  0.2775, -0.8929, -0.3988, -0.3507])}]
 
 
 # ---------------------------- END configure ---------------------------- #
@@ -209,12 +220,14 @@ for i, gate in enumerate(gates):
     
     model_alloutputs[gate] = {}
     device_alloutputs[gate] = {}
+    print('start model')
     # get predicted output with neural network
     with torch.no_grad():
         web.reset_parameters(cv)
         web_output = web.forward(input_data)
     model_output[gate] = web_output
     
+    print('start measuring')
     # measure on device
     with torch.no_grad():
         mweb.reset_parameters(cv)
