@@ -63,7 +63,7 @@ class experiment_config(config_class):
         self.InputGen = self.input_waveform(inputs)
         self.amplification = 10
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 30
+        self.generations = 80
         self.generange = [[-1.2,0.6], [-1.2,0.6],[-1.2,0.6], [-0.7,0.3], [-0.7,0.3]]
         self.inputrange = [-1.2,0.6]
         #electrodes of the input: [1,2], [3,4] or [5,6] 
