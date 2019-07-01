@@ -8,7 +8,7 @@ Created on Mon May 13 12:41:43 2019
 
 import numpy as np
 from SkyNEt.config.config_class import config_class
-from SkyNEt.modules.GenWaveform import GenWaveform
+from SkyNEt.modules.GenWaveform2 import GenWaveform
 
 
 class experiment_config(config_class):
@@ -61,7 +61,9 @@ class experiment_config(config_class):
         # Define experiment
         self.lengths, self.slopes = [100], [0] # in 1/fs
         self.InputGen = self.input_waveform(inputs)
-        self.amplification = 10
+        self.use_nn = True
+        self.amplification_nn = 10
+        self.amplification_chip = 100
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
         self.generations = 80
         self.generange = [[-1.2,0.6], [-1.2,0.6],[-1.2,0.6], [-0.7,0.3], [-0.7,0.3]]
@@ -73,8 +75,8 @@ class experiment_config(config_class):
         self.genomes = sum(self.partition)  
         self.genes = len(self.generange) 
         self.clipvalue = 350
-#        self.Fitness = self.corr_lin_fit
-        self.Fitness = self.corr_sig_fit
+        self.Fitness = self.corr_lin_fit
+#        self.Fitness = self.corr_sig_fit
 
     
 
@@ -94,8 +96,8 @@ class experiment_config(config_class):
         inputs_wvfrm = np.asarray([inp_wvfrm0,inp_wvfrm1])
         
 #        print('Size of input', inputs_wvfrm.shape)
-        w_ampl = [1,0]*len(inputs[0])
-        w_lengths = [self.lengths[0],self.slopes[0]]*len(inputs[0])
+        w_ampl = [0] + [1,0]*len(inputs[0])
+        w_lengths = [self.slopes[0]]+ [self.lengths[0],self.slopes[0]]*len(inputs[0])
         
         weight_wvfrm = GenWaveform(w_ampl, w_lengths)
         bool_weights = [x==1 for x in weight_wvfrm[:samples]]
@@ -104,19 +106,19 @@ class experiment_config(config_class):
 #    --------------------------------------------------------------------------------------
     #Fitness function1: Combination of a sigoid with pre-defined separation threshold (2.5 nA)
     # and the correlation function. The sigmoid can be adapted by changing the function 'sig(self, x)'        
-    def corr_sig_fit(self, output, target, w,standard_dev):
-        if np.any(np.abs(output)>self.clipvalue):
+    def corr_sig_fit(self, output, target, w):
+        if np.any(np.abs(output[w])>self.clipvalue):
             print('Clipping value set at: '+ str(self.clipvalue))
             fit = -100
             return fit
-        elif np.any(np.abs(output)<-self.clipvalue):
+        elif np.any(np.abs(output[w])<-self.clipvalue):
             print('Clipping value set at:'+ str(-self.clipvalue))
             fit = -100
             return fit
-        buff0 = target == 0
-        buff1 = target == 1
-        max_0 = np.max(output[buff0])
-        min_1 = np.min(output[buff1])
+        buff0 = target[w] == 0
+        buff1 = target[w] == 1
+        max_0 = np.max(output[w][buff0])
+        min_1 = np.min(output[w][buff1])
         sep = min_1 - max_0
         x = output[w][:,np.newaxis]
         y = target[w][:,np.newaxis]
@@ -139,19 +141,23 @@ class experiment_config(config_class):
     #Fitness function2: Combination of a linear function with output-dependent thresholds 
     # and the correlation function. 
     # The linear function can be adapted by changing 'sig_lin(self,sep,standard_dev) 
-    def corr_lin_fit(self, output, target, w, standard_dev):
-        if np.any(np.abs(output)>self.clipvalue):
+    def corr_lin_fit(self, output, target, w):
+        standard_deviation = [] 
+        for k in range(0,len(output[w]),100):
+            standard_deviation.append(np.std(output[w][k:k+100])) 
+        standard_dev = np.asarray(standard_deviation)
+        if np.any(np.abs(output[w])>self.clipvalue):
             print('Clipping value set at: '+ str(self.clipvalue))
             fit = -100
             return fit
-        elif np.any(np.abs(output)<-self.clipvalue):
+        elif np.any(np.abs(output[w])<-self.clipvalue):
             print('Clipping value set at:'+ str(-self.clipvalue))
             fit = -100
             return fit
-        buff0 = target == 0
-        buff1 = target == 1
-        max_0 = np.max(output[buff0])
-        min_1 = np.min(output[buff1])
+        buff0 = target[w] == 0
+        buff1 = target[w] == 1
+        max_0 = np.max(output[w][buff0])
+        min_1 = np.min(output[w][buff1])
         sep = min_1 - max_0
         x = output[w][:,np.newaxis]
         y = target[w][:,np.newaxis]

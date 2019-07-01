@@ -27,7 +27,7 @@ import time
 import numpy as np
 import pdb
 import os 
-
+#from SkyNEt.instruments import InstrumentImporter
 
 
 ##Returns the output array with noise 
@@ -59,12 +59,12 @@ def opposite( x, genePool, cf, net, target, dtype,w):
                     os._exit(1)
                 inputs = torch.from_numpy(x_dummy).type(dtype)
                 inputs = Variable(inputs)
-                output = net.outputs(inputs) * cf.amplification 
+                output = net.outputs(inputs) * cf.amplification_nn 
                 output, standard_dev = noise_gen(output)
                 outputAvg[avgIndex] =  np.asarray(output) 
-                temp_list[i][j,avgIndex] = cf.Fitness(outputAvg[avgIndex],target, w, standard_dev)
+                temp_list[i][j,avgIndex] = cf.Fitness(outputAvg[avgIndex],target, w)
     indices = temp_list[1] > temp_list[0]
-    genePool.setNewPool(indices)    
+    genePool.setNewPool(indices)     
 
 
 def evolve( dataset, threshold, inputs, binary_labels):
@@ -114,14 +114,18 @@ def evolve( dataset, threshold, inputs, binary_labels):
                     print("Combination input electrodes is not valid")
                     time.sleep(1)
                     os._exit(1)               
-                inputs = torch.from_numpy(x_dummy).type(dtype)
-                inputs = Variable(inputs)
-                output = net.outputs(inputs) * cf.amplification 
-                # Add Noise
-                output, standard_dev = noise_gen(output)
+                if cf.use_nn:
+                    inputs = torch.from_numpy(x_dummy).type(dtype)
+                    inputs = Variable(inputs)
+                    output = net.outputs(inputs) * cf.amplification_nn 
+                    # Add Noise
+                    output, standard_dev = noise_gen(output)
+                else:
+                    inputs = x_dummy.T
+                    output = InstrumentImporter.nidaqIO.IO_cDAQ(inputs, cf.fs) *cf.amplification_chip
                 outputAvg[avgIndex] =  np.asarray(output) 
                 # Calculate fitness
-                fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],target, w, standard_dev)
+                fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],target, w)
     
             outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
         #Save fitness
