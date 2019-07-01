@@ -98,7 +98,7 @@ def evolve( dataset, threshold, inputs, binary_labels):
     for i in range(cf.generations):
         start = time.time()
         #if the solution is not found when half of the generations have elapsed, evaluate opposite pool
-        if (i+1)%(cf.generations/2) == 0: 
+        if (i+1)%40 == 0: 
             opposite( x, genePool, cf, net, target, dtype,w)
 
         for j in range(cf.genomes):
