@@ -27,9 +27,9 @@ User specific parameters
 inputs = [[-1.1,0.5,-1.1,0.5,-0.6],[-1.1,-1.1,0.5,0.5,0]]
 bad_gates = [3,11,19,22,23,30]
 #bad_gates = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
-save =True
+save =False
 filepath_folder = r'../../test/evolution_test/VCdim_testing5/Verification_data_ramp_new2/'
-no_measurements = 100
+no_measurements = 1
 
 
 

@@ -76,7 +76,7 @@ if show_acc:
 else: 
     acc= np.array(found_gen)
 acc[acc>80] = 100
-accuracy[accuracy==0.992]=1      
+acc[acc==0.992]=1      
 subplot_no = 231
 plt.figure()
 if mutation == 1:

@@ -59,7 +59,7 @@ class experiment_config(config_class):
         self.comport = 'COM3'  # COM port for the ivvi rack
 
         # Define experiment
-        self.lengths, self.slopes = [100], [0] # in 1/fs
+        self.lengths, self.slopes = [100], [20] # in 1/fs
         self.InputGen = self.input_waveform(inputs)
         self.use_nn = True
         self.amplification_nn = 10
@@ -143,8 +143,8 @@ class experiment_config(config_class):
     # The linear function can be adapted by changing 'sig_lin(self,sep,standard_dev) 
     def corr_lin_fit(self, output, target, w):
         standard_deviation = [] 
-        for k in range(0,len(output[w]),100):
-            standard_deviation.append(np.std(output[w][k:k+100])) 
+        for k in range(0,len(output[w]),self.lengths[0]):
+            standard_deviation.append(np.std(output[w][k:k+self.lengths[0]])) 
         standard_dev = np.asarray(standard_deviation)
         if np.any(np.abs(output[w])>self.clipvalue):
             print('Clipping value set at: '+ str(self.clipvalue))
@@ -178,7 +178,7 @@ class experiment_config(config_class):
         max_std = np.amax(standard_dev)
         second_std = np.amax(standard_dev[standard_dev!=max_std])
         #Threshold separation 
-        x_sep = 3* (max_std+ second_std)
+        x_sep = 4* (max_std+ second_std)
         #Start of the linear increase
         start = -4
         #If the threshold value x_sep is reached, 'maximum' will be returned. 
