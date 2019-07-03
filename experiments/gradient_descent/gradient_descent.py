@@ -30,6 +30,12 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 t = cf.InputGen()[0]  # Time array
 x = np.asarray(cf.InputGen()[1:3])  # Array with P and Q signal
 w = cf.InputGen()[3]  # Weight array
+#w = np.zeros(t.shape[0])
+#w[0:int(cf.fs*cf.signallength/cf.inputCases)] = 1
+#w[int(cf.fs*(cf.signallength/cf.inputCases + cf.edgelength)): int(cf.fs*(2*cf.signallength/cf.inputCases + cf.edgelength))] = 1
+#w[int(cf.fs*2*(cf.signallength/cf.inputCases + cf.edgelength)): int(cf.fs*(3*cf.signallength/cf.inputCases + 2*cf.edgelength))] = 1
+#w[int(cf.fs*3*(cf.signallength/cf.inputCases + cf.edgelength)): int(cf.fs*(4*cf.signallength/cf.inputCases + 3*cf.edgelength))] = 1
+
 target = cf.gainFactor * cf.targetGen()[1]  # Target signal
 
 # Initialize arrays
@@ -59,7 +65,7 @@ for k in range(cf.controls + cf.inputs):
 # Main aqcuisition loop
 for i in range(cf.n + 1):
     
-    # Apply the sine waves on top of the control voltages:
+    # Apply DC control voltages:
     inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] = controls[i,:][:,np.newaxis] * np.ones(x.shape[1]) 
     
     # For all except last iteration add sine waves on top of DC voltages
@@ -74,7 +80,7 @@ for i in range(cf.n + 1):
     if cf.device == 'chip':
         for j in range(inputs.shape[1]):
             inputs[i, j, 0:int(cf.fs*cf.rampT)] = np.linspace(0, inputs[i, j, int(cf.fs*cf.rampT)], int(cf.fs*cf.rampT))
-            inputs[i, j, -int(cf.fs*cf.rampT):] = np.linspace(inputs[i, j, -int(cf.fs*cf.rampT)], 0, int(cf.fs*cf.rampT))    
+            inputs[i, j, -int(cf.fs*cf.rampT):] = np.linspace(inputs[i, j, -int(cf.fs*cf.rampT + 1)], 0, int(cf.fs*cf.rampT))    
         
     # Measure output
     if cf.device == 'chip':
@@ -121,7 +127,7 @@ for i in range(cf.n + 1):
         
         
         # Multiply dE/dI and dI/dV to obtain the gradient w.r.t. control voltages
-        EVgrad[i] += np.mean(EIgrad[i, k*cf.signallength*cf.fs//cf.inputCases:(k+1)*cf.signallength*cf.fs//cf.inputCases][:,np.newaxis] * (sign[k,:] * IVgrad[i,k,:]), axis=0)
+        EVgrad[i] += np.mean(EIgrad[i, int(k*cf.signallength*cf.fs//cf.inputCases):int((k+1)*cf.signallength*cf.fs//cf.inputCases)][:,np.newaxis] * (sign[k,:] * IVgrad[i,k,:]), axis=0)
             
     if i < cf.n-1:
         # Update scheme
@@ -154,6 +160,7 @@ for i in range(cf.n + 1):
 
 SaveLib.saveExperiment(cf.configSrc, saveDirectory,
                        controls = controls,
+                       inputs = inputs,
                        output = data,
                        t = t,
                        x_scaled = x_scaled,
