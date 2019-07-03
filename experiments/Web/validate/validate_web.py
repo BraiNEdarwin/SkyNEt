@@ -75,21 +75,18 @@ amplification = 100 # on ivvi rack
 
 save_location = r'D:/data/lennart/web_validation/'
 #save_location = r'/home/lennart/Dropbox/afstuderen/results/measurements/'
-save_name = 'boolean_v2_1_test'
+save_name = 'cp_v2_4-1'
 
+n=100 # datapoints per problem case
+result_folder = '2019_06_17_142417_cp_GD_4-1_v2_beta80-92' # only saved with experiment, not used
 
 # voltage bounds which should never be exceeded: (checked in MeasureNet)
-voltage_max = np.array([0.6, 0.6, 0.6, 0.6, 0.6, 0.3, 0.3])
+voltage_max = np.array([0.7, 0.7, 0.7, 0.7, 0.7, 0.3, 0.3])
 voltage_min = np.array([-1.2, -1.2, -1.2, -1.2, -1.2, -0.7, -0.7])
 
-# input voltages of boolean inputs (on/upper, off/lower)
-input_lower = -1.2
-input_upper = 0.6
-
-N = 100 # number of data points of one of four input cases of boolean logic
-
 set_frequency = 1000 # Hz
-ramp_speed = 50 # V/s
+ramp_speed = 0.1 # V/s, 
+# IMPORTANT: ivvi rack ramps each voltage individually, so this value is only used for changing a single voltage at a time
 
 
 # load device simulation
@@ -99,7 +96,7 @@ data_dir = 'MSE_d5w90_500ep_lr1e-3_b2048_b1b2_0.90.75-11-05-21h48m.pt'
 net = staNNet(main_dir+data_dir)
 
 def cust_sig(x):
-    print('cust_sig')
+#    print('cust_sig')
     return torch.sigmoid(x/15*2)
 
 mnet = MeasureNet(voltage_max, voltage_min, device=execute, set_frequency=set_frequency, amplification=amplification)
@@ -111,46 +108,62 @@ mweb.transfer = cust_sig
 
 # define web for both NN model and measuring
 for w,n in zip([web, mweb], [net, mnet]):
-    w.add_vertex(n, 'A', output=True, input_gates=[1,2])
-#    w.add_vertex(n, 'A', output=True, input_gates=[])
-#    w.add_vertex(n, 'B', input_gates=[1,2])
-#    w.add_vertex(n, 'C', input_gates=[1,2])
-#    w.add_arc('B', 'A', 1)
-#    w.add_arc('C', 'A', 2)
+#    w.add_vertex(n, 'A', output=True, input_gates=[1,2])
+    w.add_vertex(n, 'A', output=True, input_gates=[])
+    w.add_vertex(n, 'B', input_gates=[1,2])
+    w.add_vertex(n, 'C', input_gates=[1,2])
+    w.add_vertex(n, 'D', input_gates=[1,2])
+    w.add_vertex(n, 'E', input_gates=[1,2])
+    w.add_arc('B', 'A', 1)
+    w.add_arc('C', 'A', 2)
+    w.add_arc('D', 'A', 3)
+    w.add_arc('E', 'A', 4)
+    w.add_parameters(['scale', 'bias'],
+                       [torch.ones(2), torch.tensor([0., 1.])],
+    #                   lambda : 0.0001*torch.mean(web.scale**2 + web.bias**2)/2,
+                       lr=0.1, betas=(0.9,0.99))
 
 
+cv_list = torch.tensor([-1.1044788360595703,
+ -0.20852607488632202,
+ -0.1164623498916626,
+ -0.6689516305923462,
+ -0.19157111644744873,
+ -0.3318597674369812,
+ 0.11369849741458893,
+ -0.4117467999458313,
+ -0.975537896156311,
+ -1.0046099424362183,
+ -0.06706836819648743,
+ -0.005668036639690399,
+ 0.12973833084106445,
+ -1.1843717098236084,
+ 0.11103629320859909,
+ -0.028120175004005432,
+ 0.2865794003009796,
+ -1.1123498678207397,
+ -0.9114303588867188,
+ -0.9430482983589172,
+ 0.1317417174577713,
+ -0.17312610149383545,
+ -0.04973844438791275,
+ -0.32583948969841003,
+ 0.15769539773464203,
+ -0.31805670261383057,
+ 0.028909362852573395,
+ 4.800425052642822,
+ -14.237703323364258,
+ -5.183893203735352,
+ -1.211928367614746])
 
-gates = ['AND', 'NAND', 'OR', 'NOR', 'XOR', 'XNOR']
-bool_cvs = [{'A': tensor([-1.1825,  0.2760, -0.3523,  0.2719, -0.4826])},
- {'A': tensor([ 0.2996, -0.8808, -0.5958, -0.2585,  0.1529])},
- {'A': tensor([-1.1245,  0.5861, -0.2215, -0.5269, -0.3841])},
- {'A': tensor([0.5000, 0.5838, 0.4203, 0.0130, 0.2996])},
- {'A': tensor([ 0.0724, -0.5670,  0.0325, -0.5061,  0.0676])},
- {'A': tensor([-1.1441,  0.1646, -0.7877,  0.3000, -0.2061])}]
-
-#bool_cvs = [{'A': tensor([ 0.2498, -0.3319, -1.0923, -0.1691, -1.1776, -0.0609,  0.0169]),
-#  'B': tensor([-1.0331, -0.2191, -1.1111, -0.1877, -0.6405]),
-#  'C': tensor([-0.2440, -0.8852,  0.0559,  0.0966,  0.2144])},
-# {'A': tensor([ 0.0937,  0.3562, -0.8781, -1.1184,  0.0669, -0.6141,  0.0881]),
-#  'B': tensor([-0.7568,  0.3931,  0.1475,  0.2175,  0.0151]),
-#  'C': tensor([-0.7577, -0.3734, -0.2696, -0.5682,  0.2370])},
-# {'A': tensor([-0.2924,  0.1317,  0.0832, -0.0645, -0.2500,  0.1185, -0.2103]),
-#  'B': tensor([-1.0824, -0.8645, -0.3586, -0.6862,  0.2656]),
-#  'C': tensor([-0.2053, -0.4878,  0.4077,  0.0027,  0.2233])},
-# {'A': tensor([-0.5843,  0.4526, -0.5074, -0.1753,  0.2017, -0.1571,  0.1874]),
-#  'B': tensor([-1.0227, -0.9396, -0.0977, -0.4615, -0.2419]),
-#  'C': tensor([ 0.3603, -0.0894, -0.4416,  0.1514, -0.0895])},
-# {'A': tensor([-0.9051, -0.7379, -0.5636, -0.3715, -0.8637, -0.6866,  0.1454]),
-#  'B': tensor([ 0.1546,  0.5784, -0.9241, -0.0073, -0.4881]),
-#  'C': tensor([ 0.2132, -0.0492, -0.9695, -0.4396, -0.0183])},
-# {'A': tensor([ 0.0177, -0.3942, -0.6297, -1.1114,  0.3203, -0.2144,  0.1504]),
-#  'B': tensor([ 0.2061,  0.5553, -0.9211,  0.0597, -0.4676]),
-#  'C': tensor([ 0.5525,  0.2775, -0.8929, -0.3988, -0.3507])}]
+web.reset_parameters(cv_list)
+cv = web.get_parameters()
 
 
 # ---------------------------- END configure ---------------------------- #
 
 savedir = createSaveDirectory(save_location, save_name)
+
 
 def npramp(start, stop, set_frequency=1000, ramp_speed=50):
     """ ramp from start array to stop array, numpy version """
@@ -182,73 +195,124 @@ def ramp(start, stop, set_frequency=1000, ramp_speed=50):
     y += start
     return y
 
-# input data for both I0 and I1
-problem_input_size = 2 # two binary inputs
-case1 = torch.tensor([input_lower, input_lower])
-case2 = torch.tensor([input_lower, input_upper])
-case3 = torch.tensor([input_upper, input_lower])
-case4 = torch.tensor([input_upper, input_upper])
-# input ramping before I(0,0) and after I(1,1)
-preramp = ramp(torch.zeros(problem_input_size), case1)
-postramp = ramp(case4, torch.zeros(problem_input_size))
 
-input_data = torch.cat((
-        preramp,
-        case1.repeat(N,1),
-        ramp(case1,case2),
-        case2.repeat(N,1),
-        ramp(case2,case3),
-        case3.repeat(N,1),
-        ramp(case3,case4),
-        case4.repeat(N,1),
-        postramp))
+# function to generate train data for control problem
+#def generate_cp(n=10, mean_I0=-0.2, mean_I1=-0.2, amp_I0=0.9, amp_I1=0.9):
+#     values_I0 = [mean_I0-amp_I0+amp_I0*2/2*(i//n//7) for i in range(21*n)]
+#     values_I1 = [mean_I1-amp_I1+amp_I1*2/6*(i//n%7) for i in range(21*n)]
+#     input_data = torch.tensor([values_I0, values_I1]).t()
+#     targets = [0,0,0,1,1,1,1,0,1,1,1,1,2,2,1,1,2,1,2,1,2]
+#     target_data = torch.tensor([targets]).view(-1,1).repeat(1,n).view(-1,1)
+#     return input_data, target_data
+    
+# input data for both I0 and I1
+def generate_cp(n=10, mean_I0=-0.2, mean_I1=-0.2, amp_I0=0.9, amp_I1=0.9):
+    N=1
+    values_I0 = [mean_I0-amp_I0+amp_I0*2/2*(i//N//7) for i in range(21*N)]
+    values_I1 = [mean_I1-amp_I1+amp_I1*2/6*(i//N%7) for i in range(21*N)]
+    raw_problem_data = torch.tensor([values_I0, values_I1]).t()
+    raw_input_data = torch.cat((torch.zeros(N,2), raw_problem_data, torch.zeros(N,2)))
+    input_data_list = []
+    positions = []
+    count = 0
+    for i in range(21):
+        ramped_data = ramp(raw_input_data[i], raw_input_data[i+1])
+        input_data_list.append(ramped_data)
+        input_data_list.append(raw_input_data[i+1].repeat(n,1))
+        count += ramped_data.shape[0]
+        positions.append(count+n//2)
+        count +=n
+    input_data_list.append(ramp(raw_input_data[-2], raw_input_data[-1]))
+    input_data = torch.cat(input_data_list)
+    return input_data, positions
+#    targets = [0,0,0,1,1,1,1,0,1,1,1,1,2,2,1,1,2,1,2,1,2]
+#    target_data = torch.tensor([targets]).view(-1,1).repeat(1,n).view(-1,1)
+#    return input_data, target_data
+input_data, positions = generate_cp(n=100)
 
 
 # copy input for each network
-stack_size = (7*len(web.graph) - web.nr_of_params)//problem_input_size
+stack_size = (7*len(web.graph) - web.nr_of_params)//2
 input_data = torch.cat((input_data,)*stack_size, dim=1)
 
-model_output = {}
-device_output = {}
+
+keys = cv.keys()
+
+assert keys==web.get_parameters().keys(), 'keys not matching'
+
+
 model_alloutputs = {}
 device_alloutputs = {}
-for i, gate in enumerate(gates):
-    cv = bool_cvs[i]
-    keys = cv.keys()
-    
-    assert keys==web.graph.keys(), 'keys not matching'
-    
-    model_alloutputs[gate] = {}
-    device_alloutputs[gate] = {}
-    print('start model')
-    # get predicted output with neural network
-    with torch.no_grad():
-        web.reset_parameters(cv)
-        web_output = web.forward(input_data)
-    model_output[gate] = web_output
-    
-    print('start measuring')
-    # measure on device
-    with torch.no_grad():
-        mweb.reset_parameters(cv)
-        mweb_output = mweb.forward(input_data)
-    
-    device_output[gate] = mweb_output
+print('start model')
+# get predicted output with neural network
+with torch.no_grad():
+    web.reset_parameters(cv)
+    web_output = web.forward(input_data)
+model_output = web_output
 
-    # store all vertex outputs
-    for key in keys:
-        model_alloutputs[gate][key] = web.graph[key]['output'].numpy()
-        device_alloutputs[gate][key] = mweb.graph[key]['output'].numpy()
+print('start measuring')
+# measure on device
+with torch.no_grad():
+    mweb.reset_parameters(cv)
+    mweb_output = mweb.forward(input_data)
+
+device_output = mweb_output
+
+# store all vertex outputs
+for key in web.graph.keys():
+    model_alloutputs[key] = web.graph[key]['output'].numpy()
+    device_alloutputs[key] = mweb.graph[key]['output'].numpy()
 
 
 
 saveExperiment(savedir, 
                input_data=input_data,
-               control_voltages=bool_cvs,
+               control_voltages=cv,
                model_output=model_output,
                device_output=device_output,
                model_alloutputs=model_alloutputs,
-               device_alloutputs=device_alloutputs)
+               device_alloutputs=device_alloutputs,
+               positions=positions,
+               result_folder=result_folder)
 
+def moving_average(a, n=3) :
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
+
+def plot_output(device_output, model_output, positions, window=1, extra_title='', numpy=False):
+    plt.figure()
+    xticks = ['A','B','C','D','E','F','G']
+    plt.xticks(positions, xticks*3)
+    if numpy:
+        plt.plot(moving_average(device_output, window), 'k')
+        plt.plot(model_output, ':k')
+    else:
+        plt.plot(moving_average(device_output.numpy(), window), 'k')
+        plt.plot(model_output.numpy(), ':k')
+    plt.title(extra_title)
+    plt.legend(['device', 'model'])
+    plt.ylabel('Output current (nA)')
+    plt.show()
+
+window = 10
+
+plot_output(device_output, model_output, positions)
+plot_output(device_output, model_output, positions, window=window)
+
+vertices = model_alloutputs.keys()
+for vertex in vertices:
+    plot_output(device_alloutputs[vertex], model_alloutputs[vertex], positions, extra_title='vertex '+vertex, numpy=True)
+    plot_output(device_alloutputs[vertex], model_alloutputs[vertex], positions, extra_title='vertex '+vertex+', window '+str(window), window=10, numpy=True)
+
+def plot_input_data(input_data, fontsize=25):
+    plt.rcParams.update({'font.size':fontsize})
+    xticks = ['A','B','C','D','E','F','G']
+    plt.plot(input_data[:,0].numpy(), ':k')
+    plt.plot(input_data[:,1].numpy(), 'k')
+    plt.xticks(positions, xticks*3)
+    plt.legend(['I0', 'I1'])
+    plt.ylabel('Applied voltage (V)')
+    plt.show()
 
 InstrumentImporter.reset(0, 0)
