@@ -57,13 +57,15 @@ class experiment_config(config_class):
         ######### SPECIFY PARAMETERS ###################
         ################################################
         self.comport = 'COM3'  # COM port for the ivvi rack
-
-        # Define experiment
-        self.lengths, self.slopes = [100], [20] # in 1/fs
-        self.InputGen = self.input_waveform(inputs)
         self.use_nn = True
-        self.amplification_nn = 10
-        self.amplification_chip = 100
+        if self.use_nn:
+            self.lengths, self.slopes = [100], [0] # in 1/fs
+            self.amplification_nn = 10
+        else:
+            self.lengths, self.slopes = [100], [20] # in 1/fs
+            self.amplification_chip = 100
+        # Define experiment
+        self.InputGen = self.input_waveform_new(inputs)
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
         self.generations = 80
         self.generange = [[-1.2,0.6], [-1.2,0.6],[-1.2,0.6], [-0.7,0.3], [-0.7,0.3]]
@@ -88,6 +90,23 @@ class experiment_config(config_class):
     # These can be e.g. new fitness functions or input/output generators.
 
     def input_waveform(self, inputs):
+        assert len(inputs) == 2, 'Input must be 2 dimensional!'
+        inp_wvfrm0 = GenWaveform(inputs[0], self.lengths, slopes=self.slopes)
+        inp_wvfrm1 = GenWaveform(inputs[1], self.lengths, slopes=self.slopes)
+        samples = len(inp_wvfrm0)
+        time_arr = np.linspace(0, samples/self.fs, samples)
+        inputs_wvfrm = np.asarray([inp_wvfrm0,inp_wvfrm1])
+        
+#        print('Size of input', inputs_wvfrm.shape)
+        w_ampl = [1,0]*len(inputs[0])
+        w_lengths = [self.lengths[0],self.slopes[0]]*len(inputs[0])
+        
+        weight_wvfrm = GenWaveform(w_ampl, w_lengths)
+        bool_weights = [x==1 for x in weight_wvfrm[:samples]]
+        
+        return time_arr, inputs_wvfrm, bool_weights
+    
+    def input_waveform_new(self, inputs):
         assert len(inputs) == 2, 'Input must be 2 dimensional!'
         inp_wvfrm0 = GenWaveform(inputs[0], self.lengths, slopes=self.slopes)
         inp_wvfrm1 = GenWaveform(inputs[1], self.lengths, slopes=self.slopes)
@@ -178,7 +197,7 @@ class experiment_config(config_class):
         max_std = np.amax(standard_dev)
         second_std = np.amax(standard_dev[standard_dev!=max_std])
         #Threshold separation 
-        x_sep = 4* (max_std+ second_std)
+        x_sep = 3* (max_std+ second_std)
         #Start of the linear increase
         start = -4
         #If the threshold value x_sep is reached, 'maximum' will be returned. 
