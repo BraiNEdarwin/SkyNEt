@@ -23,14 +23,14 @@ class experiment_config(object):
 
 
         #define where you want to save the data.
-        self.filepath = '/home/Darwin/data/Rik/IV/'
+        self.filepath = '/home/Darwin/data/Rik/IV'
         self.name = 'test'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
         
         #define the IV you want to take in volts.
-        self.v_low = -1.5
-        self.v_high = 1.5
-        self.n_points =1000
+        self.v_low = -0.5
+        self.v_high = 0.5
+        #self.n_points =1000
         self.direction = 'up'
 
         #define the input and output amplifications.
@@ -39,15 +39,18 @@ class experiment_config(object):
 
         #measurment tool settings.
         self.device = 'nidaq'
-        self.fs = 1000
+        self.fs = 10000
+        #this sets the nyquist frequency to 5000Hz
         
-        self.n_pulses = 5
-        self.backgate = 0
+        self.n_points = 1000
+        self.frequency = 1*self.fs/self.n_points #in Hz
+        self.amplitude = 0.5
+        self.frequencysweep = np.linspace(1,2000,20)
 
 
         self.Sweepgen = self.Sweepgen
 
-    def Sweepgen(self, v_high, v_low, n_points,backgate, direction):
+    def Sweepgen(self, v_high, v_low, n_points, direction):
         n_points = n_points/2
 
         if direction == 'down':
@@ -60,8 +63,9 @@ class experiment_config(object):
             Input3 = np.linspace(v_low, 0, int((n_points*v_low)/(v_low-v_high)))
         else:
             print('Specify the sweep direction')
-        
-        Input = np.ones((1,len(Input1)+len(Input2)+len(Input3)))*backgate
+
+
+        Input = np.zeros((1,len(Input1)+len(Input2)+len(Input3)))
         Input[0, 0:len(Input1)] = Input1
         Input[0, len(Input1):len(Input1)+len(Input2)] = Input2
         Input[0, len(Input1)+len(Input2):len(Input1)+len(Input2)+len(Input3)] = Input3
@@ -79,21 +83,19 @@ class experiment_config(object):
         return Input
     
     def sine(self, n_points, frequency, amplitude):
-        
-        
-        points = np.linspace(0,1,n_points-1)
-        Input = amplitude*np.sin(points* np.pi / 180.)
+        frequencycompensation = frequency/(self.fs/self.n_points)
+        Input = np.zeros((1,(n_points)))
+        points = np.linspace(0,frequencycompensation,n_points)
+        Input[0,:] = amplitude*np.sin(points* np.pi / 0.5)
         
         
         return Input
-    
-    def generate_cp(n=100, mean_I0=-0.3, mean_I1=-0.3, amp_I0=0.9, amp_I1=0.9):
-        values_I0 = [mean_I0-amp_I0+amp_I0*2/2*(i//n//7) for i in range(21*n)]
-        values_I1 = [mean_I1-amp_I1+amp_I1*2/6*(i//n%7) for i in range(21*n)]
-        input_data = np.array[[values_I0],[values_I1]]
-        targets = [0,0,0,1,1,1,1,0,1,1,1,1,2,2,1,1,2,1,2,1,2]
         
         
-        return input_data, targets
+        
+
+
+
+
 
 

@@ -3,28 +3,32 @@ import matplotlib.pyplot as plt
 from SkyNEt.instruments import InstrumentImporter
 import numpy as np
 import os
-import config_IV as config
+import config_IVneighbours as config
 
 # Load the information from the config class.
 config = config.experiment_config()
 
 # Initialize save directory.
 saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.name)
-
+plt.figure()
+plt.title('sweep and static neighbouring electrode')
+plt.xlabel('voltage (V)')
+plt.ylabel('current (10nA)')
 # Define the device input using the function in the config class.
-
-Input = config.Sweepgen( config.v_high, config.v_low, config.n_points,config.backgate, config.direction)
+Output = np.zeros((config.n_measure,config.n_points))
+for i in range(config.n_measure):
+    Input = config.Sweepgen( config.v_high, config.v_low, config.n_points,config.neighboursteps[i], config.direction)
 #Input = np.zeros([2, config.n_points])
 ##Input = config.Pulse(config.v_high, config.v_low, config.n_points, config.n_pulses)
 #Input = config.sine(config.n_points, 1, config.v_high)
 # Measure using the device specified in the config class.
-if config.device == 'nidaq':
-    Output = InstrumentImporter.nidaqIO.IO_cDAQ9132(Input, config.fs)
-elif config.device == 'adwin':
-    adwin = InstrumentImporter.adwinIO.initInstrument()
-    Output = InstrumentImporter.adwinIO.IO(adwin, Input, config.fs)
-else:
-    print('specify measurement device')
+    if config.device == 'nidaq':
+        Output[i,:] = InstrumentImporter.nidaqIO.IO_cDAQ9132(Input, config.fs)
+    elif config.device == 'adwin':
+        adwin = InstrumentImporter.adwinIO.initInstrument()
+        Output[i,:] = InstrumentImporter.adwinIO.IO(adwin, Input, config.fs)
+    else:
+        print('specify measurement device')
 
 # Save the Input and Output
 #SaveLib.saveExperiment(config.configSrc, saveDirectory, input = Input, output = Output)
@@ -42,11 +46,11 @@ else:
 #print(resistance)
 #print('the resistance is %i ohms' %avgresistance)
 # Plot the IV curve.
-plt.figure()
-plt.plot(Input[0], Output[0])
+
+    plt.plot(Input[0], Output[i], label=round(config.neighboursteps[i],1))
+    plt.legend()
 #plt.title('device measurement')#average R = %i' %avgresistance)
-plt.xlabel('voltage (V)')
-plt.ylabel('current (10nA)')
+
 plt.show()
 
 # Final reset

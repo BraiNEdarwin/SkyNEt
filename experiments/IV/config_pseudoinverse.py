@@ -1,5 +1,7 @@
 import numpy as np
 import os
+import matplotlib.pyplot as plt
+import math
 
 class experiment_config(object):
     '''This is the configuration file used for IV measurements. 
@@ -23,15 +25,25 @@ class experiment_config(object):
 
 
         #define where you want to save the data.
-        self.filepath = '/home/Darwin/data/Rik/IV/'
+        self.filepath = '/home/Darwin/data/Rik/pseudoinverse/'
         self.name = 'test'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
         
-        #define the IV you want to take in volts.
-        self.v_low = -1.5
-        self.v_high = 1.5
-        self.n_points =1000
-        self.direction = 'up'
+        #define two input voltages and the amount of points you want to measure
+        self.numberinputs =2
+        self.vc =7
+        self.vpoints=  [[-0.5,-0.6],
+                       [0.5,-0.6],
+                       [0,-0.8],
+                       [0, 0.8],
+                       [-0.5,0.6],
+                       [0.5,0.6],
+                       [-0.8,0.1],
+                       
+                       [0,0]]#to end the measurement on 0V
+        self.points_per_input=150
+        self.n_points =self.points_per_input*self.vc
+        self.slopesize= 50
 
         #define the input and output amplifications.
         self.amplificatin = 1
@@ -41,11 +53,10 @@ class experiment_config(object):
         self.device = 'nidaq'
         self.fs = 1000
         
-        self.n_pulses = 5
-        self.backgate = 0
+
+        
 
 
-        self.Sweepgen = self.Sweepgen
 
     def Sweepgen(self, v_high, v_low, n_points,backgate, direction):
         n_points = n_points/2
@@ -86,14 +97,37 @@ class experiment_config(object):
         
         
         return Input
+        
+    def pseudoInput(self, vpoints, vc, numberinputs, points_per_input, slopesize):
+        noslope=points_per_input-slopesize
+        Input = np.zeros((numberinputs,points_per_input*vc))
+        print(Input.shape)
+        for num in range(numberinputs):
+            for i in range(vc):              
+                Input[num,i*points_per_input:i*points_per_input+noslope]=np.ones(noslope)*vpoints[i][num]
+                Input[num,i*points_per_input+noslope:(i+1)*points_per_input]=np.linspace(vpoints[i][num], vpoints[i+1][num],slopesize)
+        return Input
     
+
+
+# Read config.txt file
+#exec(open("config_software.txt").read())
+
+#loads .npz file
     def generate_cp(n=100, mean_I0=-0.3, mean_I1=-0.3, amp_I0=0.9, amp_I1=0.9):
-        values_I0 = [mean_I0-amp_I0+amp_I0*2/2*(i//n//7) for i in range(21*n)]
-        values_I1 = [mean_I1-amp_I1+amp_I1*2/6*(i//n%7) for i in range(21*n)]
-        input_data = np.array[[values_I0],[values_I1]]
-        targets = [0,0,0,1,1,1,1,0,1,1,1,1,2,2,1,1,2,1,2,1,2]
-        
-        
-        return input_data, targets
+         values_I0 = [mean_I0-amp_I0+amp_I0*2/2*(i//n//7) for i in range(21*n)]
+         values_I1 = [mean_I1-amp_I1+amp_I1*2/6*(i//n%7) for i in range(21*n)]
+         input_data = np.array([[values_I0],[values_I1]])
+         targets = np.array([0,0,0,1,1,1,1,0,1,1,1,1,2,2,1,1,2,1,2,1,2])
+         target_data = np.zeros((2100))
+         for i in range(len(targets)):
+             target_data[i*100:i*100+100] = np.ones(100)*targets[i]
+         return input_data, target_data
+
+
+
+
+
+
 
 

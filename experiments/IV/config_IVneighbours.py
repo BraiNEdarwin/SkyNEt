@@ -41,13 +41,14 @@ class experiment_config(object):
         self.device = 'nidaq'
         self.fs = 1000
         
+        self.n_measure = 6
         self.n_pulses = 5
-        self.backgate = 0
+        self.neighboursteps = np.linspace(self.v_low, self.v_high, self.n_measure)
 
 
         self.Sweepgen = self.Sweepgen
 
-    def Sweepgen(self, v_high, v_low, n_points,backgate, direction):
+    def Sweepgen(self, v_high, v_low, n_points,neighbour, direction):
         n_points = n_points/2
 
         if direction == 'down':
@@ -61,7 +62,7 @@ class experiment_config(object):
         else:
             print('Specify the sweep direction')
         
-        Input = np.ones((1,len(Input1)+len(Input2)+len(Input3)))*backgate
+        Input = np.ones((2,len(Input1)+len(Input2)+len(Input3)))*neighbour
         Input[0, 0:len(Input1)] = Input1
         Input[0, len(Input1):len(Input1)+len(Input2)] = Input2
         Input[0, len(Input1)+len(Input2):len(Input1)+len(Input2)+len(Input3)] = Input3
@@ -86,14 +87,12 @@ class experiment_config(object):
         
         
         return Input
-    
-    def generate_cp(n=100, mean_I0=-0.3, mean_I1=-0.3, amp_I0=0.9, amp_I1=0.9):
-        values_I0 = [mean_I0-amp_I0+amp_I0*2/2*(i//n//7) for i in range(21*n)]
-        values_I1 = [mean_I1-amp_I1+amp_I1*2/6*(i//n%7) for i in range(21*n)]
-        input_data = np.array[[values_I0],[values_I1]]
-        targets = [0,0,0,1,1,1,1,0,1,1,1,1,2,2,1,1,2,1,2,1,2]
         
         
-        return input_data, targets
+        
+
+
+
+
 
 
