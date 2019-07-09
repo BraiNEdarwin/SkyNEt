@@ -27,7 +27,7 @@ import time
 import numpy as np
 import pdb
 import os 
-#from SkyNEt.instruments import InstrumentImporter
+from SkyNEt.instruments import InstrumentImporter
 
 
 ##Returns the output array with noise 
@@ -57,10 +57,15 @@ def opposite( x, genePool, cf, net, target, dtype,w):
                     print("Combination input electrodes is not valid")
                     time.sleep(1)
                     os._exit(1)
-                inputs = torch.from_numpy(x_dummy).type(dtype)
-                inputs = Variable(inputs)
-                output = net.outputs(inputs) * cf.amplification_nn 
-                output, standard_dev = noise_gen(output)
+                if cf.use_nn:
+                    inputs = torch.from_numpy(x_dummy).type(dtype)
+                    inputs = Variable(inputs)
+                    output = net.outputs(inputs) * cf.amplification_nn 
+                    # Add Noise
+                    output, standard_dev = noise_gen(output)
+                else:
+                    inputs = x_dummy.T
+                    output = InstrumentImporter.nidaqIO.IO_cDAQ(inputs, cf.fs) *cf.amplification_chip
                 outputAvg[avgIndex] =  np.asarray(output) 
                 temp_list[i][j,avgIndex] = cf.Fitness(outputAvg[avgIndex],target, w)
     indices = temp_list[1] > temp_list[0]
@@ -86,9 +91,14 @@ def evolve( dataset, threshold, inputs, binary_labels):
     outputTemp = np.zeros((cf.genomes, len(x[0])))
 
     # Initialize NN
-    main_dir = r'../../test/NN_test/data4nn/Data_for_testing/'
-    dtype = torch.FloatTensor
-    net = staNNet(main_dir+'NN_New2.pt')  
+    if cf.use_nn:
+        main_dir = r'../../test/NN_test/data4nn/Data_for_testing/'
+        dtype = torch.FloatTensor
+        net = staNNet(main_dir+'NN_New2.pt')  
+    else:
+        net = 0
+        dtype = 0
+        main_dir = 0
     
     # Initialize genepool  
     genePool = Evolution.GenePool(cf)  
@@ -165,4 +175,4 @@ def evolve( dataset, threshold, inputs, binary_labels):
     print('Best genome: ', best_genome)
     print('Accuracy of best genome: ', accuracy)
     #Return relevant data 
-    return best_genome, best_output, max_fitness, accuracy, cf.TargetGen, end 
+    return best_genome, best_output, max_fitness, accuracy, cf.TargetGen, end,w 

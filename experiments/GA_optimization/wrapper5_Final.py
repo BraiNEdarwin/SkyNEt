@@ -7,6 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import os
 import evolve_VCdim5_Final as vcd 
+from SkyNEt.instruments import InstrumentImporter
 """
 Wrapper to measure the VC dimension of a device using the measurement script measure_VCdim.py
 This wrapper creates the binary labels for N points and for each label it finds the control voltages.
@@ -25,11 +26,12 @@ User specific parameters
 
 #inputs 
 inputs = [[-1.1,0.5,-1.1,0.5,-0.6],[-1.1,-1.1,0.5,0.5,0]]
+
 bad_gates = [3,11,19,22,23,30]
 #bad_gates = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
-save =False
-filepath_folder = r'../../test/evolution_test/VCdim_testing5/Verification_data_ramp_new2/'
-no_measurements = 1
+save =True
+filepath_folder = r'D:\data\Annefleur\GA_optimization2\\'
+no_measurements = 10
 
 
 
@@ -67,7 +69,7 @@ for i in range(len(dat_list)):
             found_classifier.append(1)
         else:
             print('Finding classifier ',bl)
-            genes, output, fitness, accuracy, target,end, = vcd.evolve(i, threshold, inputs, bl)
+            genes, output, fitness, accuracy, target,end,w = vcd.evolve(i, threshold, inputs, bl)
             if accuracy>threshold:
                 found_classifier.append(1)
             else:
@@ -104,21 +106,25 @@ for i in range(len(dat_list)):
              target_classifier = target_classifier,
              end_classifier = end_classifier,
              threshold = threshold)
-#only show output if you did 1 run  
 
-#if no_measurements == 1:
-#    output_f = output_classifier
-#    plt.figure()
-#    subplot_no = 230
-#    output_f = output_classifier
-#    for i in range(0, len(binary_labels)): 
-#        subplot_no = subplot_no + 1 
-#        ax = plt.subplot(subplot_no)
-#        ax.plot(output_f[i][w].T,label=binary_labels[i])
-#        ax.legend()
-#        plt.title('Accuracy: '+str(accuracy_classifier[i]), fontsize=20)
-#        plt.rc('xtick', labelsize=20) 
-#        plt.rc('ytick', labelsize=20) 
-#        plt.show()
-#        
+
+InstrumentImporter.reset(0, 0)
+
+#only show output if you did 1 run  
+'''
+if no_measurements == 1:
+    output_f = output_classifier
+    plt.figure()
+    subplot_no = 230
+    output_f = output_classifier
+    for i in range(0, len(binary_labels)): 
+        subplot_no = subplot_no + 1 
+        ax = plt.subplot(subplot_no)
+        ax.plot(output_f[i][w].T,label=binary_labels[i])
+        ax.legend()
+        plt.title('Accuracy: '+str(accuracy_classifier[i]), fontsize=20)
+        plt.rc('xtick', labelsize=20) 
+        plt.rc('ytick', labelsize=20) 
+        plt.show()
         
+'''    
