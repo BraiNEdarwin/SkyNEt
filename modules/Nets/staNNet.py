@@ -44,7 +44,7 @@ class staNNet(object):
            self.depth = depth
            self.width = width
            
-           print(f'Meta-info: \n {list(self.info.keys())}')
+#           print(f'Meta-info: \n {list(self.info.keys())}')
            self.ttype = self.x_train.type()
            self._tests()
         
@@ -57,7 +57,7 @@ class staNNet(object):
                self.itype = torch.cuda.LongTensor
                self.model.cuda()
 #               self.loss_fn.cuda() apparently this is not needed if both arguments are already on gpu
-               print('Sent to GPU')           
+#               print('Sent to GPU')           
         elif len(args)==1 and type(args[0]) is str:
             self._load_model(args[0])
         else:
@@ -65,7 +65,7 @@ class staNNet(object):
 
                 
     def _load_model(self,data_dir):
-        print('Loading the model from '+data_dir)
+#        print('Loading the model from '+data_dir)
         self.ttype = torch.torch.FloatTensor
         if torch.cuda.is_available():
             state_dic = torch.load(data_dir)
@@ -73,7 +73,7 @@ class staNNet(object):
         else:
             state_dic = torch.load(data_dir, map_location='cpu')
         if list(filter(lambda x: 'running_mean' in x,state_dic.keys())):
-            print('BN active in loaded model')
+#            print('BN active in loaded model')
             self._BN = True
         else:
             self._BN = False
@@ -82,7 +82,7 @@ class staNNet(object):
         # move info key from state_dic to self
         if state_dic.get('info') is not None:
             self.info = state_dic['info']
-            print(f'Model loaded with info dictionary containing: \n {self.info.keys()}')
+#            print(f'Model loaded with info dictionary containing: \n {self.info.keys()}')
             state_dic.pop('info')
         else:
             # for backwards compatibility with objects where information is stored directly in state_dic
@@ -97,7 +97,7 @@ class staNNet(object):
             if 'conversion' not in self.info.keys():
                 self.info['conversion'] = 1.0
 
-        print('NN loaded with activation %s and loss %s' % (self.info['activation'], self.info['loss']))
+#        print('NN loaded with activation %s and loss %s' % (self.info['activation'], self.info['loss']))
         loss = self.info['loss']
         itms = list(state_dic.items())  
         layers = list(filter(lambda x: ('weight' in x[0]) and (len(x[1].shape)==2),itms))
@@ -132,16 +132,16 @@ class staNNet(object):
 
         if self._BN: 
             track_running_stats=False  
-            print('BN tracking average: ',track_running_stats)
+#            print('BN tracking average: ',track_running_stats)
             self.bn_layer = nn.BatchNorm1d(self.width,track_running_stats=track_running_stats)
         
         activation = self.info['activation']
         if activation == 'tanh':
             activ_func = nn.Tanh()
-            print('Activation is tanh')            
+#            print('Activation is tanh')            
         elif activation == 'ReLU':
             activ_func = nn.ReLU()
-            print('Activation is ReLU')
+#            print('Activation is ReLU')
         elif activation is None:
             activ_func = None
         else:
@@ -165,9 +165,9 @@ class staNNet(object):
         modules.append(self.l_out)
         modules = [x for x in modules if x !=None ]
         
-        print('Model constructed with modules: \n',modules)
+#        print('Model constructed with modules: \n',modules)
         self.model = nn.Sequential(*modules)
-        print(f'Loss founction is defined to be {loss}')
+#        print(f'Loss founction is defined to be {loss}')
         if loss == 'RMSE':
             self.a = torch.tensor([0.01900258860717661, 0.014385111570154395]).type(self.ttype)
             self.b = torch.tensor([0.21272562199413553, 0.0994027221336]).type(self.ttype)
