@@ -19,6 +19,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
+import SkyNEt.experiments.Web.problems as problems
 
 
 # ------------------------ configure ------------------------
@@ -26,33 +27,31 @@ from SkyNEt.modules.Nets.webNNet import webNNet
 main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
 #data_dir = 'lr2e-4_eps400_mb512_20180807CP.pt'
 data_dir = 'NN_skip3_MSE.pt'
-net1 = staNNet(main_dir+data_dir)
+net = staNNet(main_dir+data_dir)
 
 # single device web
 web = webNNet()
-web.add_vertex(net1, 'A', output=True, input_gates=[2,3])
+web.add_vertex(net, 'A', output=True, input_gates=[2,3])
 
-# input voltages of boolean inputs (on/upper, off/lower)
-input_lower = -0.7
-input_upper = 0.1
+# lower and upper values for inputs and targets
+input_values = [-0.7, 0.1]
+target_values = [0.0, 10.0]
 
-# hardcoded target values of logic gates with off->lower and on->upper
-upper = 10.0
-lower = 0.0
-# if set to false, use output of known cv configurations as targets
 
 N = 100 # number of data points of one of four input cases, total 4*N
 
+# gradient descnt parameters
 batch_size = 100
 max_epochs = 300
 lr = 0.05
 beta = 10
+
+# determines how the web is reset before searching for the next gate
 cv_reset = 'rand'
 
-training_type = 'cormse' # options: None, mse, bin, binmse, cor, cormse
+training_type = 'bin' # options: None, mse, bin, binmse, cor, cormse
 
-add_noise = False # automatically set to false when using bin
-sigma = 0.01 # standard deviation of added noise in target
+sigma = None # standard deviation of added noise in target
 
 
 # define custom stopping criteria
@@ -64,42 +63,12 @@ def stop_fn(epoch, error_list, best_error):
 
 # ------------------------ END configure ------------------------
 
-
-
-
-
-# input data for both I0 and I1
-input_data = input_lower*torch.ones(N*4,2)
-
-input_data[N:2*N,   1] = input_upper
-input_data[2*N:3*N, 0] = input_upper
-input_data[3*N:,    0] = input_upper
-input_data[3*N:,    1] = input_upper
-
-
-# target data for all gates
-gates = ['AND','NAND','OR','NOR','XOR','XNOR']
-
 if training_type == 'bin':
-    lower = 0
-    upper = 1
-target_data = upper*torch.ones(6, 4*N)
-target_data[0, :3*N] = lower
-target_data[1, 3*N:] = lower
-target_data[2, :N] = lower
-target_data[3, N:] = lower
-target_data[4, :N] = lower
-target_data[4, 3*N:] = lower
-target_data[5, N:3*N] = lower
+    sigma = None
+    target_values = [0, 1]
 
-w = torch.ones(6, 2)
-for i in range(6):
-    temp = torch.sum(target_data[i].float())/4/N
-    weights = torch.bincount(target_data[i].long())
-    weights = weights[weights != 0].float()
-    weights = 1/weights
-    weights /= torch.sum(weights)
-    w[i] = weights
+gates, input_data, target_data = problems.boolean(N, input_values=input_values, target_values=target_values, sigma=sigma)
+
 
 optimizer = torch.optim.Adam
 def cor_loss_fn(x, y):
@@ -107,12 +76,11 @@ def cor_loss_fn(x, y):
     return 1.0-corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-16)
 mse_loss_fn = torch.nn.MSELoss()
 def mse_norm_loss_fn(y_pred, y):
-    return mse_loss_fn(y_pred, y)/(upper-lower)**2
+    return mse_loss_fn(y_pred, y)/(target_values[1]-target_values[0])**2
 
 # ------------- Different training types -------------
 # CrossEntropyLoss for 2 class classification
 if training_type == 'bin':
-    add_noise = False
     target_data = target_data.long()
     def loss_fn(y_p, y):
         y_pred = y_p - 0.3
@@ -131,7 +99,6 @@ elif training_type=='binmse':
         # mse
         loss_value2 = mse_norm_loss_fn(torch.sigmoid(y_pred), y)
         return 1*loss_value1 + 1*loss_value2
-    add_noise = False
 # use default loss function
 elif training_type=='cor':
     def loss_fn(x, y):
@@ -146,11 +113,6 @@ elif training_type=='cormse':
         return alpha*cor+(1-alpha)*mse
 
 
-if add_noise:
-    gauss = torch.distributions.Normal(0.0, sigma)
-    target_data += gauss.sample((6, 4*N))
-
-
 
 # Train each gate
 trained_cv = []
@@ -159,7 +121,8 @@ for (i,gate) in enumerate(gates):
     print(i, gate)
     web.reset_parameters(cv_reset)
     if training_type == 'bin':
-        cross_fn = torch.nn.CrossEntropyLoss(weight = w[i])
+        class_weights = problems.get_class_weights(target_data[i])
+        cross_fn = torch.nn.CrossEntropyLoss(weight = class_weights)
     loss_l, best_cv, param_history = web.session_train(input_data, target_data[i].view(-1,1), 
                      beta=beta,
                      batch_size=batch_size,

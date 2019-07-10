@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 import SkyNEt.experiments.boolean_logic.config_evolve_NN as config
+import SkyNEt.experiments.Web.problems as problems
 
 
 # ------------------------ START configure ------------------------
@@ -38,52 +39,31 @@ net = staNNet(main_dir+data_dir)
 web = webNNet()
 web.add_vertex(net, 'A', output=True)
 
-N = 100 # number of data points of one input, total 4*N
+N = 10 # number of data points of one input, total 4*N
 
 training_type = 'cormse'
 
-# hardcoded target values of logic gates with off->lower and on->upper
-target_hardcoded = True
-upper = 1.0
-lower = 0.0
-# if set to false, use output of known cv configurations as targets
+# lower and upper values for inputs and targets
+input_values = [0.0, 0.9]
+target_values = [0., 1.]
 
-
-add_noise = False
-sigma = 0.01 # standard deviation of noise added to target
+sigma = None # standard deviation of noise added to target
 
 # ------------------------ END configure ------------------------
 
-
-
-
-# input data for both I0 and I1
-input_data = torch.zeros(N*4,2)
-input_data[N:2*N,   1] = 0.9
-input_data[2*N:3*N, 0] = 0.9
-input_data[3*N:,    0] = 0.9
-input_data[3*N:,    1] = 0.9
-
-gates = ['AND','NAND','OR','NOR','XOR','XNOR']
-
 if training_type == 'bin':
-    upper = 1
-    lower = 0
-target_data = upper*torch.ones(6, 4*N)
-target_data[0, :3*N] = lower
-target_data[1, 3*N:] = lower
-target_data[2, :N] = lower
-target_data[3, N:] = lower
-target_data[4, :N] = lower
-target_data[4, 3*N:] = lower
-target_data[5, N:3*N] = lower
+    sigma = None
+    target_values = [0, 1]
 
+gates, input_data, target_data = problems.boolean(N, input_values=input_values, target_values=target_values, sigma=sigma)
+
+# define loss functions according to training type
 def cor_loss_fn(x, y):
     corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))
     return 1.0-corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-16)
 mse_loss_fn = torch.nn.MSELoss()
 def mse_norm_loss_fn(y_pred, y):
-    return mse_loss_fn(y_pred, y)/(upper-lower)**2
+    return mse_loss_fn(y_pred, y)/(target_values[1]-target_values[0])**2
 
 if training_type == 'bin':
     target_data = target_data.long()
@@ -105,10 +85,6 @@ elif training_type=='cormse':
         return alpha*cor+(1-alpha)*mse
 else:
     assert False, 'Specify loss function'
-
-if add_noise:
-    gauss = torch.distributions.Normal(0.0, sigma)
-    target_data += gauss.sample((6, 4*N))
 
 
 store_fitness = np.zeros((len(gates), cf.generations))
