@@ -41,11 +41,11 @@ def boolean(N, input_values=[0., 1.], target_values=[0., 1.], sigma=None):
     gates = ['AND','NAND','OR','NOR','XOR','XNOR']
     
     # each of the 4 boolean input cases is N points long
-    input_data = torch.zeros(N*4,2)
-    input_data[N:2*N,   1] = 0.9
-    input_data[2*N:3*N, 0] = 0.9
-    input_data[3*N:,    0] = 0.9
-    input_data[3*N:,    1] = 0.9
+    input_data = input_values[1]*torch.ones(N*4,2)
+    input_data[N:2*N,   1] = input_values[0]
+    input_data[2*N:3*N, 0] = input_values[0]
+    input_data[3*N:,    0] = input_values[0]
+    input_data[3*N:,    1] = input_values[0]
     
     # target data for all the 6 boolean logic gates
     target_data = target_values[1]*torch.ones(6, 4*N)
