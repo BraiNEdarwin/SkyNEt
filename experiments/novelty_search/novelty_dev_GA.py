@@ -5,14 +5,14 @@ Created on Fri Feb 22 17:06:41 2019
 
 @author: ljknoll
 
-demonstration of novelty based searching in simulated devices
+test demonstration of novelty based searching in simulated devices
 for purpose of visualisation, 1D output is created for 2 inputs, effectively creating 2d output.
 
 """
 import torch
 import matplotlib.pyplot as plt
 
-from SkyNEt.modules.Nets.predNNet import predNNet
+from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 import SkyNEt.experiments.boolean_logic.config_evolve_NN as config
 
@@ -29,8 +29,8 @@ cf.name = 'novelty_test'
 
 # Initialize NN
 main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
-data_dir = 'lr2e-4_eps400_mb512_20180807CP.pt'
-net = predNNet(main_dir+data_dir)
+data_dir = 'NN_skip3_MSE.pt'
+net = staNNet(main_dir+data_dir)
 
 web = webNNet()
 web.add_vertex(net, 'A', output=True)

@@ -17,7 +17,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
-from SkyNEt.modules.Nets.predNNet import predNNet
+from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 import SkyNEt.experiments.boolean_logic.config_evolve_NN as config
 
@@ -35,7 +35,7 @@ cf.name = 'lineartest'
 # Initialize NN
 main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
 data_dir = 'lr2e-4_eps400_mb512_20180807CP.pt'
-net = predNNet(main_dir+data_dir)
+net = staNNet(main_dir+data_dir)
 
 web = webNNet()
 web.add_vertex(net, 'A', output=True)
@@ -151,22 +151,23 @@ def print_gates(plot_output = True, plot_normalized=False):
         
         # print output network and targets
         plt.subplot(2, 3 , 1 + i//2 + i%2*3)
-        plt.plot(long_target[i])
+        plt.plot(long_target[i].numpy())
         legend_list = ['target']
         
         if plot_output:
-            plt.plot(output_data)
+            plt.plot(output_data.numpy())
             legend_list.append('network')
         
         if plot_normalized:
-            plt.plot(0.1+(output_data-torch.min(output_data))/1.2/(max(output_data)-min(output_data)))
+            normalized_output = 0.1+(output_data-torch.min(output_data))/1.2/(max(output_data)-min(output_data))
+            plt.plot(normalized_output.numpy())
             legend_list.append('normalized network')
         
         plt.legend(legend_list)
         plt.title("%s, diff:%.3f, cv:%s" % (gate, max(output_data)-min(output_data), np.round(boolean_cv[i].numpy(), 3)))
     # adjust margins
     plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
-    # fullscreen plot (only available with matplotlib auto)
+    # fullscreen plot (only available when using Qt5Agg backend of matplotlib)
     figManager = plt.get_current_fig_manager()
     figManager.window.showMaximized()
     plt.show()

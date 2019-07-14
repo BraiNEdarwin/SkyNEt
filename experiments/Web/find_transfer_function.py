@@ -39,7 +39,7 @@ def generate_grid_inputs(net, nsteps, minima, maxima):
     Returns:
         torch tensor (n, m) with all n combinations of m values, where n = nsteps^m and m = input dimensions
     Example:
-        For a network with 7 input dimensions, and resolution of 5 points, you need 7^5=16807 grid points
+        For a network with 7 input dimensions, and resolution of 5 points, you need 5^7=78125 grid points
     """
     dims = minima.shape[0]
     inputs = torch.zeros(nsteps**dims, dims)
@@ -54,7 +54,7 @@ minima = net.info['offset']-net.info['amplitude']
 maxima = net.info['offset']+net.info['amplitude']
 nsteps = 10
 #input_data = generate_grid_inputs(net, nsteps, minima, maxima)
-input_data = torch.rand(nsteps**5, 7)*(torch.tensor(maxima).float()-torch.tensor(minima).float()) + torch.tensor(minima).float()
+input_data = torch.rand(nsteps**7, 7)*(torch.tensor(maxima).float()-torch.tensor(minima).float()) + torch.tensor(minima).float()
 
 
 start = time.time()

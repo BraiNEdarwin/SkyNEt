@@ -207,7 +207,7 @@ def noveltyGA(self,
             archive[i] = np.random.rand(cf.genes)
             self.set_parameters_from_pool(archive[i])
             self.forward(train_data)
-            temp = self.get_output(False, False)
+            temp = self.get_output()
             if normalize:
                 temp = (temp-torch.mean(temp, dim=0))/torch.std(temp, dim=0)
             archive_output[i] = temp

@@ -3,7 +3,11 @@
 """
 Created on Thu May 23 14:36:08 2019
 
-@author: lennart
+Script which measures the device output physically instead of with a neural network model.
+Instead of passing a staNNet object to add_vertex, MeasureNet object defined below is used.
+
+
+@author: ljknoll
 """
 
 import numpy as np
@@ -15,28 +19,53 @@ from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 from SkyNEt.instruments import InstrumentImporter
 
-# input voltages of boolean inputs (on/upper, off/lower)
-input_lower = -0.7
-input_upper = 0.1
+def npramp(start, stop, set_frequency=1000, ramp_speed=5):
+    """ 2D version of linspace, ramp from start array to stop array using numpy"""
+    delta = stop - start
+    max_delta = max(abs(delta))
+    # round up division number of steps are needed
+    num = -(-max_delta*set_frequency//ramp_speed)
+    if num<=1:
+        return np.stack((start, stop))
+    # calculate step size
+    step = delta / num
+    y = np.arange(0., num+1)
+    y = np.outer(y, step)
+    y += start
+    return y
 
-N = 100 # number of data points of one of four input cases of boolean logic
-
-set_frequency = 1000 # Hz
-ramp_speed = 50 # V/s
-
-# load device simulation
-main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
-data_dir = 'NN_skip3_MSE.pt'
-net = staNNet(main_dir+data_dir)
+def ramp(start, stop, set_frequency=1000, ramp_speed=5):
+    """ 2D version of linspace, ramp from start array to stop array using pytorch"""
+    delta = stop - start
+    max_delta = max(abs(delta))
+    # round up division number of steps are needed
+    num = -(-max_delta*set_frequency//ramp_speed)
+    if num<=1:
+        return torch.stack((start, stop))
+    # calculate step size
+    step = delta / num
+    y = torch.arange(0., num+1)
+    y = torch.ger(y, step)
+    y += start
+    return y
 
 class MeasureNet:
-    """ Alternative class of staNNet to measure input data of a single device """
+    """
+    Alternative class of staNNet to measure output data of a single device
+    Arguments:
+        device          string, 
+        D_in            integer, 
+        set_frequency   integer, frequency used to 
+    """
     
     def __init__(self, device='cdaq', D_in=7, set_frequency=1000):
         self.D_in = 7
         self.set_frequency=set_frequency
         if device=='cdaq':
             self.measure = self.cdaq
+        elif device=='random':
+            self.measure = self.random
+            print('WARNING: using random outputs for testing, NOT measuring!')
         else:
             assert False, 'Incorrect measurement device'
     
@@ -51,9 +80,29 @@ class MeasureNet:
     
     def cdaq(self, input_data):
         return InstrumentImporter.nidaqIO.IO_cDAQ(input_data, self.set_frequency)
-#        return np.mean(input_data, axis=1, keepdims=True) + np.random.rand(input_data.shape[0], 1)/10
+    
+    def random(self, input_data):
+        return np.mean(input_data, axis=1, keepdims=True) + np.random.rand(input_data.shape[0], 1)/10
 
-mnet = MeasureNet(set_frequency=set_frequency)
+# ------------------ START CONFIGURE ------------------ #
+
+# input voltages of boolean inputs (on/upper, off/lower)
+input_lower = -0.7
+input_upper = 0.1
+
+N = 100 # number of data points of one of four input cases of boolean logic
+
+set_frequency = 1000 # Hz
+ramp_speed = 5 # V/s
+
+device = 'random' # use 'cdaq'
+
+# load device simulation
+main_dir = r'/home/lennart/Dropbox/afstuderen/search_scripts/'
+data_dir = 'NN_skip3_MSE.pt'
+net = staNNet(main_dir+data_dir)
+
+mnet = MeasureNet(device=device, D_in=7, set_frequency=set_frequency)
 
 web = webNNet()
 mweb = webNNet()
@@ -71,39 +120,13 @@ cv = {'A': tensor([ 0.1174, -0.5477,  0.3110,  0.1646,  0.4120,  0.5261,  0.5301
   'B': tensor([ 0.1508, -0.0177, -0.2225,  0.0073, -0.2982]),
   'C': tensor([-0.3451, -0.4791,  0.4497, -0.5789, -0.0036])}
 
+
+# ------------------ END CONFIGURE ------------------ #
+
 keys = cv.keys()
 
 assert keys==web.graph.keys(), 'keys not matching'
 
-def npramp(start, stop, set_frequency=1000, ramp_speed=50):
-    """ ramp from start array to stop array """
-    delta = stop - start
-    max_delta = max(abs(delta))
-    # round up division number of steps are needed
-    num = -(-max_delta*set_frequency//ramp_speed)
-    if num<=1:
-        return np.stack((start, stop))
-    # calculate step size
-    step = delta / num
-    y = np.arange(0., num+1)
-    y = np.outer(y, step)
-    y += start
-    return y
-
-def ramp(start, stop, set_frequency=1000, ramp_speed=50):
-    """ ramp from start array to stop array """
-    delta = stop - start
-    max_delta = max(abs(delta))
-    # round up division number of steps are needed
-    num = -(-max_delta*set_frequency//ramp_speed)
-    if num<=1:
-        return torch.stack((start, stop))
-    # calculate step size
-    step = delta / num
-    y = torch.arange(0., num+1)
-    y = torch.ger(y, step)
-    y += start
-    return y
 
 # input data for both I0 and I1
 problem_input_size = 2 # two binary inputs
@@ -112,17 +135,17 @@ case2 = torch.tensor([input_lower, input_upper])
 case3 = torch.tensor([input_upper, input_lower])
 case4 = torch.tensor([input_upper, input_upper])
 # input ramping before I(0,0) and after I(1,1)
-preramp = ramp(torch.zeros(problem_input_size), case1)
-postramp = ramp(case4, torch.zeros(problem_input_size))
+preramp = ramp(torch.zeros(problem_input_size), case1, ramp_speed)
+postramp = ramp(case4, torch.zeros(problem_input_size), ramp_speed)
 
 input_data = torch.cat((
         preramp,
         case1.repeat(N,1),
-        ramp(case1,case2),
+        ramp(case1,case2, ramp_speed),
         case2.repeat(N,1),
-        ramp(case2,case3),
+        ramp(case2,case3, ramp_speed),
         case3.repeat(N,1),
-        ramp(case3,case4),
+        ramp(case3,case4, ramp_speed),
         case4.repeat(N,1),
         postramp))
 
@@ -140,6 +163,7 @@ with torch.no_grad():
 with torch.no_grad():
     mweb_output = mweb.forward(input_data)
 
+# plot output of each vertex
 np_web_output = {}
 np_mweb_output = {}
 for key in keys:
