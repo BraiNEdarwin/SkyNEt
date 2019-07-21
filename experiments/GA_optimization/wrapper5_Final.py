@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import os
 import evolve_VCdim5_Final as vcd 
-from SkyNEt.instruments import InstrumentImporter
+#from SkyNEt.instruments import InstrumentImporter
 """
 Wrapper to measure the VC dimension of a device using the measurement script measure_VCdim.py
 This wrapper creates the binary labels for N points and for each label it finds the control voltages.
@@ -29,9 +29,9 @@ inputs = [[-1.1,0.5,-1.1,0.5,-0.6],[-1.1,-1.1,0.5,0.5,0]]
 
 bad_gates = [3,11,19,22,23,30]
 #bad_gates = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
-save =True
+save =False
 filepath_folder = r'D:\data\Annefleur\GA_optimization2\\'
-no_measurements = 10
+no_measurements = 1
 
 
 
@@ -108,10 +108,9 @@ for i in range(len(dat_list)):
              threshold = threshold)
 
 
-InstrumentImporter.reset(0, 0)
+#InstrumentImporter.reset(0, 0)
 
 #only show output if you did 1 run  
-'''
 if no_measurements == 1:
     output_f = output_classifier
     plt.figure()
@@ -121,10 +120,10 @@ if no_measurements == 1:
         subplot_no = subplot_no + 1 
         ax = plt.subplot(subplot_no)
         ax.plot(output_f[i][w].T,label=binary_labels[i])
-        ax.legend()
+        ax.legend(fontsize=20)
         plt.title('Accuracy: '+str(accuracy_classifier[i]), fontsize=20)
         plt.rc('xtick', labelsize=20) 
         plt.rc('ytick', labelsize=20) 
         plt.show()
         
-'''    
+

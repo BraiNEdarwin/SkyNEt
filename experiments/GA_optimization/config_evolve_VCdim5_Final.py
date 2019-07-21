@@ -57,7 +57,7 @@ class experiment_config(config_class):
         ######### SPECIFY PARAMETERS ###################
         ################################################
         self.comport = 'COM3'  # COM port for the ivvi rack
-        self.use_nn = False
+        self.use_nn = True
         if self.use_nn:
             self.lengths, self.slopes = [100], [0] # in 1/fs
             self.amplification_nn = 10
@@ -197,7 +197,7 @@ class experiment_config(config_class):
         max_std = np.amax(standard_dev)
         second_std = np.amax(standard_dev[standard_dev!=max_std])
         #Threshold separation 
-        x_sep = 4*(max_std+ second_std)
+        x_sep = 3*(max_std+ second_std)
         #Start of the linear increase
         start = -4
         #If the threshold value x_sep is reached, 'maximum' will be returned. 

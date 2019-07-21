@@ -27,7 +27,7 @@ import time
 import numpy as np
 import pdb
 import os 
-from SkyNEt.instruments import InstrumentImporter
+#from SkyNEt.instruments import InstrumentImporter
 
 
 ##Returns the output array with noise 
