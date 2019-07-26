@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import signal
 from SkyNEt.config.config_class import config_class
 import os
 
@@ -30,11 +31,11 @@ class experiment_config(config_class):
         self.freq2 = np.array([2,np.pi,5,7,13,17,19]) 
         self.freq = np.sqrt(self.freq2[:self.waveElectrodes])*self.factor
         self.phase = np.zeros(self.waveElectrodes)
-        self.sampleTime = 50 # Sample time of the sine waves for one grid point (in seconds)
+        self.sampleTime = 500 # Sample time of the sine waves for one grid point (in seconds)
         self.fs = 50
-        self.transientTest = False
+        self.transientTest = True
         self.nr_testbatches = 1
-        self.n = 50 # Amount of test points for the transient test
+        self.n = 500 # Amount of test points for the transient test
         self.samplePoints = int(50*self.fs) # Amount of sample points per batch measurement (sampleTime*fs/samplePoints batches)
         self.amplification = 100
         self.gain_info = '10MV/A'
@@ -49,10 +50,10 @@ class experiment_config(config_class):
         # Save settings
         self.filepath = r'D:\data\Mark\wave_search\paper_chip\\'
         
-        self.name = 'consistency_check_50s'
-
+        self.name = 'transient_test_triangle_500pts_unsorted'
+        #self.name = '1100mV'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))        
-        self.inputData = self.generateSineWave
+        self.inputData = self.generateTriangle
 
 
 
@@ -68,3 +69,18 @@ class experiment_config(config_class):
         '''
 
         return np.sin((2 * np.pi * freq[:, np.newaxis] * t)/ fs + phase[:,np.newaxis]) * amplitude[:,np.newaxis]
+
+
+
+    def generateTriangle(self, freq, t, amplitude, fs, phase = np.zeros(7)):
+        '''
+        Generates a triangle wave form that can be used for the input data.
+        freq:       Frequencies of the inputs in an one-dimensional array
+        t:          The datapoint(s) index where to generate a sine value (1D array when multiple datapoints are used)
+        amplitude:  Amplitude of the sine wave (Vmax in this case)
+        fs:         Sample frequency of the device
+        phase:      (Optional) phase offset at t=0
+        ''' 
+        # There is an additional + np.pi/2 to make sure that if phase = 0. the inputs start at 0V
+
+        return signal.sawtooth((2* np.pi * freq[:,np.newaxis] * t)/fs + phase[:,np.newaxis] + np.pi/2, 0.5) * amplitude[:,np.newaxis]

@@ -35,7 +35,7 @@ for tests in range(1,cf.nr_testbatches+1):
         start_wave = time.time()
         
         t = np.linspace(i * cf.samplePoints, (i + 1) * cf.samplePoints - 1, cf.samplePoints)
-        waves = cf.generateSineWave(cf.freq, t, cf.amplitude, cf.fs, cf.phase) + np.outer(cf.offset, np.ones(t.shape[0]))
+        waves = cf.inputData(cf.freq, t, cf.amplitude, cf.fs, cf.phase) + np.outer(cf.offset, np.ones(t.shape[0]))
         # Use 0.5 second to ramp up to the value where data aqcuisition stopped previous iteration
         # and 0.5 second to ramp down after the batch is done
         wavesRamped = np.zeros((waves.shape[0], waves.shape[1] + int(cf.fs))) 
@@ -61,7 +61,7 @@ for tests in range(1,cf.nr_testbatches+1):
                                     amplification = cf.amplification,
                                     electrodeSetup = cf.electrodeSetup,
                                     gain_info = cf.gain_info,
-                                    filename = 'training_NN_data_test' + str(tests))
+                                    filename = 'training_NN_data')
         end_wave = time.time()
         print('Data collection for part ' + str(i+1) + ' of ' + str(batches) + ' took '+str(end_wave-start_wave)+' sec.')
 
@@ -87,7 +87,7 @@ for tests in range(1,cf.nr_testbatches+1):
                                 amplification = cf.amplification,
                                 electrodeSetup = cf.electrodeSetup,
                                 gain_info = cf.gain_info,
-                                filename = 'training_NN_data_test' + str(tests))
+                                filename = 'training_NN_data')
     else:
         SaveLib.saveExperiment(cf.configSrc, saveDirectory, 
                                 output = data*cf.amplification/cf.postgain,
@@ -100,7 +100,7 @@ for tests in range(1,cf.nr_testbatches+1):
                                 amplification = cf.amplification,
                                 electrodeSetup = cf.electrodeSetup,
                                 gain_info = cf.gain_info,
-                                filename = 'training_NN_data_test' + str(tests))
+                                filename = 'training_NN_data')
       
 
 InstrumentImporter.reset(0,0)

@@ -20,19 +20,19 @@ class experiment_config(config_class):
 
         self.controls = 5
         self.inputs = 2
-        self.freq = 0.2*np.array([5, 7, 9, 11, 13])  #
+        self.freq = 8*np.array([1,2,3,4,5])  #
         self.fs = 1000
-        self.n = 10               # Amount of iterations
+        self.n = 50               # Amount of iterations
         self.amplification = 100
         self.postgain = 1
-        self.inputScaling = 1.4
-        self.inputOffset = -0.7
-        self.CVrange = np.array([[-1.2, 1],[-1.2, 1],[-1.2, 1],[-1, 1],[-1, 1]])   # Range for the control voltages
+        self.inputScaling = 1.8
+        self.inputOffset = -1.2
+        self.CVrange = np.array([[-1.2, .8],[-1.2, .8],[-1.2, -.8],[-0.8, 0.8],[-0.8, 0.8]])   # Range for the control voltages
         
-        self.waveAmplitude = 0.01    # Amplitude of the waves used in the controls
-        self.rampT = 0.5           # time to ramp up and ramp down the voltages at start and end of a measurement.
-        self.targetGen = self.XNOR
-        self.name = 'XNOR'
+        self.waveAmplitude = np.array([0.07, 0.03, 0.03, 0.005, 0.005])   # Amplitude of the waves used in the controls
+        self.rampT = 0.3           # time to ramp up and ramp down the voltages at start and end of a measurement.
+        self.targetGen = self.XOR
+        self.name = 'XOR_eps3E-2_f8'
         #                        Summing module S2d      Matrix module           device
         # For the first array: 7 is always the output, 0 corresponds to ao0, 1 to ao1 etc.
         self.electrodeSetup = [[0,1,2,3,4,5,6,7],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
@@ -44,13 +44,13 @@ class experiment_config(config_class):
         # rest parameters #
         ###################
         # parameters for methods
-        self.signallength = 1*4  #in seconds
+        self.signallength = 0.125*4  #in seconds
         self.edgelength = 0.01  #in seconds
         self.inputCases = 4     #amount of cases measured (4 in the case of Boolean logic)
         
         #self.fft_N = self.fs*self.signallength//self.inputCases       
         self.phase_thres = 90 # in degrees
-        self.eta = 6E-2          # Learn rate 
+        self.eta = 3E-2          # Learn rate 
         self.gradFunct =  self.cor_sigmoid_grad
         self.errorFunct = self.cor_sigmoid_loss
         self.keithley_address = 'GPIB0::17::INSTR'
@@ -117,7 +117,7 @@ class experiment_config(config_class):
         corr = np.mean((x-np.mean(x))*(t-np.mean(t)))/(np.std(x)*np.std(t)+1E-12)
         x_high_min = np.min(x[(t == self.gainFactor)])
         x_low_max = np.max(x[(t == 0)])
-        sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -4)/2)) + 0.05
+        sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -5)/3)) + 0.05
         return (1.1 - corr) / sigmoid  
         
     def cor_sigmoid_grad(self, x, t, w):
@@ -129,7 +129,7 @@ class experiment_config(config_class):
         x_high_min = np.min(x[(t == self.gainFactor)])
         x_low_max = np.max(x[(t == 0)])
         
-        sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -4)/2)) +0.05
+        sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -5)/3)) +0.05
         d_sigmoid = sigmoid*(1-sigmoid)
         
         return (d_corr * sigmoid - ((x == x_high_min).astype(int) - (x == x_low_max).astype(int)) * d_sigmoid * (1.1 - corr)) / sigmoid **2 
@@ -143,7 +143,7 @@ class experiment_config(config_class):
         x_high_min = np.min(x[(t == self.gainFactor)])
         x_low_max = np.max(x[(t == 0)])
         
-        sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -4)/2)) +0.05
+        sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -5)/3)) +0.05
 
         
         return d_corr / sigmoid
