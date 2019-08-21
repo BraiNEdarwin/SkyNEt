@@ -24,60 +24,34 @@ All other methods are concreate and serve as default setting; they can be modifi
 
 import numpy as np
 import time
-from abc import ABC, abstractmethod
 #import pdb
 #import logging
 #import sys
 from SkyNEt.modules.GenWaveform import GenWaveform
 
-# Define abstract attribute
-class abstract_attribute(object):
-    def __get__(self, obj, type):
-        raise NotImplementedError("Attribute was not set in your experiment subclass!")
-
-class GA(ABC):
-    
-    def __init__(self):
-        super().__init__()
-    ###########################################################################
-    ###################### Define abstract attributes and methods #############
-    ###########################################################################
-    ### Abstract attributes
+class GA:
     #TODO: how to implement separationof CV evolution and input affine transformation?
-    genes = abstract_attribute() #Nr of genes include CVs and affine trafo of input 
-    generange = abstract_attribute()
-    genomes = abstract_attribute() #Nr of individuals in population
-    partition = abstract_attribute()
-    mutation_rate = abstract_attribute()
-    lengths = abstract_attribute()
-    slopes = abstract_attribute()
-    ### Abstract methods    
-    @abstractmethod
-    def Fitness(self, output):
-        '''ABSTRACT METHOD: The implementation of this is enforced.
-        Implement a method that gets outputs as arguments and calculates 
-        elementwise the fitness for each member in the population.
-        Returns: numpy array of fitness values corresponding to each individal 
-        '''
-        pass   
-    @abstractmethod
-    def EvaluatePopulation(self, pool):
-        '''
-        ABSTRACT METHOD: The implementation of this is enforced.
-        Implement a method that gets the pool of genes as argument and obtains 
-        the response of the system given the control voltages and the inputs.
-        This method should handle all the necessary components to get the output
-        needed in the GA, including the distinction between the modality of the
-        experiment (device, NN or simulator) and the separation of the affine 
-        transformation and control voltages.
-        Retruns: numpy arrays of output (waveforms) and fitness values.
-        '''
-        pass
+    def __init__(self,config_obj):   
+        
+        #Define GA hyper-parameters
+        self.genes = config_obj.genes           # Nr of genes include CVs and affine trafo of input 
+        self.generange = config_obj.generange   # Voltage range of CVs
+        self.genomes = config_obj.genomes       # Nr of individuals in population
+        self.partition = config_obj.partition
+        self.mutation_rate = config_obj.mutation_rate
+        #Parameters to define target waveforms
+        self.lengths = config_obj.lengths
+        self.slopes = config_obj.slopes
+        
+        #Define methods for fitness and platform from config_obj
+        self.Fitness = config_obj.get_fitness()
+        self.EvaluatePopulation = config_obj.get_platform()
+
     
     ##########################################################################
-    ################ Concrete methods defining evolution #####################
+    ###################### Methods defining evolution ########################
     ##########################################################################
-    def Evolve(self, targets, generations):
+    def Evolve(self, targets, generations=100):
         #TODO: check if no. of targets is equal to no. of inputs!!
         # Initialize target
         self.target_wfm = self.Target(targets)  # Target signal
@@ -95,7 +69,8 @@ class GA(ABC):
         for gen in range(generations):
             start = time.time() 
             ####### Evaluate population (user specific) #######
-            self.output, self.fitness = self.EvaluatePopulation(self.pool)
+            self.output = self.EvaluatePopulation(self.pool)
+            self.fitness = self.Fitness(self.output)
             # Status print
             max_fit = max(self.fitness)
             print(f"Highest fitness: {max_fit}")
@@ -107,6 +82,7 @@ class GA(ABC):
             print("Generation nr. " + str(gen + 1) + " completed; took "+str(end-start)+" sec.")
                         
             #%% Save generation data (USE OBSERVER PATTERN?)
+            #TODO: Implemanet SAVER
 #            self.geneArray[i, :, :] = self.pool
 #            self.outputArray[i, :, :] = self.output
 #            self.fitnessArray[i, :] = self.fitness
