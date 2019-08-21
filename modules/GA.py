@@ -1,36 +1,7 @@
 # -*- coding: utf-8 -*-
-"""This is a class implementing the genetic algorithm (GA). 
+""" Contains class implementing the Genetic Algorithm for all SkyNEt platforms.
 Created on Thu May 16 18:16:36 2019
 @author: HCRuiz (some code taken from contributions of other SkyNEt members)
-
-The methods implement the GA regardless of the platform being optimized, i.e. it
-can be used with the chip, the model or the physical simulations. 
-
--------------------------------------------------------------------------------
-Argument --- config object (config_GA). 
-The configuration object must have the following:
-Methods:
-    - EvaluatePopulation : Implements the evaluation of genomes. 
-        It takes a numpy array as argument and returns outputs as numpy array.
-    - Fitness : Defines fitness landscape for a fixed target. Takes only one 
-        argument outputs as numpy arrays and returns an numpy array of one dimension.
-
-Attributes:
-    - genes : number of genes in each individual 
-    - generange
-    - genomes : number of individuals in the population
-    - partition : a list with the partition for the different operations on the population
-    - mutation_rate : rate of mutation applied to genes
-    - Arguments for GenWaveform:
-        o lengths : defines the input lengths (in ms) of the targets
-        o slopes : defines the slopes (in ms) between targets
-    
-Notes:
-    * All other methods serve as default settings but they can be modified as well by
-    the user via inheritance.
-    * Requires args to GenWaveform because the method Evolve requires targets, 
-    so one single instance of GA can handle multiple tasks.
-
 """
 
 import numpy as np
@@ -41,6 +12,39 @@ import time
 from SkyNEt.modules.GenWaveform import GenWaveform 
 
 class GA:
+    '''This is a class implementing the genetic algorithm (GA).
+    The methods implement the GA regardless of the platform being optimized, 
+    i.e. it can be used with the chip, the model or the physical simulations. 
+
+    ---------------------------------------------------------------------------
+    
+    Argument : config object (config_GA). 
+    
+    The configuration object must have the following:
+    Methods:
+        - get_platform() : Implements the evaluation of genomes self.EvaluatePopulation(). 
+            The method self.EvaluatePopulation() must take as arguments the inputs inputs_wfm,
+            the gene pool and the targets target_wfm. It must return outputs as numpy array of
+            shape (self.genomes, len(self.target_wfm) and fitness scores as 
+            numpy array of size self.genomes
+    
+    Attributes:
+        - genes : number of genes in each individual 
+        - generange
+        - genomes : number of individuals in the population
+        - partition : a list with the partition for the different operations on the population
+        - mutation_rate : rate of mutation applied to genes
+        - Arguments for GenWaveform:
+            o lengths : defines the input lengths (in ms) of the targets
+            o slopes : defines the slopes (in ms) between targets
+        
+    Notes:
+        * All other methods serve as default settings but they can be modified as well by
+        the user via inheritance.
+        * Requires args to GenWaveform because the method Evolve requires targets, 
+        so one single instance of GA can handle multiple tasks.
+
+    '''
     #TODO: how to implement separationof CV evolution and input affine transformation?
     def __init__(self,config_obj):   
         
@@ -53,35 +57,40 @@ class GA:
         #Parameters to define target waveforms
         self.lengths = config_obj.lengths
         self.slopes = config_obj.slopes
-        
-        #Define methods for fitness and platform from config_obj
-        self.Fitness = config_obj.get_fitness()
+        # Initialize filter_array
+        self.filter_array = self.waveForm([True])
+        #Define platform and stopping criteria from config_obj
         self.EvaluatePopulation = config_obj.get_platform()
+        self.StopCondition = config_obj.StopCondition
 
     
     ##########################################################################
     ###################### Methods defining evolution ########################
     ##########################################################################
-    def Evolve(self, targets, generations=100):
+    def Evolve(self, inputs, targets, generations=100):
         #TODO: check if no. of targets is equal to no. of inputs!!
+        assert len(inputs[0]) == len(targets), f'No. of input data {len(inputs)} does not match no. of targets {len(targets)}'
         # Initialize target
-        self.target_wfm = self.Target(targets)  # Target signal
+        self.target_wfm = self.waveform(targets)
+        # Initialize target
+        self.inputs_wfm, self.filter_array = self.input_waveform(inputs)
+
         #Initialize population
         self.pool = np.random.rand(self.genomes, self.genes)
-        self.fitness = np.zeros(self.genomes)
-        self.output = np.zeros((self.genomes, len(self.target_wfm)))
         
         #Define placeholders
         self.geneArray = np.zeros((generations, self.genomes, self.genes))
         self.outputArray = np.zeros((generations, self.genomes, len(self.target_wfm)))
-        self.fitnessArray = np.zeros((generations, self.genomes))
+        self.fitnessArray = -np.inf*np.ones((generations, self.genomes))
         
         #%% Evolution loop
         for gen in range(generations):
             start = time.time() 
-            ####### Evaluate population (user specific) #######
-            self.output = self.EvaluatePopulation(self.pool)
-            self.fitness = self.Fitness(self.output)
+            #-------------- Evaluate population (user specific) --------------#
+            self.output, self.fitness = self.EvaluatePopulation(self.inputs_wfm,
+                                                                self.pool, 
+                                                                self.target_wfm)
+            #-----------------------------------------------------------------#
             # Status print
             max_fit = max(self.fitness)
             print(f"Highest fitness: {max_fit}")
@@ -198,37 +207,40 @@ class GA:
                     self.newpool[j] = np.random.triangular(0, self.newpool[j], 1)
 
 #%% ########### Helper Methods ######################
-    def StopCondition(self, max_fit):
-        return False
+    def StopCondition(self, max_fit, corr_thr=0.9):
+        best = self.output[self.fitness==max_fit][:,np.newaxis]
+        y = self.target_wfm[self.filter_array][:,np.newaxis]
+        X = np.stack((best, y), axis=0)[:,:,0]
+        corr = np.corrcoef(X)[0,1]
+        print(f"Correlation of fittest genome: {corr}")
+        if corr >= corr_thr:
+            print(f'Very high correlation achieved, evolution will stop! \
+                  (correlaton threshold set to {corr_thr})')
+        return corr >= corr_thr
     
-    def Target(self, targets):
-        target_wfrm = GenWaveform(targets, self.lengths, slopes=self.slopes)
-        return np.asarray(target_wfrm)
+    def waveform(self, data):
+        data_wfrm = GenWaveform(data, self.lengths, slopes=self.slopes)
+        return np.asarray(data_wfrm)
+    
+    def input_waveform(self, inputs):
+        nr_inp = len(inputs)
+        print(f'Input is {nr_inp} dimensional')
+        inp_list = [waveform(inputs[i]) for i in range(nr_inp)]
+        inputs_wvfrm = np.asarray(inp_list) 
+#        print('Size of input', inputs_wvfrm.shape)
+        samples = inputs_wvfrm.shape[-1]
+        print(f'Input signals have length {samples}')
+#        time_arr = np.linspace(0, samples/self.fs, samples)
+        w_ampl = [1,0]*len(inputs[0])
+        w_lengths = [self.lengths[0],self.slopes[0]]*len(inputs[0])       
+        weight_wvfrm = GenWaveform(w_ampl, w_lengths)
+        bool_weights = [x==1 for x in weight_wvfrm[:samples]]
+        
+        return inputs_wvfrm, bool_weights#, time_arr
     
 #%% MAIN
 if __name__=='__main__':
     
-    #Define concrete class
-    class test(GA):
-        def __init__(self):
-            super().__init__()
-            self.w = True
-            
-        def Fitness(self, output):
-            pass
-        def EvaluatePopulation(self, pool):
-            pass
-        def StopCondition(self, max_fit, corr_thr=0.85):
-            out = self.output[self.fitness==max_fit][:,np.newaxis]
-            y = self.target_wfm[self.w][:,np.newaxis]
-            X = np.stack((out, y), axis=0)[:,:,0]
-            corr = np.corrcoef(X)[0,1]
-            print(f"Correlation of fittest genome: {corr}")
-            if corr >= corr_thr:
-                print(f'Very high correlation achieved, evolution will stop! \
-                      (correlaton threshold set to {corr_thr})')
-            return corr >= corr_thr
 
-    # Instantiate
-    t = test()
+
 
