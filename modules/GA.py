@@ -21,46 +21,40 @@ class GA:
     
     Argument : config object (config_GA). 
     
-    The configuration object must have the following:
-    Methods:
-        - get_platform() : Implements the evaluation of genomes self.EvaluatePopulation(). 
-            The method self.EvaluatePopulation() must take as arguments the inputs inputs_wfm,
-            the gene pool and the targets target_wfm. It must return outputs as numpy array of
-            shape (self.genomes, len(self.target_wfm) and fitness scores as 
-            numpy array of size self.genomes
-    
-    Attributes:
-        - genes : number of genes in each individual 
-        - generange
-        - genomes : number of individuals in the population
-        - partition : a list with the partition for the different operations on the population
-        - mutation_rate : rate of mutation applied to genes
-        - Arguments for GenWaveform:
-            o lengths : defines the input lengths (in ms) of the targets
-            o slopes : defines the slopes (in ms) between targets
+    The configuration dictionary must contain the following:    
+      - genes : number of genes in each individual 
+      - generange
+      - genomes : number of individuals in the population
+      - partition : a list with the partition for the different operations on the population
+      - mutation_rate : rate of mutation applied to genes
+      - Arguments for GenWaveform:
+          o lengths : defines the input lengths (in ms) of the targets
+          o slopes : defines the slopes (in ms) between targets
         
     Notes:
         * All other methods serve as default settings but they can be modified as well by
         the user via inheritance.
         * Requires args to GenWaveform because the method Evolve requires targets, 
         so one single instance of GA can handle multiple tasks.
+        *   The get_platform() function in Grabber gets an instance of the platform used
+        to evaluate the genomes in the population
+        * The get_fitness() function in Grabber gets the fitness function used as a score in GA
 
     '''
-    #TODO: how to implement separationof CV evolution and input affine transformation?
-    def __init__(self,config_obj):   
+    def __init__(self,config_dict):   
         
         #Define GA hyper-parameters
-        self.genes = config_obj.genes           # Nr of genes include CVs and affine trafo of input 
-        self.generange = config_obj.generange   # Voltage range of CVs
-        self.genomes = config_obj.genomes       # Nr of individuals in population
-        self.partition = config_obj.partition
-        self.mutation_rate = config_obj.mutation_rate
+        self.genes = config_dict['genes']           # Nr of genes include CVs and affine trafo of input 
+        self.generange = config_dict['generange']   # Voltage range of CVs
+        self.genomes = config_dict['genomes']       # Nr of individuals in population
+        self.partition = config_dict['partition']   # Partitions of population
+        self.mutation_rate = config_dict['mutation_rate']
         #Parameters to define target waveforms
-        self.lengths = config_obj.lengths
-        self.slopes = config_obj.slopes
+        self.lengths = config_dict['lengths']       # Length of data in the waveform
+        self.slopes = config_dict['slopes']         # Length of ramping from one value to the next
         #Parameters to define task
-        self.platform = config_obj.platform
-        self.fitness_function = config_obj.fitness
+        self.platform = config_dict['platform']     # Dictionary containing all variables for the platform
+        self.fitness_function = config_dict['fitness'] # String determining fitness funtion
         #Define platform and fitness function from Grabber
         self.Platform = Grabber.get_platform(self.platform)
         self.Fitness = Grabber.get_fitness(self.fitness_function)
@@ -158,9 +152,9 @@ class GA:
     def Mutation(self):
         '''Mutate all genes but the first partition[0] with a triangular 
         distribution between 0 and 1 with mode=gene. The chance of mutation is 
-        config_obj.mutationrate'''
+        config_dict['mutationrate']'''
         mask = np.random.choice([0, 1], size=self.pool[self.partition[0]:].shape, 
-                                  p=[1-self.config_obj.mutationrate, self.config_obj.mutationrate])
+                                  p=[1-self.mutationrate, self.mutationrate])
         mutatedpool = np.random.triangular(0, self.newpool[self.partition[0]:], 1)
         self.newpool[self.partition[0]:] = ((np.ones(self.newpool[self.partition[0]:].shape) - mask)*self.newpool[self.partition[0]:] 
                                             + mask * mutatedpool)
