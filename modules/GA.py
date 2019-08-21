@@ -10,6 +10,7 @@ import time
 #import logging
 #import sys
 from SkyNEt.modules.GenWaveform import GenWaveform 
+import SkyNEt.modules.Grabber
 
 class GA:
     '''This is a class implementing the genetic algorithm (GA).
@@ -57,18 +58,18 @@ class GA:
         #Parameters to define target waveforms
         self.lengths = config_obj.lengths
         self.slopes = config_obj.slopes
-        # Initialize filter_array
-        self.filter_array = self.waveForm([True])
-        #Define platform and stopping criteria from config_obj
-        self.EvaluatePopulation = config_obj.get_platform()
-        self.StopCondition = config_obj.StopCondition
+        #Parameters to define task
+        self.platform = config_obj.platform
+        self.fitness_function = config_obj.fitness
+        #Define platform and fitness function from Grabber
+        self.Platform = Grabber.get_platform(self.platform)
+        self.Fitness = Grabber.get_fitness(self.fitness_function)
 
     
     ##########################################################################
     ###################### Methods defining evolution ########################
     ##########################################################################
     def Evolve(self, inputs, targets, generations=100):
-        #TODO: check if no. of targets is equal to no. of inputs!!
         assert len(inputs[0]) == len(targets), f'No. of input data {len(inputs)} does not match no. of targets {len(targets)}'
         # Initialize target
         self.target_wfm = self.waveform(targets)
@@ -87,9 +88,10 @@ class GA:
         for gen in range(generations):
             start = time.time() 
             #-------------- Evaluate population (user specific) --------------#
-            self.output, self.fitness = self.EvaluatePopulation(self.inputs_wfm,
-                                                                self.pool, 
-                                                                self.target_wfm)
+            self.output = self.Platform.evaluate(self.inputs_wfm,
+                                                  self.pool, 
+                                                  self.target_wfm)
+            self.fitness = self.Fitness(self.output, self.target_wfm)
             #-----------------------------------------------------------------#
             # Status print
             max_fit = max(self.fitness)
