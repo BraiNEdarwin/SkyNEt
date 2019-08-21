@@ -1,24 +1,35 @@
 # -*- coding: utf-8 -*-
-"""
+"""This is a class implementing the genetic algorithm (GA). 
 Created on Thu May 16 18:16:36 2019
-
 @author: HCRuiz (some code taken from contributions of other SkyNEt members)
 
-This is an abstract class implementing the genetic algorithm. The abstract methods and attributes are
-experiment specific, so they must be implemented by the user.
+The methods implement the GA regardless of the platform being optimized, i.e. it
+can be used with the chip, the model or the physical simulations. 
 
-Abstract methods:
-    - Fitness : Defines fitness landscape for a fixed target. Takes only one argument outputs as numpy arrays
+-------------------------------------------------------------------------------
+Argument --- config object (config_GA). 
+The configuration object must have the following:
+Methods:
     - EvaluatePopulation : Implements the evaluation of genomes. 
-        It takes pool as argument and returns outputs and fitness as numpy arrays
+        It takes a numpy array as argument and returns outputs as numpy array.
+    - Fitness : Defines fitness landscape for a fixed target. Takes only one 
+        argument outputs as numpy arrays and returns an numpy array of one dimension.
 
-Abstract attributes:
+Attributes:
     - genes : number of genes in each individual 
+    - generange
     - genomes : number of individuals in the population
     - partition : a list with the partition for the different operations on the population
     - mutation_rate : rate of mutation applied to genes
-
-All other methods are concreate and serve as default setting; they can be modified as well by user via inheritance
+    - Arguments for GenWaveform:
+        o lengths : defines the input lengths (in ms) of the targets
+        o slopes : defines the slopes (in ms) between targets
+    
+Notes:
+    * All other methods serve as default settings but they can be modified as well by
+    the user via inheritance.
+    * Requires args to GenWaveform because the method Evolve requires targets, 
+    so one single instance of GA can handle multiple tasks.
 
 """
 
@@ -27,7 +38,7 @@ import time
 #import pdb
 #import logging
 #import sys
-from SkyNEt.modules.GenWaveform import GenWaveform
+from SkyNEt.modules.GenWaveform import GenWaveform 
 
 class GA:
     #TODO: how to implement separationof CV evolution and input affine transformation?
