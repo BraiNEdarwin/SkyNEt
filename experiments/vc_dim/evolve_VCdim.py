@@ -7,7 +7,7 @@ The only difference to the measurement scripts are on lines where the device is 
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
 import SkyNEt.modules.PlotBuilder as PlotBuilder
-from   SkyNEt.data.acceleration import Accelerator
+from   SkyNEt.config.acceleration import Accelerator
 import config_evolve_VCdim as config
 
 from SkyNEt.modules.Nets.staNNet import staNNet
