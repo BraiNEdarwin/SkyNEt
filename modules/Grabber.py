@@ -29,9 +29,9 @@ def get_fitness(fitness):
     '''
     if fitness == 'corr_fit':
         return FitF.corr_fit
-    elif fitness == 'sig_corr':
-        return FitF.sig_corr
-    elif fitness == 'max_delta_corr':
-        return FitF.max_delta_corr
+    elif fitness == 'accuracy_fit':
+        return FitF.accuracy_fit
+#    elif fitness == 'max_delta_corr':
+#        return FitF.max_delta_corr
     else:
         raise NotImplementedError(f"Fitness function {fitness} is not recognized!")

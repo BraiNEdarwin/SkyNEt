@@ -10,7 +10,8 @@ import time
 #import logging
 #import sys
 from SkyNEt.modules.GenWaveform import GenWaveform 
-import SkyNEt.modules.Grabber
+import SkyNEt.modules.Grabber as Grabber
+from SkyNEt.modules.Classifiers import perceptron
 
 class GA:
     '''This is a class implementing the genetic algorithm (GA).
@@ -48,7 +49,7 @@ class GA:
         self.generange = config_dict['generange']   # Voltage range of CVs
         self.genomes = config_dict['genomes']       # Nr of individuals in population
         self.partition = config_dict['partition']   # Partitions of population
-        self.mutation_rate = config_dict['mutation_rate']
+        self.mutationrate = config_dict['mutationrate']
         #Parameters to define target waveforms
         self.lengths = config_dict['lengths']       # Length of data in the waveform
         self.slopes = config_dict['slopes']         # Length of ramping from one value to the next
@@ -58,6 +59,9 @@ class GA:
         #Define platform and fitness function from Grabber
         self.Platform = Grabber.get_platform(self.platform)
         self.Fitness = Grabber.get_fitness(self.fitness_function)
+        
+        # Internal parameters
+        self.stop_thr = 0.95
 
     
     ##########################################################################
@@ -82,7 +86,7 @@ class GA:
         for gen in range(generations):
             start = time.time() 
             #-------------- Evaluate population (user specific) --------------#
-            self.output = self.Platform.evaluate(self.inputs_wfm,
+            self.output = self.Platform.evaluatePopulation(self.inputs_wfm,
                                                   self.pool, 
                                                   self.target_wfm)
             self.fitness = self.Fitness(self.output, self.target_wfm)
@@ -90,18 +94,12 @@ class GA:
             # Status print
             max_fit = max(self.fitness)
             print(f"Highest fitness: {max_fit}")
-            if self.StopCondition(max_fit):
-                break
-            # Evolve to the next generation
-            self.NextGen()
-            end = time.time()
-            print("Generation nr. " + str(gen + 1) + " completed; took "+str(end-start)+" sec.")
-                        
+            
+            self.geneArray[gen, :, :] = self.pool
+            self.outputArray[gen, :, :] = self.output
+            self.fitnessArray[gen, :] = self.fitness
             #%% Save generation data (USE OBSERVER PATTERN?)
             #TODO: Implemanet SAVER
-#            self.geneArray[i, :, :] = self.pool
-#            self.outputArray[i, :, :] = self.output
-#            self.fitnessArray[i, :] = self.fitness
 #            # Save generation
 #            SaveLib.saveExperiment(saveDirectory,
 #                                   genes = self.geneArray,
@@ -109,15 +107,27 @@ class GA:
 #                                   fitness = self.fitnessArray,
 #                                   target = target[w][:,np.newaxis],
 #                                   weights = w, time = t)
-            
+            end = time.time()
+            print("Generation nr. " + str(gen + 1) + " completed; took "+str(end-start)+" sec.")
+            if self.StopCondition(max_fit):
+                break
+            # %%Evolve to the next generation
+            self.NextGen()
+                        
         #%%Get best results
         max_fitness = np.max(self.fitnessArray)
         ind = np.unravel_index(np.argmax(self.fitnessArray, axis=None), self.fitnessArray.shape)
         best_genome = self.geneArray[ind]
         best_output = self.outputArray[ind]
+        print('===============================================================')
         print('Max. Fitness: ', max_fitness)
         print('Best genome: ', best_genome)
-        return best_genome, best_output, max_fitness
+        y = best_output[self.filter_array][:,np.newaxis]
+        trgt = self.target_wfm[self.filter_array][:,np.newaxis]
+        accuracy, _, _ = perceptron(y,trgt)
+        print('Accuracy: ', accuracy)
+        print('===============================================================')
+        return best_genome, best_output, max_fitness, accuracy
 #%%    
     def NextGen(self):
         indices = np.argsort(self.fitness)
@@ -203,16 +213,16 @@ class GA:
                     self.newpool[j] = np.random.triangular(0, self.newpool[j], 1)
 
 #%% ########### Helper Methods ######################
-    def StopCondition(self, max_fit, corr_thr=0.9):
-        best = self.output[self.fitness==max_fit][:,np.newaxis]
-        y = self.target_wfm[self.filter_array][:,np.newaxis]
-        X = np.stack((best, y), axis=0)[:,:,0]
+    def StopCondition(self, max_fit):
+        best = self.output[self.fitness==max_fit]
+        y = self.target_wfm[self.filter_array][np.newaxis,:]
+        X = np.concatenate((best, y), axis=0)
         corr = np.corrcoef(X)[0,1]
         print(f"Correlation of fittest genome: {corr}")
-        if corr >= corr_thr:
+        if corr >= self.stop_thr:
             print(f'Very high correlation achieved, evolution will stop! \
-                  (correlaton threshold set to {corr_thr})')
-        return corr >= corr_thr
+                  (correlaton threshold set to {self.stop_thr})')
+        return corr >= self.stop_thr
     
     def waveform(self, data):
         data_wfrm = GenWaveform(data, self.lengths, slopes=self.slopes)
@@ -221,7 +231,7 @@ class GA:
     def input_waveform(self, inputs):
         nr_inp = len(inputs)
         print(f'Input is {nr_inp} dimensional')
-        inp_list = [waveform(inputs[i]) for i in range(nr_inp)]
+        inp_list = [self.waveform(inputs[i]) for i in range(nr_inp)]
         inputs_wvfrm = np.asarray(inp_list) 
 #        print('Size of input', inputs_wvfrm.shape)
         samples = inputs_wvfrm.shape[-1]
@@ -237,6 +247,37 @@ class GA:
 #%% MAIN
 if __name__=='__main__':
     
-
-
-
+    import matplotlib.pyplot as plt
+    # Define platform
+    platform = {}
+    platform['modality'] = 'nn'
+    platform['path2NN'] = r'D:\UTWENTE\PROJECTS\DARWIN\Data\Mark\MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
+    platform['amplification'] = 10.
+    
+    config_dict = {}    
+    config_dict['partition'] =  [5]*5 # Partitions of population
+    # Voltage range of CVs in V
+    config_dict['generange'] = [[-1.2,0.6], [-1.2, 0.6], [-1.2, 0.6], [-0.7, 0.3], [-0.7, 0.3],[1,1]]
+    config_dict['genes'] = len(config_dict['generange'])    # Nr of genes
+    config_dict['genomes'] = sum(config_dict['partition'])  # Nr of individuals in population   
+    config_dict['mutationrate'] = 0.1
+    
+    #Parameters to define target waveforms
+    config_dict['lengths'] = [80]     # Length of data in the waveform
+    config_dict['slopes'] = [0]        # Length of ramping from one value to the next
+    #Parameters to define task
+    config_dict['fitness'] = 'corr_fit'
+    
+    config_dict['platform'] = platform    # Dictionary containing all variables for the platform
+    
+    ga = GA(config_dict)
+    
+    inputs = [[-1.,0.4,-1.,0.4,-0.8, 0.2],[-1.,-1.,0.4,0.4, 0., 0.]]
+    targets = [1,1,0,0,1,1]
+    
+    best_genome, best_output, max_fitness, accuracy = ga.Evolve(inputs,targets)
+    
+    plt.figure()
+    plt.plot(best_output)
+    plt.title(f'Best output for target {targets}')
+    plt.show()
