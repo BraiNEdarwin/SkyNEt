@@ -1,5 +1,5 @@
 '''
-This is a template for evolving the NN based on the boolean_logic experiment. 
+This is a template for evolving the NN based on the boolean_logic experiment.
 The only difference to the measurement scripts are on lines where the device is called.
 
 '''
@@ -7,9 +7,10 @@ The only difference to the measurement scripts are on lines where the device is 
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
 import SkyNEt.modules.PlotBuilder as PlotBuilder
+from   SkyNEt.data.acceleration import Accelerator
 import config_evolve_VCdim as config
 
-from SkyNEt.modules.Nets.staNNet import staNNet 
+from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Classifiers import perceptron
 # Other imports
 import torch
@@ -19,48 +20,46 @@ import numpy as np
 import pdb
 
 #%% Function definition
-def evolve(inputs, binary_labels, 
+def evolve(inputs, binary_labels,
            path_2_NN = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt',
-           noise = 0, 
+           noise = 0,
            filepath = r'../../test/evolution_test/VCdim_testing/',
            hush=True):
-    
+
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
-    
     # Initialize input and target
     t = cf.InputGen[0]  # Time array
     x = cf.InputGen[1]  # Array with P and Q signal
     w = cf.InputGen[2]  # Weight array
     target = cf.amplification*cf.TargetGen  # Target signal
-    
+
     # np arrays to save genePools, outputs and fitness
     geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
     outputArray = np.zeros((cf.generations, cf.genomes, len(x[0])))
     fitnessArray = np.zeros((cf.generations, cf.genomes))
-    
+
     # Temporary arrays, overwritten each generation
     fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
     outputAvg = np.zeros((cf.fitnessavg, len(x[0])))
     outputTemp = np.zeros((cf.genomes, len(x[0])))
     controlVoltages = np.zeros(cf.genes)
-    
+
     # Initialize save directory
     saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
-    
+
     # Initialize main figure
     if not hush:
         mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
-    
+
     # Initialize NN
-    net = staNNet(path_2_NN) 
+    net = staNNet(path_2_NN)
 #    pdb.set_trace()
-    dtype = torch.FloatTensor#torch.cuda.FloatTensor
-    # Initialize genepool
+    # Initialize genepoolnet.output
     genePool = Evolution.GenePool(cf)
-    
+
     #%% Measurement loop
-    
+
     for i in range(cf.generations):
         start = time.time()
         for j in range(cf.genomes):
@@ -68,35 +67,33 @@ def evolve(inputs, binary_labels,
             for k in range(cf.genes-1):
                 controlVoltages[k] = genePool.MapGenes(
                                         cf.generange[k], genePool.pool[j, k])
-    
+
             # Set the input scaling
             x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
-    
+
             # Measure cf.fitnessavg times the current configuration
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to NN
                 g = np.ones_like(target)[:,np.newaxis]*controlVoltages[:5,np.newaxis].T/1000.
                 x_dummy = np.concatenate((x_scaled.T,g),axis=1) # First input then genes; dims of input TxD
-                inputs = torch.from_numpy(x_dummy).type(dtype)
-                inputs = Variable(inputs)
 #                pdb.set_trace()
-                output = net.outputs(inputs)
-    
+                output = net.outputs(Accelerator.format_numpy(x_dummy))
+
                 # Plot genome
                 try:
                     PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
                 except:
                     pass
-                
+
                 # Train output
                 outputAvg[avgIndex] = cf.amplification*np.asarray(output) #cf.amplification * np.asarray(output) + noise*(3/100)*(1 + np.abs(np.asarray(output)))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
                 noisy_target = target #+ 0.001*np.random.standard_normal(output.shape)
-    
+
                 # Calculate fitness
                 fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],
                                                          noisy_target,
                                                          w)
-    
+
                 # Plot output
                 try:
                     PlotBuilder.currentOutputEvolution(mainFig,
@@ -107,20 +104,20 @@ def evolve(inputs, binary_labels,
                                                        fitnessTemp[j, avgIndex])
                 except:
                     pass
-                
+
             outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
-    
+
         genePool.fitness = fitnessTemp.min(1)  # Save fitness
         end = time.time()
         # Status print
         print("Generation nr. " + str(i + 1) + " completed; took "+str(end-start)+" sec.")
         print("Highest fitness: " + str(max(genePool.fitness)))
-    
+
         # Save generation data
         geneArray[i, :, :] = genePool.pool
         outputArray[i, :, :] = outputTemp
         fitnessArray[i, :] = genePool.fitness
-    
+
         # Update main figure
         try:
             PlotBuilder.updateMainFigEvolution(mainFig,
@@ -133,20 +130,20 @@ def evolve(inputs, binary_labels,
                                                output,
                                                w)
         except:
-            pass    
+            pass
         # Save generation
         SaveLib.saveExperiment(saveDirectory,
                                genes = geneArray,
                                output = outputArray,
                                fitness = fitnessArray)
-    
+
         # Evolve to the next generation
         genePool.NextGen()
-    
+
     try:
         PlotBuilder.finalMain(mainFig)
     except:
-        pass        
+        pass
     #Get best results
     max_fitness = np.max(fitnessArray)
     a = fitnessArray

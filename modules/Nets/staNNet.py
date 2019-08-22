@@ -5,8 +5,8 @@ Created on Wed Feb 28 12:40:12 2018
 
 @author: hruiz
 
-Defines the standard Neural Network class using PyTorch nn-package. It defines the model and inplements the training procedure. 
-INPUT: ->data; a list of (input,output) pairs for training and validation [(x_train,y_train),(x_val,y_val)]. 
+Defines the standard Neural Network class using PyTorch nn-package. It defines the model and inplements the training procedure.
+INPUT: ->data; a list of (input,output) pairs for training and validation [(x_train,y_train),(x_val,y_val)].
                The dimensions of x and y arrays must be (Samples,Dim) and they must be torch.FloatTensor
        ->depth: number of hidden layers
        ->width: can be list of number of nodes in each hidden layer
@@ -21,24 +21,24 @@ TO DO:
 
 import torch
 import torch.nn as nn
-import numpy as np 
+import numpy as np
 import os
 #from matplotlib import pyplot as plt
 import pdb
 
 class staNNet(object):
 
-    def __init__(self,*args,loss='MSE',activation='ReLU', dim_cv=5, BN=False, conversion=100):
-        
+    def __init__(self,*args,loss='MSE',activation='ReLU', dim_cv=5, BN=False):
+
         if len(args) == 3: #data,depth,width
-           data,depth,width = args           
-           self.info = {'activation':activation, 'loss':loss, 'conversion':conversion}
+           data,depth,width = args
+           self.info = {'activation':activation, 'loss':loss}
            for key, item in data[2].items():
-               self.info[key] = item               
+               self.info[key] = item
            self.x_train, self.y_train = data[0]
-           self.y_train = self.y_train/self.info['conversion']
+           self.y_train = self.y_train/self.info['amplification'].item()
            self.x_val, self.y_val = data[1]
-           self.y_val = self.y_val/self.info['conversion']                                     
+           self.y_val = self.y_val/self.info['amplification'].item()
            self.D_in = self.load_data(self.x_train[0:1]).size()[1]
            self.D_out = self.y_train.size()[1]
            self._BN = BN
@@ -47,23 +47,23 @@ class staNNet(object):
            print(f'Meta-info: \n {list(self.info.keys())}')
            self.ttype = self.x_train.type()
            self._tests()
-        
+
            ################### DEFINE MODEL ######################################
            self._contruct_model(loss)
 
-           if isinstance(self.x_train.data,torch.FloatTensor): 
+           if isinstance(self.x_train.data,torch.FloatTensor):
                self.itype = torch.LongTensor
            else:
                self.itype = torch.cuda.LongTensor
                self.model.cuda()
 #               self.loss_fn.cuda() apparently this is not needed if both arguments are already on gpu
-               print('Sent to GPU')           
+               print('Sent to GPU')
         elif len(args)==1 and type(args[0]) is str:
             self._load_model(args[0])
         else:
-            assert False, 'Arguments must be either 3 (data,depth,width) or a string to load the model!'      
+            assert False, 'Arguments must be either 3 (data,depth,width) or a string to load the model!'
 
-                
+
     def _load_model(self,data_dir):
         print('Loading the model from '+data_dir)
         self.ttype = torch.torch.FloatTensor
@@ -78,7 +78,7 @@ class staNNet(object):
         else:
             self._BN = False
 
- 
+
         # move info key from state_dic to self
         if state_dic.get('info') is not None:
             self.info = state_dic['info']
@@ -97,7 +97,7 @@ class staNNet(object):
 
         print('NN loaded with activation %s and loss %s' % (self.info['activation'], self.info['loss']))
         loss = self.info['loss']
-        itms = list(state_dic.items())  
+        itms = list(state_dic.items())
         layers = list(filter(lambda x: ('weight' in x[0]) and (len(x[1].shape)==2),itms))
         self.depth = len(layers)-2
         self.width = layers[0][1].shape[0]
@@ -105,17 +105,17 @@ class staNNet(object):
         self.D_out = layers[-1][1].shape[0]
 
         self._contruct_model(loss)
-        
+
         self.model.load_state_dict(state_dic)
 
-        if isinstance(layers[-1][1],torch.FloatTensor): 
+        if isinstance(layers[-1][1],torch.FloatTensor):
             self.itype = torch.LongTensor
-        else: 
+        else:
             self.itype = torch.cuda.LongTensor
             self.model.cuda()
-#            self.loss_fn.cuda()    
+#            self.loss_fn.cuda()
         self.model.eval()
-            
+
     def _contruct_model(self,loss):
         # Use the nn package to define our model and loss function.
 #        self.model = nn.Sequential(
@@ -123,19 +123,19 @@ class staNNet(object):
 #            nn.ReLU(),
 #            nn.Linear(self.width, self.D_out),
 #        )
-        
+
         self.l_in = nn.Linear(self.D_in, self.width)
         self.l_out = nn.Linear(self.width, self.D_out)
 
-        if self._BN: 
-            track_running_stats=False  
+        if self._BN:
+            track_running_stats=False
             print('BN tracking average: ',track_running_stats)
             self.bn_layer = nn.BatchNorm1d(self.width,track_running_stats=track_running_stats)
-        
+
         activation = self.info['activation']
         if activation == 'tanh':
             activ_func = nn.Tanh()
-            print('Activation is tanh')            
+            print('Activation is tanh')
         elif activation == 'ReLU':
             activ_func = nn.ReLU()
             print('Activation is ReLU')
@@ -143,26 +143,26 @@ class staNNet(object):
             activ_func = None
         else:
             assert False, "Activation function ('%s') not recognized!" % activation
-        
 
-        if self._BN: 
+
+        if self._BN:
             modules = [nn.BatchNorm1d(self.D_in,track_running_stats=track_running_stats),
                        self.l_in,activ_func]
         else:
             modules = [self.l_in,activ_func]
-            
+
         for i in range(self.depth):
-            if self._BN: 
-                modules.append(self.bn_layer) 
-                #BN before activation (like in paper) doesn't make much difference; 
+            if self._BN:
+                modules.append(self.bn_layer)
+                #BN before activation (like in paper) doesn't make much difference;
                 #before the linearity also not much difference vs non-BN model
             hidden = nn.Linear(self.width,self.width)
             modules.append(hidden)
             modules.append(activ_func)
-        
+
         modules.append(self.l_out)
         modules = [x for x in modules if x !=None ]
-        
+
         print('Model constructed with modules: \n',modules)
         self.model = nn.Sequential(*modules)
         print(f'Loss founction is defined to be {loss}')
@@ -174,7 +174,7 @@ class staNNet(object):
             self.loss_fn = nn.MSELoss()
         else:
             assert False, f'Loss function ERROR! {loss} is not recognized'
-        
+
     def nMSE(self, pred, targets):
         y = pred#targets
         sign = torch.sign(y)
@@ -185,15 +185,15 @@ class staNNet(object):
 #        r = torch.mean(torch.log(C))
         #pdb.set_trace()
         return r
-    
+
     def train_nn(self,learning_rate,nr_epochs,batch_size,
                  betas = (0.9, 0.999),
                  data = None, seed=False):
 
-        """TO DO: 
+        """TO DO:
             check if x_train, x_val and y_train and y_val are defined, if not, raise an error asking to define
         """
-        
+
         if seed:
             torch.manual_seed(22)
             print('The torch RNG is seeded!')
@@ -209,17 +209,17 @@ class staNNet(object):
         self.L_val = np.zeros((nr_epochs,))
         self.L_train = np.zeros((nr_epochs,))
         for epoch in range(nr_epochs):
-    
-            permutation = torch.randperm(self.x_train.size()[0]).type(self.itype) # Permute indices 
+
+            permutation = torch.randperm(self.x_train.size()[0]).type(self.itype) # Permute indices
             nr_minibatches = 0
 
             for i in range(0,len(permutation),batch_size):
-                
+
                 # Forward pass: compute predicted y by passing x to the model.
                 indices = permutation[i:i+batch_size]
                 x_train = self.load_data(self.x_train[indices])
                 y_pred = self.model(x_train)
-                
+
                 # Compute and print loss.
                 loss_training = self.loss_fn(y_pred, self.y_train[indices])
 
@@ -229,37 +229,37 @@ class staNNet(object):
                 # accumulated in buffers( i.e, not overwritten) whenever .backward()
                 # is called. Checkout docs of torch.autograd.backward for more details.
                 optimizer.zero_grad()
-                
+
                 # Backward pass: compute gradient of the loss with respect to model
                 # parameters
                 loss_training.backward()
-                
+
                 # Calling the step function on an Optimizer makes an update to its
                 # parameters
                 optimizer.step()
                 nr_minibatches += 1
-                             
+
             self.model.eval()
-            
+
             # Evaluate training error
             get_indices = torch.randperm(self.x_train.size()[0]).type(self.itype)[:int(len(self.x_val)/10)]
             x = self.load_data(self.x_train[get_indices])
-            y = self.model(x) * self.info['conversion'] #\\
-            y_subset = self.y_train[get_indices] * self.info['conversion'] 
+            y = self.model(x) *self.info['amplification'].item()
+            y_subset = self.y_train[get_indices] * self.info['amplification'].item()
             loss = self.loss_fn(y,y_subset).item()
             self.L_train[epoch] = loss
             #Evaluate Validation error
             get_indices = torch.randperm(self.x_val.size()[0]).type(self.itype)[:int(len(self.x_val)/10)]
             x_val = self.load_data(self.x_val[get_indices])
-            y = self.model(x_val) * self.info['conversion']
-            loss = self.loss_fn(y, self.y_val[get_indices] * self.info['conversion']).item() 
+            y = self.model(x_val) * self.info['amplification'].item()
+            loss = self.loss_fn(y, self.y_val[get_indices] * self.info['amplification'].item()).item()
             self.L_val[epoch] = loss
-            
+
             if epoch % 10 == 0:
                 current_dir = os.path.dirname(os.path.abspath(__file__))
                 print(current_dir)
                 self.save_model(current_dir+'/checkpoint.pt')
-            
+
             print('Epoch:', epoch, 'Val. Error:', self.L_val[epoch],
                   'Training Error:', self.L_train[epoch])
             self.model.train()
@@ -269,11 +269,11 @@ class staNNet(object):
 #        plt.figure()
 #        plt.plot(np.arange(nr_epochs),self.L_val)
 #        plt.show()
-        
+
     def _tests(self):
-        if not self.x_train.size()[0] == self.y_train.size()[0]: 
+        if not self.x_train.size()[0] == self.y_train.size()[0]:
             raise NameError('Input and Output Batch Sizes do not match!')
-    
+
     def save_model(self, path):
         """
         Saves the model in given path, all other attributes are saved under the 'info' key as a new dictionary.
@@ -292,21 +292,25 @@ class staNNet(object):
     def outputs(self,inputs,grad=False):
         data = self.load_data(inputs)
         if grad:
-          return self.model(data) * self.info['conversion']
+          return self.model(data) * self.info['amplification'].item()
         else:
-          return self.model(data).data.cpu().numpy()[:,0] * self.info['conversion']
-    
+            if torch.cuda.is_available():
+                return self.model(data).data.cpu().numpy()[:,0] * self.info['amplification'].item()
+            else:
+                return self.model(data).data.numpy()[:,0] * self.info['amplification'].item()
+
+
 if __name__ == '__main__':
     #%%
     ###############################################################################
     ########################### LOAD DATA  ########################################
     ###############################################################################
-    
+
     from SkyNEt.modules.Nets.DataHandler import DataLoader as dl
     main_dir = r'../../test/NN_test/'
     file_name = 'data_for_training.npz'
     data = dl(main_dir+r'data4nn/16_04_2019/', file_name, steps=3)
-    
+
     #%%
     ###############################################################################
     ############################ DEFINE NN and RUN ################################
@@ -315,7 +319,7 @@ if __name__ == '__main__':
     width = 90
     learning_rate,nr_epochs,batch_size = 3e-4, 5, 64*32
     net = staNNet(data,depth,width)
-    net.train_nn(learning_rate,nr_epochs,batch_size)    
+    net.train_nn(learning_rate,nr_epochs,batch_size)
     #%%
     ###############################################################################
     ############################## SAVE NN ########################################
