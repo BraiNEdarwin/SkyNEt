@@ -7,17 +7,24 @@ Created on Wed Aug 21 13:14:52 2019
 import numpy as np
 from SkyNEt.modules.Classifiers import perceptron 
 
-def accuracy_fit(output, target, clip=np.inf):
-#        print('shape of target = ', target.shape)
-    if np.any(np.abs(output)>clip):
-        acc = 0
-        print(f'Clipped at {clip} nA')
-    else:
-        x = output[:,np.newaxis]
-        y = target[:,np.newaxis]
-#        print('shape of x,y: ', x.shape,y.shape)
-        acc, _, _ = perceptron(x,y)
-    return acc
+#TODO: include max and AF fitness functions
+
+def accuracy_fit(outputpool, target, clip=np.inf):
+    genomes = len(outputpool)
+    fitpool = np.zeros(genomes)
+    for j in range(genomes):
+        output = outputpool[j]
+    
+        if np.any(np.abs(output)>clip):
+            acc = 0
+            print(f'Clipped at {clip} nA')
+        else:
+            x = output[:,np.newaxis]
+            y = target[:,np.newaxis]
+            acc, _, _ = perceptron(x,y)
+            
+        fitpool[j] = acc
+    return fitpool
 
 def corr_fit(outputpool, target, clip=np.inf):
     genomes = len(outputpool)

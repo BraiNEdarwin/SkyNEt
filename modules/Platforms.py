@@ -13,6 +13,10 @@ Created on Wed Aug 21 11:34:14 2019
 import numpy as np
 import importlib
 
+#TODO: Add chip platform
+#TODO: Add simulation platform
+
+#%% Chip platform to measure the current output from voltage configurations of disordered NE systems
 class chip:
     def __init__(self, platform_dict):
         pass
@@ -20,6 +24,7 @@ class chip:
     def evaluatePopulation(self,inputs_wfm, gene_pool, target_wfm):
         pass
 
+#%% NN platform using models loaded form staNNet
 class nn:
 
     def __init__(self, platform_dict):
@@ -58,13 +63,15 @@ class nn:
         # params_trafo.shape -> ()
         return inputs_wfm*params_trafo
 
+#%% Simulation platform for physical MC simulations of devices 
 class simulation:
     def __init__(self, platform_dict):
         pass
     
     def evaluatePopulation(self,inputs_wfm, gene_pool, target_wfm):
         pass
-    
+
+#%% MAIN function (for debugging)    
 if __name__ == '__main__':
     
     # Define platform

@@ -12,7 +12,9 @@ import time
 from SkyNEt.modules.GenWaveform import GenWaveform 
 import SkyNEt.modules.Grabber as Grabber
 from SkyNEt.modules.Classifiers import perceptron
-
+#TODO: Implement AF's GA (Check if genes/CV are in Volts and over the defined range!!)
+#TODO: Implemanet Saver
+#TODO: Implement Plotter
 class GA:
     '''This is a class implementing the genetic algorithm (GA).
     The methods implement the GA regardless of the platform being optimized, 
@@ -64,9 +66,7 @@ class GA:
         self.stop_thr = 0.95
 
     
-    ##########################################################################
-    ###################### Methods defining evolution ########################
-    ##########################################################################
+#%% Method implementing evolution
     def Evolve(self, inputs, targets, generations=100):
         assert len(inputs[0]) == len(targets), f'No. of input data {len(inputs)} does not match no. of targets {len(targets)}'
         # Initialize target
@@ -82,7 +82,7 @@ class GA:
         self.outputArray = np.zeros((generations, self.genomes, len(self.target_wfm)))
         self.fitnessArray = -np.inf*np.ones((generations, self.genomes))
         
-        #%% Evolution loop
+        #Evolution loop
         for gen in range(generations):
             start = time.time() 
             #-------------- Evaluate population (user specific) --------------#
@@ -98,9 +98,8 @@ class GA:
             self.geneArray[gen, :, :] = self.pool
             self.outputArray[gen, :, :] = self.output
             self.fitnessArray[gen, :] = self.fitness
-            #%% Save generation data (USE OBSERVER PATTERN?)
-            #TODO: Implemanet SAVER
-#            # Save generation
+
+#            #Save generation (USE OBSERVER PATTERN?)
 #            SaveLib.saveExperiment(saveDirectory,
 #                                   genes = self.geneArray,
 #                                   output = self.outputArray,
@@ -111,10 +110,10 @@ class GA:
             print("Generation nr. " + str(gen + 1) + " completed; took "+str(end-start)+" sec.")
             if self.StopCondition(max_fit):
                 break
-            # %%Evolve to the next generation
+            #Evolve to the next generation
             self.NextGen()
                         
-        #%%Get best results
+        #Get best results
         max_fitness = np.max(self.fitnessArray)
         ind = np.unravel_index(np.argmax(self.fitnessArray, axis=None), self.fitnessArray.shape)
         best_genome = self.geneArray[ind]
@@ -128,7 +127,8 @@ class GA:
         print('Accuracy: ', accuracy)
         print('===============================================================')
         return best_genome, best_output, max_fitness, accuracy
-#%%    
+    
+#%% Step to next generation    
     def NextGen(self):
         indices = np.argsort(self.fitness)
         indices = indices[::-1]
@@ -158,7 +158,10 @@ class GA:
 
         # Reset fitness
         self.fitness = np.zeros(self.genomes)
-#%%
+        
+#%% ##########################################################################
+    ###################### Methods defining evolution ########################
+    ##########################################################################
     def Mutation(self):
         '''Mutate all genes but the first partition[0] with a triangular 
         distribution between 0 and 1 with mode=gene. The chance of mutation is 
@@ -169,11 +172,6 @@ class GA:
         self.newpool[self.partition[0]:] = ((np.ones(self.newpool[self.partition[0]:].shape) - mask)*self.newpool[self.partition[0]:] 
                                             + mask * mutatedpool)
         
-#%%
-#    def MapGenes(self,generange, gene):
-#        '''Convert the gene [0,1] to the appropriate value set by generange [a,b]'''
-#        return generange[0] + gene * (generange[1] - generange[0])
-#%%
     def AddNoise(self):
         '''Add Gaussian noise to the fittest partition[1] genes'''
         self.newpool[sum(self.partition[:1]):sum(self.partition[:2])] = (self.pool[:self.partition[1]] +
@@ -185,25 +183,25 @@ class GA:
 
         buff = self.newpool[sum(self.partition[:1]):sum(self.partition[:2])] < 0.0
         self.newpool[sum(self.partition[:1]):sum(self.partition[:2])][buff] = 0.0
-#%%
+        
     def CrossoverFitFit(self):
         '''Perform crossover between the fittest :partition[2] genomes and the
         fittest 1:partition[2]+1 genomes'''
         mask = np.random.randint(2, size=(self.partition[2], self.genes))
         self.newpool[sum(self.partition[:2]):sum(self.partition[:3])] = (mask * self.pool[:self.partition[2]]
                 + (np.ones(mask.shape) - mask) * self.pool[1:self.partition[2]+1])
-#%%
+
     def CrossoverFitRandom(self):
         '''Perform crossover between the fittest :partition[3] genomes and random
         genomes'''
         mask = np.random.randint(2, size=(self.partition[3], self.genes))
         self.newpool[sum(self.partition[:3]):sum(self.partition[:4])] = (mask * self.pool[:self.partition[3]]
                 + (np.ones(mask.shape) - mask) * self.pool[np.random.randint(self.genomes, size=(self.partition[3],))])
-#%%
+
     def AddRandom(self):
         '''Generate partition[4] random genomes'''
         self.newpool[sum(self.partition[:4]):] = np.random.rand(self.partition[4], self.genes)
-#%%        
+        
     def RemoveDuplicates(self):
         '''Check the entire pool for any duplicate genomes and replace them by 
         the genome put through a triangular distribution'''
@@ -212,7 +210,10 @@ class GA:
                 if(j != i and np.array_equal(self.newpool[i],self.newpool[j])):
                     self.newpool[j] = np.random.triangular(0, self.newpool[j], 1)
 
-#%% ########### Helper Methods ######################
+#%% #################################################
+    ########### Helper Methods ######################
+    #################################################
+    
     def StopCondition(self, max_fit):
         best = self.output[self.fitness==max_fit]
         y = self.target_wfm[self.filter_array][np.newaxis,:]
@@ -252,6 +253,7 @@ if __name__=='__main__':
     platform = {}
     platform['modality'] = 'nn'
     platform['path2NN'] = r'D:\UTWENTE\PROJECTS\DARWIN\Data\Mark\MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
+#    platform['path2NN'] = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
     platform['amplification'] = 10.
     
     config_dict = {}    
