@@ -88,7 +88,7 @@ class VCDimensionTest():
             print('Finding classifier ', label)
 
             genes, output, fitness, accuracy =\
-                self.algorithm.Evolve(inputs, label)
+                self.algorithm.optimize(inputs, label)
             if accuracy > threshold:
                 self.found_classifier.append(1)
             else:
