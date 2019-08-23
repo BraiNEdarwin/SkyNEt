@@ -6,13 +6,14 @@ Created on Thu May 16 18:16:36 2019
 
 import numpy as np
 import time
+import random 
 #import pdb
 #import logging
 #import sys
 from SkyNEt.modules.GenWaveform import GenWaveform 
 import SkyNEt.modules.Grabber as Grabber
 from SkyNEt.modules.Classifiers import perceptron
-#TODO: Implement AF's GA (Check if genes/CV are in Volts and over the defined range!!)
+
 #TODO: Implemanet Saver
 #TODO: Implement Plotter
 class GA:
@@ -22,7 +23,7 @@ class GA:
 
     ---------------------------------------------------------------------------
     
-    Argument : config object (config_GA). 
+    Argument : config dictionary. 
     
     The configuration dictionary must contain the following:    
       - genes : number of genes in each individual 
@@ -63,19 +64,24 @@ class GA:
         self.Fitness = Grabber.get_fitness(self.fitness_function)
         
         # Internal parameters
-        self.stop_thr = 0.95
+        self.stop_thr = 0.9
 
     
 #%% Method implementing evolution
-    def Evolve(self, inputs, targets, generations=100):
+    def Evolve(self, inputs, targets, generations=100, seed=None):
         assert len(inputs[0]) == len(targets), f'No. of input data {len(inputs)} does not match no. of targets {len(targets)}'
+        
+        self.generations = generations
         # Initialize target
         self.target_wfm = self.waveform(targets)
         # Initialize target
         self.inputs_wfm, self.filter_array = self.input_waveform(inputs)
 
-        #Initialize population
-        self.pool = np.random.rand(self.genomes, self.genes)
+        self.pool = np.zeros((self.genomes, self.genes))
+        self.opposite_pool = np.zeros((self.genomes, self.genes))
+        for i in range(0,self.genes):
+            self.pool[:,i] = np.random.uniform(self.generange[i][0], self.generange[i][1], size=(self.genomes,))
+        np.random.seed(seed=seed)
         
         #Define placeholders
         self.geneArray = np.zeros((generations, self.genomes, self.genes))
@@ -84,7 +90,7 @@ class GA:
         
         #Evolution loop
         for gen in range(generations):
-            start = time.time() 
+            start = time.time()
             #-------------- Evaluate population (user specific) --------------#
             self.output = self.Platform.evaluatePopulation(self.inputs_wfm,
                                                   self.pool, 
@@ -111,16 +117,19 @@ class GA:
             if self.StopCondition(max_fit):
                 break
             #Evolve to the next generation
-            self.NextGen()
+            self.NextGen(gen)
                         
         #Get best results
         max_fitness = np.max(self.fitnessArray)
         ind = np.unravel_index(np.argmax(self.fitnessArray, axis=None), self.fitnessArray.shape)
         best_genome = self.geneArray[ind]
         best_output = self.outputArray[ind]
-        print('===============================================================')
-        print('Max. Fitness: ', max_fitness)
-        print('Best genome: ', best_genome)
+#        print(best_output.shape,self.target_wfm.shape)
+        best_corr = self.corr(best_output)
+        print(f'\n========================= BEST SOLUTION =======================')
+        print('Fitness: ', max_fitness)
+        print('Correlation: ', best_corr)
+        print(f'Genome:\n {best_genome}')
         y = best_output[self.filter_array][:,np.newaxis]
         trgt = self.target_wfm[self.filter_array][:,np.newaxis]
         accuracy, _, _ = perceptron(y,trgt)
@@ -129,102 +138,193 @@ class GA:
         return best_genome, best_output, max_fitness, accuracy
     
 #%% Step to next generation    
-    def NextGen(self):
+    def NextGen(self, gen):
+        # Sort genePool based on fitness 
         indices = np.argsort(self.fitness)
         indices = indices[::-1]
-        self.pool = self.pool[indices]  # Sort genepool on fitness
-        self.newpool = self.pool.copy() # promote fittest partition[0] gene configurations
-
-        # Generate second partition by adding Gaussian noise to the fittest partition
-        self.AddNoise()
-
-        # Generate third partition by mixing fittest :partition[2] with fittest 1:partition[2]
-        self.CrossoverFitFit()
-
-        # Generate fourth partition by mixing fittest with randomly selected
-        self.CrossoverFitRandom()
-
-        # Generate fifth partition by uniform sampling
-        self.AddRandom()
-
-        # Mutation over all new partitions
+        self.pool = self.pool[indices]  
+        self.fitness = self.fitness[indices]
+        # Copy the current pool 
+        self.newpool = self.pool.copy()
+        # Determine which genomes are chosen to generate offspring 
+        # Note: twice as much parents are selected as there are genomes to be generated
+        chosen = self.Universal_sampling()
+        # Generate offspring by means of crossover. 
+        # The crossover method returns 1 genome from 2 parents       
+        for i in range(0,len(chosen),2):
+            index_newpool = int(i/2 +sum(self.partition[:1]))
+            if chosen[i] == chosen[i+1]:
+                if chosen[i] == 0: 
+                    chosen[i] = chosen[i] + 1 
+                else: 
+                    chosen[i] = chosen[i] - 1 
+            #The individual with the highest fitness score is given as input first
+            if chosen[i] < chosen[i+1]:
+                self.newpool[index_newpool,:] = self.Crossover_BLXab(self.pool[chosen[i],:], self.pool[chosen[i+1],:])
+            else:
+                self.newpool[index_newpool,:] = self.Crossover_BLXab(self.pool[chosen[i+1],:], self.pool[chosen[i],:])
+        # The mutation rate is updated based on the generation counter     
+        self.UpdateMutation(gen)
+        # Every genome, except the partition[0] genomes are mutated 
         self.Mutation()
-        
-        # Check for duplicate genomes
         self.RemoveDuplicates()
-            
-        # Replace pool
         self.pool = self.newpool.copy()
-
-        # Reset fitness
-        self.fitness = np.zeros(self.genomes)
         
 #%% ##########################################################################
     ###################### Methods defining evolution ########################
     ##########################################################################
+ #------------------------------------------------------------------------------       
+ 
+    def Universal_sampling(self):
+        '''
+        Sampling method: Stochastic universal sampling returns the chosen 'parents' 
+        '''
+        no_genomes = 2 * self.partition[1]    
+        chosen = []
+        probabilities = self.Linear_rank()
+        for i in range(1, len(self.fitness)):
+            probabilities[i] = probabilities[i] + probabilities[i-1]
+        distance = 1/(no_genomes)
+        start = random.random() * distance
+        for n in range(no_genomes):
+            pointer = start+n*distance
+            for i in range(len(self.fitness)):
+                if pointer < probabilities[0]:
+                    chosen.append(0)
+                    break 
+                elif pointer< probabilities[i] and pointer >= probabilities[i-1]:
+                    chosen.append(i)
+                    break 
+        chosen = random.sample(chosen, len(chosen))    
+        return chosen
+     
+    
+    def Linear_rank(self):
+        '''
+        Assigning probabilities: Linear ranking scheme used for stochastic universal sampling method. 
+        It returns an array with the probability that a genome will be chosen. 
+        The first probability corresponds to the genome with the highest fitness etc. 
+        '''
+        maximum = 1.5
+        rank = np.arange(self.genomes) + 1 
+        minimum = 2 - maximum 
+        probability =  (minimum +( (maximum-minimum) * (rank -1)/ (self.genomes - 1)))/self.genomes
+        return probability[::-1]
+    
+ 
+ #------------------------------------------------------------------------------    
+   
+    def Crossover_BLXab(self, parent1, parent2):
+        '''
+        Crossover method: Blend alpha beta crossover returns a new genome (voltage combination)
+        from two parents. Here, parent 1 has a higher fitness than parent 2
+        '''
+        
+        alpha = 0.6
+        beta = 0.4
+        maximum = np.maximum(parent1, parent2)
+        minimum = np.minimum(parent1, parent2)
+        I = (maximum - minimum) 
+        offspring= np.zeros((parent1.shape))
+        for i in range(len(parent1)):
+            if parent1[i] > parent2[i]:
+                offspring[i] = np.random.uniform(minimum[i]-I[i]*beta, maximum[i]+I[i]*alpha)
+            else: 
+                offspring[i] = np.random.uniform(minimum[i] - I[i]*alpha, maximum[i]+I[i]*beta)
+        for i in range(0,self.genes):
+            if offspring[i] < self.generange[i][0]: 
+                offspring[i] = self.generange[i][0]
+            if offspring[i]  > self.generange[i][1]: 
+                offspring[i] = self.generange[i][1]
+        return offspring
+    
+    
+ #------------------------------------------------------------------------------    
+  
+    def UpdateMutation(self,gen):
+        '''
+        Dynamic parameter control of mutation rate: This formula updates the mutation 
+        rate based on the generation counter
+        '''
+        pm_inv = 2+5/(self.generations-1)* gen
+        self.mutationrate = 0.625/pm_inv
+
+ #------------------------------------------------------------------------------ 
+ 
     def Mutation(self):
-        '''Mutate all genes but the first partition[0] with a triangular 
-        distribution between 0 and 1 with mode=gene. The chance of mutation is 
-        config_dict['mutationrate']'''
+        '''
+        Mutate all genes but the first partition[0] with a triangular 
+        distribution in generange with mode=gene to be mutated.
+        '''
+        np.random.seed(seed=None)
         mask = np.random.choice([0, 1], size=self.pool[self.partition[0]:].shape, 
-                                  p=[1-self.mutationrate, self.mutationrate])
-        mutatedpool = np.random.triangular(0, self.newpool[self.partition[0]:], 1)
-        self.newpool[self.partition[0]:] = ((np.ones(self.newpool[self.partition[0]:].shape) - mask)*self.newpool[self.partition[0]:] 
-                                            + mask * mutatedpool)
-        
-    def AddNoise(self):
-        '''Add Gaussian noise to the fittest partition[1] genes'''
-        self.newpool[sum(self.partition[:1]):sum(self.partition[:2])] = (self.pool[:self.partition[1]] +
-                0.02*np.random.randn(self.partition[1],self.newpool.shape[1]))
-
-        # check that genes are in [0,1]
-        buff = self.newpool[sum(self.partition[:1]):sum(self.partition[:2])] > 1.0
-        self.newpool[sum(self.partition[:1]):sum(self.partition[:2])][buff] = 1.0
-
-        buff = self.newpool[sum(self.partition[:1]):sum(self.partition[:2])] < 0.0
-        self.newpool[sum(self.partition[:1]):sum(self.partition[:2])][buff] = 0.0
-        
-    def CrossoverFitFit(self):
-        '''Perform crossover between the fittest :partition[2] genomes and the
-        fittest 1:partition[2]+1 genomes'''
-        mask = np.random.randint(2, size=(self.partition[2], self.genes))
-        self.newpool[sum(self.partition[:2]):sum(self.partition[:3])] = (mask * self.pool[:self.partition[2]]
-                + (np.ones(mask.shape) - mask) * self.pool[1:self.partition[2]+1])
-
-    def CrossoverFitRandom(self):
-        '''Perform crossover between the fittest :partition[3] genomes and random
-        genomes'''
-        mask = np.random.randint(2, size=(self.partition[3], self.genes))
-        self.newpool[sum(self.partition[:3]):sum(self.partition[:4])] = (mask * self.pool[:self.partition[3]]
-                + (np.ones(mask.shape) - mask) * self.pool[np.random.randint(self.genomes, size=(self.partition[3],))])
-
-    def AddRandom(self):
-        '''Generate partition[4] random genomes'''
-        self.newpool[sum(self.partition[:4]):] = np.random.rand(self.partition[4], self.genes)
-        
+                                p=[1-self.mutationrate, self.mutationrate])
+        mutatedpool = np.zeros((self.genomes-self.partition[0], self.genes))
+    
+        for i in range(0,self.genes):
+            if self.generange[i][0] == self.generange[i][1]:
+                mutatedpool[:,i] = self.generange[i][0]*np.ones(mutatedpool[:,i].shape)
+            else:
+                mutatedpool[:,i] = np.random.triangular(self.generange[i][0], self.newpool[self.partition[0]:,i], self.generange[i][1])
+        self.newpool[self.partition[0]:] = ((np.ones(self.newpool[self.partition[0]:].shape) - mask)*self.newpool[self.partition[0]:]  + mask * mutatedpool)
+    
+    
+  #------------------------------------------------------------------------------   
+     
     def RemoveDuplicates(self):
-        '''Check the entire pool for any duplicate genomes and replace them by 
-        the genome put through a triangular distribution'''
+        np.random.seed(seed=None)
+        '''
+        Check the entire pool for any duplicate genomes and replace them by 
+        the genome put through a triangular distribution
+        '''
         for i in range(self.genomes):
             for j in range(self.genomes):
                 if(j != i and np.array_equal(self.newpool[i],self.newpool[j])):
-                    self.newpool[j] = np.random.triangular(0, self.newpool[j], 1)
-
+                    for k in range(0,self.genes):
+                        if self.generange[k][0] != self.generange[k][1]:
+                            self.newpool[j][k] = np.random.triangular(self.generange[k][0], self.newpool[j][k], self.generange[k][1])
+                        else: 
+                            self.newpool[j][k] = self.generange[k][0]
+                            
+                        
+#------------------------------------------------------------------------------
+    #Methods required for evaluating the opposite pool                        
+    def Opposite(self):
+        '''
+        Define opposite pool  
+        '''
+        opposite_pool = np.zeros((self.genomes, self.genes))
+        for i in range(0,self.genes):
+            opposite_pool[:,i] = self.generange[i][0] + self.generange[i][1] - self.pool[:,i]
+        self.opposite_pool = opposite_pool
+        
+    def setNewPool(self, indices):
+        '''
+        After evaluating the opposite pool, set the new pool. 
+        '''
+        for k in range(len(indices)):
+            if indices[k][0]:
+                self.pool[k,:] = self.opposite_pool[k,:]
+            
 #%% #################################################
     ########### Helper Methods ######################
     #################################################
     
     def StopCondition(self, max_fit):
-        best = self.output[self.fitness==max_fit]
-        y = self.target_wfm[self.filter_array][np.newaxis,:]
-        X = np.concatenate((best, y), axis=0)
-        corr = np.corrcoef(X)[0,1]
+        best = self.output[self.fitness==max_fit][0]
+        corr = self.corr(best)
         print(f"Correlation of fittest genome: {corr}")
         if corr >= self.stop_thr:
             print(f'Very high correlation achieved, evolution will stop! \
                   (correlaton threshold set to {self.stop_thr})')
         return corr >= self.stop_thr
     
+    def corr(self,x):
+        x = x[self.filter_array][np.newaxis,:]
+        y = self.target_wfm[self.filter_array][np.newaxis,:]
+        X = np.concatenate((x, y), axis=0)
+        return np.corrcoef(X)[0,1]
+        
     def waveform(self, data):
         data_wfrm = GenWaveform(data, self.lengths, slopes=self.slopes)
         return np.asarray(data_wfrm)
@@ -268,7 +368,7 @@ if __name__=='__main__':
     config_dict['lengths'] = [80]     # Length of data in the waveform
     config_dict['slopes'] = [0]        # Length of ramping from one value to the next
     #Parameters to define task
-    config_dict['fitness'] = 'corr_fit'
+    config_dict['fitness'] = 'corrsig_fit'#'corr_fit'
     
     config_dict['platform'] = platform    # Dictionary containing all variables for the platform
     
