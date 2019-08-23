@@ -7,7 +7,6 @@ This script generates all binary assignments of N elements.
 """
 import numpy as np
 from vc_dimension_test import VCDimensionTest
-from vc_dimension_test import VCDimensionTestConfigs
 
 
 class CapacityTest():
@@ -16,7 +15,7 @@ class CapacityTest():
         self.configs = configs
         self.current_dimension = configs.from_dimension
         self.threshold = self.__calculate_threshold()
-        self.vcdimension_test = VCDimensionTest(configs.vcdimension_configs)
+        self.vcdimension_test = VCDimensionTest()
 
     def run_test(self):
         veredict = True
@@ -24,7 +23,10 @@ class CapacityTest():
             print('Generating inputs for VC Dimension %d: ' % self.current_dimension)
             inputs = self.generate_test_inputs(self.current_dimension)
             binary_labels = self.__generate_binary_target(self.current_dimension).tolist()
-            veredict = self.vcdimension_test.run_test(inputs, binary_labels, self.threshold)
+            for i in range(self.configs.max_opportunities):
+                veredict, binary_labels = self.vcdimension_test.run_test(inputs, binary_labels, self.threshold)
+                if veredict:
+                    break
             if self.__next_vcdimension() is False:
                 break
 
@@ -43,16 +45,18 @@ class CapacityTest():
         #@todo create a function that automatically generates non-linear inputs
         try:
             if vc_dim == 4:
-                return [[-1., 0.4, -1., 0.4], [-1., -1., 0.4, 0.4]]
+                return [[-0.7,-0.7,0.7,0.7],[0.7,-0.7,0.7,-0.7]]
             elif vc_dim == 5:
-                return []
+                return [[-0.7,-0.7,0.7,0.7,-0.35],[0.7,-0.7,0.7,-0.7,0.0]]
             elif vc_dim == 6:
-                return []
+                return [[-0.7,-0.7,0.7,0.7,-0.35,0.35],[0.7,-0.7,0.7,-0.7,0.0,0.0]]
             elif vc_dim == 7:
-                return []
+                return [[-0.7,-0.7,0.7,0.7,-0.35,0.35,0.0],[0.7,-0.7,0.7,-0.7,0.0,0.0,1.0]]
+            elif vc_dim == 8:
+                return [[-0.7,-0.7,0.7,0.7,-0.35,0.35,0.0,0.0],[0.7,-0.7,0.7,-0.7,0.0,0.0,1.0,-1.0]]
             else:
                 raise VCDimensionException()
-        except VCDimensionException as e:
+        except VCDimensionException:
             print('Dimension Exception occurred. The selected VC Dimension is %d Please insert a value between ' % vc_dim)
 
     def __generate_binary_target(self, target_dim):
@@ -81,12 +85,13 @@ class CapacityTest():
 
 
 class CapacityTestConfigs():
-    def __init__(self, vcdimension_configs=VCDimensionTestConfigs(), from_dimension=1, to_dimension=4, voltage_false=-1., voltage_true=0.4, threshold_numerator=1-0.5):
-        self.vcdimension_configs = vcdimension_configs
+    def __init__(self, from_dimension=1, to_dimension=4, voltage_false=-1.,
+                voltage_true=0.4, threshold_numerator=1-0.5, max_opportunities=3):
         self.from_dimension = from_dimension
         self.to_dimension = to_dimension
         self.voltage_false = voltage_false
         self.voltage_true = voltage_true
+        self.max_opportunities = max_opportunities # Maximum number of opportunities given to find all the gates
         # The threshold is calculated as: threshold_numerator/vc_dimension
         # Create binary labels for N samples
         # bad_gates = # for N=6 on model [51]
