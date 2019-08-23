@@ -7,7 +7,7 @@ This script generates all binary assignments of N elements.
 """
 import numpy as np
 from vc_dimension_test import VCDimensionTest
-
+from SkyNEt.modules.GA import GA
 
 class CapacityTest():
 
@@ -15,7 +15,7 @@ class CapacityTest():
         self.configs = configs
         self.current_dimension = configs.from_dimension
         self.threshold = self.__calculate_threshold()
-        self.vcdimension_test = VCDimensionTest()
+        self.vcdimension_test = VCDimensionTest(algorithm=self.configs.algorithm)
 
     def run_test(self):
         veredict = True
@@ -98,6 +98,31 @@ class CapacityTestConfigs():
         self.threshold_numerator = threshold_numerator
         # self.threshold = (1-0.5/self.N)  # 1-(0.65/N)*(1+1.0/N)
         # print('Threshold for acceptance is set at: ', self.threshold)
+
+        platform = {}
+        platform['modality'] = 'nn'
+        # platform['path2NN'] = r'D:\UTWENTE\PROJECTS\DARWIN\Data\Mark\MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
+        platform['path2NN'] = r'/home/unai/Documents/3-programming/boron-doped-silicon-chip-simulation/checkpoint3000_02-07-23h47m.pt'
+        # platform['path2NN'] = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
+        platform['amplification'] = 10.
+        config_dict = {}
+        config_dict['partition'] =  [5]*5 # Partitions of population
+        # Voltage range of CVs in V
+        config_dict['generange'] = [[-1.2,0.6], [-1.2, 0.6], [-1.2, 0.6], [-0.7, 0.3], [-0.7, 0.3],[1,1]]
+        config_dict['genes'] = len(config_dict['generange'])    # Nr of genes
+        config_dict['genomes'] = sum(config_dict['partition'])  # Nr of individuals in population
+        config_dict['mutationrate'] = 0.1
+
+        #Parameters to define target waveforms
+        config_dict['lengths'] = [80]     # Length of data in the waveform
+        config_dict['slopes'] = [0]        # Length of ramping from one value to the next
+        #Parameters to define task
+        config_dict['fitness'] = 'corrsig_fit'#'corr_fit'
+
+        config_dict['platform'] = platform    # Dictionary containing all variables for the platform
+
+        self.algorithm = GA(config_dict)
+
 
 
 class VCDimensionException(Exception):

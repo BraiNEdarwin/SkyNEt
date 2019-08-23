@@ -11,19 +11,18 @@ If successful (measured by a threshold on the correlation and by the perceptron 
 import numpy as np
 from matplotlib import pyplot as plt
 
-
 try:
     import instruments.InstrumentImporter
 except ModuleNotFoundError:
     print(r'No module named instruments')
 
-import evolve_VCdim as vcd
+
 # import measure_VCdim as vcd
 
 
 class VCDimensionTest():
 
-    def __init__(self,
+    def __init__(self, algorithm,
                     dirname = r'/home/unai/Documents/3-programming/boron-doped-silicon-chip-simulation/checkpoint3000_02-07-23h47m.pt',
                     plot = 'False',
                     save = 'True'
@@ -38,6 +37,8 @@ class VCDimensionTest():
         self.output_classifier = []
         self.accuracy_classifier = []
         self.found_classifier = []
+        self.algorithm = algorithm
+
 
     def run_test(self, inputs, binary_labels, threshold):
         for label in binary_labels:
@@ -87,7 +88,7 @@ class VCDimensionTest():
             print('Finding classifier ', label)
 
             genes, output, fitness, accuracy =\
-                vcd.evolve(inputs, label, path_2_NN=self.dirname, hush=True)
+                self.algorithm.Evolve(inputs, label)
             if accuracy > threshold:
                 self.found_classifier.append(1)
             else:
