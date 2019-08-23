@@ -164,7 +164,7 @@ class staNNet(object):
         print('Model constructed with modules: \n',modules)
         self.model = nn.Sequential(*modules)
         print(f'Loss founction is defined to be {loss}')
-        if loss == 'RMSE':
+        if loss == 'MSE_noisefit':
             self.a = torch.tensor([0.01900258860717661, 0.014385111570154395]).type(self.ttype)
             self.b = torch.tensor([0.21272562199413553, 0.0994027221336]).type(self.ttype)
         elif loss == 'MSE':

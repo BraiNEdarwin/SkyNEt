@@ -68,7 +68,7 @@ class GA:
 
     
 #%% Method implementing evolution
-    def Evolve(self, inputs, targets, generations=100, seed=None):
+    def optimize(self, inputs, targets, generations=100, seed=None):
         assert len(inputs[0]) == len(targets), f'No. of input data {len(inputs)} does not match no. of targets {len(targets)}'
         
         self.generations = generations
@@ -352,8 +352,8 @@ if __name__=='__main__':
     # Define platform
     platform = {}
     platform['modality'] = 'nn'
-    platform['path2NN'] = r'D:\UTWENTE\PROJECTS\DARWIN\Data\Mark\MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
-#    platform['path2NN'] = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
+#    platform['path2NN'] = r'D:\UTWENTE\PROJECTS\DARWIN\Data\Mark\MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
+    platform['path2NN'] = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
     platform['amplification'] = 10.
     
     config_dict = {}    
@@ -377,7 +377,7 @@ if __name__=='__main__':
     inputs = [[-1.,0.4,-1.,0.4,-0.8, 0.2],[-1.,-1.,0.4,0.4, 0., 0.]]
     targets = [1,1,0,0,1,1]
     
-    best_genome, best_output, max_fitness, accuracy = ga.Evolve(inputs,targets)
+    best_genome, best_output, max_fitness, accuracy = ga.optimize(inputs,targets)
     
     plt.figure()
     plt.plot(best_output)
