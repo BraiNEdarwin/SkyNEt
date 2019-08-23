@@ -6,6 +6,7 @@ output ports as 'static' control voltages. This function may need
 some refinement in the future.
 '''
 from SkyNEt.instruments.ADwin.adwin import ADwin, ADwinError
+from SkyNEt.instruments import InstrumentImporter
 import sys
 import os
 import numpy as np
@@ -44,7 +45,7 @@ def LongToFloat(x, Vmax):
     return x
 
 
-def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
+def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0], highRange = False):
     '''
     This function will write each row of array inputs on a separate
     analog output of the ADwin at the specified sample frequency Fs.
@@ -65,11 +66,23 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     Input: N x M array, N output ports, M datapoints
     Fs: sample frequency
     inputPorts**: binary list containing ones for the used input ports
+    highRange: boolean, if this is False (default) the input voltages
+        are not allowed to exceed [-2, 2]V. Only put this to True
+        if you are sure it will not harm any device.
 
     Returns
     -------
     P x M output array, P input ports, M datapoints
     '''
+    # Sanity check on input voltages
+    if not highRange:
+        if np.max(abs(Input)) > 2:  
+            print('WARNING: input voltages exceed threshold of 2V: highest absolute voltage is ' + str(max(abs(y))))
+            print('If you want to use high range voltages, set highRange to True.')
+            print('Aborting measurement...')
+            InstrumentImporter.reset(0, 0)
+            exit() 
+
     # Input preparation
     if len(Input.shape) == 1:
         Input = Input[np.newaxis,:]
@@ -77,9 +90,13 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     inputs = Input.copy()
     InputSize = inputs.shape[1]
     x = np.zeros((8, InputSize), dtype = int)
-    x[:inputs.shape[0], :] = inputs
+
+    # Transform all inputs to Long:
     for i in range(x.shape[0]):
-        x[i, :] = FloatToLong(list(x[i, :]), 10)
+        if i < inputs.shape[0] :
+            x[i, :] = FloatToLong(list(inputs[i, :]), 10)
+        else:
+            x[i, :] = FloatToLong(list(x[i, :]), 10)
     outputs = [[], [], [], [], [], [], [], []]  # Eight empty output lists
     lastWrite = False
 
@@ -88,7 +105,10 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
             adw.Boot(str('adwin' + PROCESSORTYPE + '.btl'))
         else:
             adw.Boot('C:\\ADwin\\ADwin' + PROCESSORTYPE + '.btl')
-        adw.Load_Process('C:\\Users\\PNPNteam\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8Read_4Write.TB1')
+        #adw.Load_Process('C:\\Users\\Darwin\\Documents\\GitHub\\SkyNEt\\instruments\\ADwin\\ADbasic_8Read_4Write.TB1')
+        adwinPath = os.path.realpath(__file__)
+        adwinPath = adwinPath[:-11]
+        adw.Load_Process(adwinPath + '\\ADbasic_8Read_4Write.TB1')
         adw.Set_Processdelay(1, int(300e6 / Fs))  # delay in clock cycles
         adw.Start_Process(1)
 
@@ -169,6 +189,9 @@ def IO(adw, Input, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
 
 def setControlVoltages(adw, x, Fs):
     '''
+    UNMAINTAINED: this script will probably not work, feel free to fix 
+    it.
+
     x is a list of 4 values with desired control voltages in V.
     '''
 

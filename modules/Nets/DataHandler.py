@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import math 
 import pdb
 
-def loader(data_path):
+def loader(data_path, index):
     print('Loading data from: \n',data_path)
     meta = {}
     data_dic = {} 
@@ -36,9 +36,13 @@ def loader(data_path):
                     
         ### Check if inputs available, otherwise generate them ###
         if 'inputs' not in list(data_dic.keys()):
-            print('Input generated as sine waves!')
-            data_dic['inputs'] = generate_inpsines(meta)
-            
+            if index:
+                print('Inputs are represented with their index, so lightNNet must be used.')
+                data_dic['inputs'] = np.arange(0,data_dic['outputs'].shape[0])[:,np.newaxis]
+            else:
+                print('Input generated as sine waves!')
+                data_dic['inputs'] = generate_inpsines(meta)
+
     data_dic['meta'] = meta        
     print('Data loaded with keys: \n',list(data_dic.keys()))
     print('meta key is dict with keys:\n', list(data_dic['meta'].keys()))
@@ -58,7 +62,8 @@ def generate_inpsines(info):
     
 #%% 1. STEP: Clean data for further analysis
 def PrepData(main_dir, data_filename = 'training_NN_data.npz',
-             list_dirs=[], threshold = [-np.inf,np.inf], plot=False):
+             list_dirs=[], threshold = [-np.inf,np.inf], index=False, plot=False):
+
     '''Pre-process data, cleans clipping, generates input arrays if non existent (e.g. when sine-sampling
     was involved) and merges data sets if needed. The data arrays are merged into a single array and
     cropped given the thresholds.
@@ -76,7 +81,8 @@ def PrepData(main_dir, data_filename = 'training_NN_data.npz',
         - plot: if set to True, it plots the first 1000 samples of the inputs and outputs
     
     NOTE:
-        -The data is saved in main_dir+'/data4nn/ to a .npz file with keyes: inputs, outputs, 
+
+        -The data is saved in main_dir+'/data4nn/ to a .npz file with keyes: inputs, outputs,
         data_path and meta; the meta key has a dictionary as value containing metadata of the 
         sampling procedure, i.e sine, sawtooth, grid, random.
         -The inputs are on ALL electrodes in Volts and the output in nA.
@@ -92,7 +98,7 @@ def PrepData(main_dir, data_filename = 'training_NN_data.npz',
         meta_list = []
         datapth_list = []
         for dir_file in list_dirs:
-            _databuff = loader(main_dir+dir_file+data_filename)
+            _databuff = loader(main_dir+dir_file+data_filename, index)
             out_list.append(_databuff['outputs']) 
             meta_list.append(_databuff['meta'])
             datapth_list.append(_databuff['data_path'])
@@ -103,7 +109,7 @@ def PrepData(main_dir, data_filename = 'training_NN_data.npz',
         raw_data['meta'] = meta_list
         raw_data['data_path'] = datapth_list
     else:
-        raw_data = loader(main_dir+data_filename)
+        raw_data = loader(main_dir+data_filename, index)
         for key in raw_data['meta'].keys():
             if 'file' in key:
                 raw_data['data_path'] = raw_data['meta'][key]
@@ -250,7 +256,7 @@ def DataLoader(data_dir, file_name,
     x_val = torch.from_numpy(inputs_val).type(dtype)
     y_val = torch.from_numpy(outputs_val).type(dtype)
 
-    return [(x_train,y_train),(x_val,y_val),meta]
+    return [[x_train,y_train],[x_val,y_val],meta]
 
 #%% EXTRA: Just load data and return as torch.tensor
 def GetData(dir_file, syst = 'cuda'):

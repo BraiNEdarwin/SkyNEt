@@ -86,6 +86,7 @@ class webNNet(torch.nn.Module):
             output:         (bool) wheter of not this vertex' output is output of complete graph (boolean)
             input_gates:    (list) numbers of gates which should be used as inputs
             voltage_bounds: (2 by D_in tensor) first row are lower bounds of all control voltages, second row are upper bounds
+            evaluated:      (bool) flag indicating if vertex has already been evaluated
         """
         
         assert not hasattr(self, name), "Name %s already in use, choose other name for vertex!" % name
@@ -119,7 +120,7 @@ class webNNet(torch.nn.Module):
         assert voltage_bounds.shape == (2, D_in), "shape of voltage bounds (%s) does not match expected shape (%s)"
 
         # define full transfer functions for each gate (may not be used)
-        transfer = [lambda x: self.transfer(x)*(i[1]-i[0])+i[0] for i in voltage_bounds.t()]
+        transfer = [(lambda y: (lambda x: self.transfer(x)*(y[1]-y[0])+y[0]))(ii) for ii in voltage_bounds.t()]
         
         # keep only the values of control gates, input gate values are not used
         voltage_bounds = voltage_bounds[:, control_gates]
@@ -141,7 +142,8 @@ class webNNet(torch.nn.Module):
                               'isoutput':output,
                               'swapindices':swapindices,
                               'voltage_bounds':voltage_bounds,
-                              'transfer':transfer}
+                              'transfer':transfer,
+                              'evaluated':False}
         
         if output:
             self.nr_output_vertices  += 1
@@ -178,7 +180,7 @@ class webNNet(torch.nn.Module):
         if custom_reg is not None:
             self.custom_reg = custom_reg
     
-    def forward(self, x, verbose=False):
+    def forward(self, x):
         """Evaluates the graph, returns output (torch.tensor)
         Start at network which is the output of the whole graph, 
         then recursively step through graph vertex by vertex
@@ -188,7 +190,7 @@ class webNNet(torch.nn.Module):
         self._clear_output()
         
         # define input data for all networks
-        self._set_input_data(x, verbose = verbose)
+        self._set_input_data(x)
         
         tuple_data = ()
         for key,value in self.graph.items():
@@ -207,7 +209,7 @@ class webNNet(torch.nn.Module):
         v = self.graph[vertex]
         
         # skip if vertex is already evaluated
-        if 'output' not in v:
+        if not v['evaluated']:
             # control voltages, repeated to match batch size of train_data
             cv_data = getattr(self, vertex).repeat(self._batch_size, 1)
             # concatenate input with control voltage data
@@ -227,6 +229,7 @@ class webNNet(torch.nn.Module):
                     data[:, sink_gate] = v['transfer'][sink_gate](self.graph[source_name]['output'][:,0])
             # feed through network
             v['output'] = v['network'].model(data)
+            v['evaluated'] = True
     
     def error_fn(self, y_pred, y, beta):
         """Error function: loss function with added regularization"""        
@@ -238,7 +241,7 @@ class webNNet(torch.nn.Module):
             reg_loss += torch.sum(torch.relu(voltage_bounds[0] - x) + torch.relu(-voltage_bounds[1] + x))
         return self.loss_fn(y_pred, y) + beta*reg_loss + self.custom_reg()
     
-    def _set_input_data(self, x, verbose=False):
+    def _set_input_data(self, x):
         """Store training data for each network, assumes the torch tensor has the same ordering as in the dictionary"""
         # assumes each vertex has same number of parameters (could change in future)
         dim = x.shape[1]
@@ -302,8 +305,8 @@ class webNNet(torch.nn.Module):
         """Reset output data of graph, NOT the parameters"""
         self.output_data = None
         for v in self.graph.values():
-            # remove output data of vertex, return None if key does not exist
-            v.pop('output', None)
+            # reset evaluated flag
+            v['evaluated'] = False
 
     def check_cuda(self, *args):
         """Converts tensors that are going to be used to cuda"""
