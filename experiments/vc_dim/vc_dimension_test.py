@@ -36,6 +36,9 @@ class VCDimensionTest():
                 self.configs.output_classifier[i] = np.nan * np.ones_like(self.configs.output_classifier[1])
 
         self.__to_numpy_array()
+
+        not_found = found_classifier==0
+        check_not_found(not_found)
         if self.configs.save:
             self.__save(inputs, binary_labels, threshold)
         if self.configs.plot:
@@ -45,6 +48,20 @@ class VCDimensionTest():
     def oracle(self):
         print(self.configs.capacity)
         return self.configs.capacity == 1
+
+    def check_not_found(not_found):
+        if not_found.size > 0:
+            try:
+                indx_nf = np.arange(2**N)[not_found]
+            except IndexError as error:
+                print(f'{error} \n Trying indexing bad_gates')
+                indx_nf = bad_gates[not_found]
+            print('Classifiers not found: %s' % indx_nf)
+            binaries_nf = np.array(binary_labels)[not_found]
+            print('belongs to : \n', binaries_nf)
+        else:
+            print('All classifiers found!')
+            indx_nf = None
 
     def __test_label(self, inputs, label, threshold):
         if len(set(label)) == 1:

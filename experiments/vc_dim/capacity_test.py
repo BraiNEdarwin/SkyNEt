@@ -22,7 +22,8 @@ class CapacityTest():
         veredict = True
         while veredict is True:
             print('Generating inputs for VC Dimension %d: ' % self.current_dimension)
-            inputs, binary_labels = self.generate_test_inputs(self.current_dimension)
+            inputs = self.generate_test_inputs(self.current_dimension)
+            binary_labels = self.__generate_binary_target(self.current_dimension).tolist()
             veredict = self.vcdimension_test.run_test(inputs, binary_labels, self.threshold)
             if self.__next_vcdimension() is False:
                 break
@@ -39,19 +40,20 @@ class CapacityTest():
 
     # @todo change generation of inputs to differetn vc dimensions
     def generate_test_inputs(self, vc_dim):
-        # ###### On Device ########
-        # [55]#[22,23,48,52,53,55,57,60,61] for N=6 w. large range
-        # for N=6 with (+/-0.35, 0.) as inputs 5 & 6 w. range +/-[1.2,1.0]: [6,33,37,41,45,53,57,60,61]
-        # --> bad gates for N=6 w. range +/-0.9 and lower: [1,3,6,7,9,12,14,17,19,22,23,24,25,28,30,33,35,36,37,38,39,41,44,45,46,47,49,51,52,53,54,55,56,57,60,61,62]
-        # binary_labels = bintarget(N)[bad_gates].tolist()
-        inputs = []
-        for i in range(2):
-            inputs.append(
-                np.random.choice(
-                    a=[self.configs.voltage_true, self.configs.voltage_false],
-                    size=vc_dim))
-        binary_labels = self.__generate_binary_target(vc_dim).tolist()
-        return inputs, binary_labels
+        #@todo create a function that automatically generates non-linear inputs
+        try:
+            if vc_dim == 4:
+                return [[-1., 0.4, -1., 0.4], [-1., -1., 0.4, 0.4]]
+            elif vc_dim == 5:
+                return []
+            elif vc_dim == 6:
+                return []
+            elif vc_dim == 7:
+                return []
+            else:
+                raise VCDimensionException()
+        except VCDimensionException as e:
+            print('Dimension Exception occurred. The selected VC Dimension is %d Please insert a value between ' % vc_dim)
 
     def __generate_binary_target(self, target_dim):
         # length of list, i.e. number of binary targets
@@ -93,7 +95,11 @@ class CapacityTestConfigs():
         # print('Threshold for acceptance is set at: ', self.threshold)
 
 
+class VCDimensionException(Exception):
+    """Exception: It does not exist an implementation of such VC Dimension."""
+    pass
+
+
 if __name__ == '__main__':
     test = CapacityTest(CapacityTestConfigs(from_dimension=4))
-    test.generate_test_inputs
     test.run_test()
