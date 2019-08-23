@@ -10,7 +10,7 @@ If successful (measured by a threshold on the correlation and by the perceptron 
 
 import numpy as np
 from matplotlib import pyplot as plt
-from create_binary import bintarget
+
 
 try:
     import instruments.InstrumentImporter
@@ -23,25 +23,30 @@ import evolve_VCdim as vcd
 
 class VCDimensionTest():
 
-    def __init__(self,configs):
+    def __init__(self, configs):
         self.configs = configs
 
-    def test(self):
-        for label in self.configs.binary_labels:
-            self.__test_label(label)
+    def run_test(self, inputs, binary_labels, threshold):
+        for label in binary_labels:
+            self.__test_label(inputs, label, threshold)
 
         for i in range(len(self.configs.genes_classifier)):
             if self.configs.genes_classifier[i] is np.nan:
-                self.configs.genes_classifier[i] = np.nan*np.ones_like(self.configs.genes_classifier[1])
-                self.configs.output_classifier[i] = np.nan*np.ones_like(self.configs.output_classifier[1])
+                self.configs.genes_classifier[i] = np.nan * np.ones_like(self.configs.genes_classifier[1])
+                self.configs.output_classifier[i] = np.nan * np.ones_like(self.configs.output_classifier[1])
 
         self.__to_numpy_array()
         if self.configs.save:
-            self.__save()
+            self.__save(inputs, binary_labels, threshold)
         if self.configs.plot:
-            self.plot()
+            self.plot(binary_labels, threshold)
+        return self.oracle()
 
-    def __test_label(self, label):
+    def oracle(self):
+        print(self.configs.capacity)
+        return self.configs.capacity == 1
+
+    def __test_label(self, inputs, label, threshold):
         if len(set(label)) == 1:
             print('Label ', label, ' ignored')
             genes, output, fitness, accuracy = np.nan, np.nan, np.nan, np.nan
@@ -50,8 +55,8 @@ class VCDimensionTest():
             print('Finding classifier ', label)
 
             genes, output, fitness, accuracy =\
-                vcd.evolve(self.configs.inputs, label, path_2_NN=self.configs.dirname, hush=True)
-            if accuracy > self.configs.threshold:
+                vcd.evolve(inputs, label, path_2_NN=self.configs.dirname, hush=True)
+            if accuracy > threshold:
                 self.configs.found_classifier.append(1)
             else:
                 self.configs.found_classifier.append(0)
@@ -69,19 +74,19 @@ class VCDimensionTest():
         self.configs.output_classifier = np.array(self.configs.output_classifier)
         self.configs.genes_classifier = np.array(self.configs.genes_classifier)
 
-    def __save(self):
-        np.savez(self.configs.dirname+'Summary_Results',
-                 inputs=self.configs.inputs,
-                 binary_labels=self.configs.binary_labels,
+    def __save(self, inputs, binary_labels, threshold):
+        np.savez(self.configs.dirname + 'Summary_Results',
+                 inputs=inputs,
+                 binary_labels=binary_labels,
                  capacity=self.configs.capacity,
                  found_classifier=self.configs.found_classifier,
                  fitness_classifier=self.configs.fitness_classifier,
                  accuracy_classifier=self.configs.accuracy_classifier,
                  output_classifier=self.configs.output_classifier,
                  genes_classifier=self.configs.genes_classifier,
-                 threshold=self.configs.threshold)
+                 threshold=threshold)
 
-    def plot(self):
+    def plot(self, binary_labels, threshold):
         try:
             vcd.reset(0, 0)
         except AttributeError:
@@ -90,8 +95,8 @@ class VCDimensionTest():
         plt.figure()
         plt.plot(self.configs.fitness_classifier, self.configs.accuracy_classifier, 'o')
         plt.plot(np.linspace(np.nanmin(self.configs.fitness_classifier),
-                                np.nanmax(self.configs.fitness_classifier)),
-                                self.configs.threshold*np.ones_like(np.linspace(0, 1)), '-k')
+                             np.nanmax(self.configs.fitness_classifier)),
+                 threshold*np.ones_like(np.linspace(0, 1)), '-k')
         plt.xlabel('Fitness')
         plt.ylabel('Accuracy')
         plt.show()
@@ -99,8 +104,8 @@ class VCDimensionTest():
         try:
             not_found = self.configs.found_classifier == 0
             print('Classifiers not found: %s' %
-                        np.arange(len(self.configs.found_classifier))[not_found])
-            binaries_nf = np.array(self.configs.binary_labels)[not_found]
+                  np.arange(len(self.configs.found_classifier))[not_found])
+            binaries_nf = np.array(binary_labels)[not_found]
             print('belongs to : \n', binaries_nf)
             output_nf = self.configs.output_classifier[not_found]
             # plt output of failed classifiers
@@ -114,35 +119,26 @@ class VCDimensionTest():
 
             plt.show()
         except:
-            #@todo improve the exception management
-            #@warning bare exception is not recommended
+            # @todo improve the exception management
+            # @warning bare exception is not recommended
             print('Error in plotting output!')
+
 
 class VCDimensionTestConfigs():
 
     def __init__(self,
-                    inputs = [[-1., 0.4, -1., 0.4], [-1., -1., 0.4, 0.4]],
-                    dirname = r'/home/unai/Documents/3-programming/boron-doped-silicon-chip-simulation/checkpoint3000_02-07-23h47m.pt',
-                    plot = 'True', save = 'True'):
-        self.inputs = [[-1., 0.4, -1., 0.4], [-1., -1., 0.4, 0.4]]
-        # [[-0.7,0.7,-0.7,0.7,-1.,1.],[-0.7,-0.7,0.7,0.7,0.,0.]]
-        self.N = len(self.inputs[0])
+                 # inputs = [[-1., 0.4, -1., 0.4], [-1., -1., 0.4, 0.4]],
+                 dirname=r'/home/unai/Documents/3-programming/boron-doped-silicon-chip-simulation/checkpoint3000_02-07-23h47m.pt',
+                 save='True',
+                 plot='False',
+                 vc_dim=4):
+
         # Create save directory
         # @todo improve the way in which directories are handled
         self.dirname = dirname
         self.plot = plot
         self.save = save
-        # Create binary labels for N samples
-        # bad_gates = # for N=6 on model [51]
-        # ###### On Device ########
-        # [55]#[22,23,48,52,53,55,57,60,61] for N=6 w. large range
-        # for N=6 with (+/-0.35, 0.) as inputs 5 & 6 w. range +/-[1.2,1.0]: [6,33,37,41,45,53,57,60,61]
-        # --> bad gates for N=6 w. range +/-0.9 and lower: [1,3,6,7,9,12,14,17,19,22,23,24,25,28,30,33,35,36,37,38,39,41,44,45,46,47,49,51,52,53,54,55,56,57,60,61,62]
-        # binary_labels = bintarget(N)[bad_gates].tolist()
-        self.binary_labels = bintarget(self.N).tolist()
 
-        self.threshold = (1-0.5/self.N)  # 1-(0.65/N)*(1+1.0/N)
-        # print('Threshold for acceptance is set at: ', self.threshold)
         # Initialize container variables
         self.fitness_classifier = []
         self.genes_classifier = []
@@ -153,5 +149,6 @@ class VCDimensionTestConfigs():
 
 if __name__ == "__main__":
     configs = VCDimensionTestConfigs()
+    inputs = [[-1., 0.4, -1., 0.4], [-1., -1., 0.4, 0.4]]
     test = VCDimensionTest(configs)
-    test.test()
+    print(test.run_test())

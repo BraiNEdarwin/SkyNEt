@@ -7,23 +7,22 @@ The only difference to the measurement scripts are on lines where the device is 
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.Evolution as Evolution
 import SkyNEt.modules.PlotBuilder as PlotBuilder
-from   SkyNEt.config.acceleration import Accelerator
+from SkyNEt.config.acceleration import Accelerator
 import config_evolve_VCdim as config
 
 from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Classifiers import perceptron
 # Other imports
-import torch
-from torch.autograd import Variable
 import time
 import numpy as np
-import pdb
 
-#%% Function definition
+# %% Function definition
+
+
 def evolve(inputs, binary_labels,
-           path_2_NN = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt',
-           noise = 0,
-           filepath = r'../../test/evolution_test/VCdim_testing/',
+           path_2_NN=r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt',
+           noise=0,
+           filepath=r'../../test/evolution_test/VCdim_testing/',
            hush=True):
 
     # Initialize config object
@@ -58,7 +57,7 @@ def evolve(inputs, binary_labels,
     # Initialize genepoolnet.output
     genePool = Evolution.GenePool(cf)
 
-    #%% Measurement loop
+    # %% Measurement loop
 
     for i in range(cf.generations):
         start = time.time()
@@ -66,7 +65,7 @@ def evolve(inputs, binary_labels,
             # Set the DAC voltages
             for k in range(cf.genes-1):
                 controlVoltages[k] = genePool.MapGenes(
-                                        cf.generange[k], genePool.pool[j, k])
+                    cf.generange[k], genePool.pool[j, k])
 
             # Set the input scaling
             x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
@@ -74,8 +73,8 @@ def evolve(inputs, binary_labels,
             # Measure cf.fitnessavg times the current configuration
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to NN
-                g = np.ones_like(target)[:,np.newaxis]*controlVoltages[:5,np.newaxis].T/1000.
-                x_dummy = np.concatenate((x_scaled.T,g),axis=1) # First input then genes; dims of input TxD
+                g = np.ones_like(target)[:, np.newaxis]*controlVoltages[:5, np.newaxis].T/1000.
+                x_dummy = np.concatenate((x_scaled.T, g), axis=1)  # First input then genes; dims of input TxD
 #                pdb.set_trace()
                 output = net.outputs(Accelerator.format_numpy(x_dummy))
 
@@ -86,13 +85,14 @@ def evolve(inputs, binary_labels,
                     pass
 
                 # Train output
-                outputAvg[avgIndex] = cf.amplification*np.asarray(output) #cf.amplification * np.asarray(output) + noise*(3/100)*(1 + np.abs(np.asarray(output)))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
-                noisy_target = target #+ 0.001*np.random.standard_normal(output.shape)
+                # cf.amplification * np.asarray(output) + noise*(3/100)*(1 + np.abs(np.asarray(output)))*np.random.standard_normal(output.shape) # empty for now, as we have only one output node
+                outputAvg[avgIndex] = cf.amplification*np.asarray(output)
+                noisy_target = target  # + 0.001*np.random.standard_normal(output.shape)
 
                 # Calculate fitness
-                fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],
-                                                         noisy_target,
-                                                         w)
+                fitnessTemp[j, avgIndex] = cf.Fitness(outputAvg[avgIndex],
+                                                      noisy_target,
+                                                      w)
 
                 # Plot output
                 try:
@@ -133,9 +133,9 @@ def evolve(inputs, binary_labels,
             pass
         # Save generation
         SaveLib.saveExperiment(saveDirectory,
-                               genes = geneArray,
-                               output = outputArray,
-                               fitness = fitnessArray)
+                               genes=geneArray,
+                               output=outputArray,
+                               fitness=fitnessArray)
 
         # Evolve to the next generation
         genePool.NextGen()
@@ -144,24 +144,25 @@ def evolve(inputs, binary_labels,
         PlotBuilder.finalMain(mainFig)
     except:
         pass
-    #Get best results
+    # Get best results
     max_fitness = np.max(fitnessArray)
     a = fitnessArray
     ind = np.unravel_index(np.argmax(a, axis=None), a.shape)
-    assert fitnessArray[ind]==max_fitness,'Indices do not give value'
+    assert fitnessArray[ind] == max_fitness, 'Indices do not give value'
     best_genome = geneArray[ind]
     best_output = outputArray[ind]
-    y = best_output[w][:,np.newaxis]
-    trgt = target[w][:,np.newaxis]
-    accuracy, _, _ = perceptron(y,trgt)
+    y = best_output[w][:, np.newaxis]
+    trgt = target[w][:, np.newaxis]
+    accuracy, _, _ = perceptron(y, trgt)
     print('Max. Fitness: ', max_fitness)
     print('Best genome: ', best_genome)
     print('Accuracy of best genome: ', accuracy)
     return best_genome, best_output, max_fitness, accuracy
 
-#%% Initialization
-if __name__=='__main__':
 
-    inputs = [[-1.,0.4,-1.,0.4,-0.8, 0.2],[-1.,-1.,0.4,0.4, 0., 0.]]
-    binary_labels = [1,0,1,1,0,1]
-    best_genome, best_output, max_fitness, accuracy = evolve(inputs,binary_labels,hush=False)
+# %% Initialization
+if __name__ == '__main__':
+
+    inputs = [[-1., 0.4, -1., 0.4, -0.8, 0.2], [-1., -1., 0.4, 0.4, 0., 0.]]
+    binary_labels = [1, 0, 1, 1, 0, 1]
+    best_genome, best_output, max_fitness, accuracy = evolve(inputs, binary_labels, hush=False)

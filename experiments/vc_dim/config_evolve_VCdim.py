@@ -71,15 +71,15 @@ class experiment_config(config_class):
         self.InputGen = self.input_waveform(inputs)
         self.amplification = 10
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 3
+        self.generations = 30
         self.generange = [[-1200,600], [-1200, 600], [-1200, 600], [-700, 300], [-700, 300],[1,1]]
 #        [[-1200,1200], [-1200, 1200], [-1200, 1200], [-1000, 1000], [-1000, 1000],[1.0,1.0]]
         #[[-1200, 600], [-1200, 600], [-1200, 600], [-700,300], [-700, 300],[1.0,1.0]]
-        # could be [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]?? this works, but best is 
+        # could be [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900]]?? this works, but best is
         # +/-1.2 in the 3 furthest electrodes and +/-1 in the neighboring electrodes. From the latest results, for N=6
         # the range of the 4th electrode should be increased at least in negative side... to -1.2 or -1.5?
         #self.input_scaling = 1.0
-        print('INPUT will be SCALED with',self.generange[-1])  
+        print('INPUT will be SCALED with',self.generange[-1])
 
         self.Fitness = self.Affitness#self.marx_fit#self.corr_fit #
 #        self.fitnessparameters = [1, 0, 0, 1]
@@ -118,7 +118,7 @@ class experiment_config(config_class):
     #####################################################
     # Optionally define new methods here that you wish to use in your experiment.
     # These can be e.g. new fitness functions or input/output generators.
-    
+
     def input_waveform(self, inputs):
         assert len(inputs) == 2, 'Input must be 2 dimensional!'
         inp_wvfrm0 = GenWaveform(inputs[0], self.lengths, slopes=self.slopes)
@@ -126,16 +126,16 @@ class experiment_config(config_class):
         samples = len(inp_wvfrm0)
         time_arr = np.linspace(0, samples/self.fs, samples)
         inputs_wvfrm = np.asarray([inp_wvfrm0,inp_wvfrm1])
-        
+
 #        print('Size of input', inputs_wvfrm.shape)
         w_ampl = [1,0]*len(inputs[0])
         w_lengths = [self.lengths[0],self.slopes[0]]*len(inputs[0])
-        
+
         weight_wvfrm = GenWaveform(w_ampl, w_lengths)
         bool_weights = [x==1 for x in weight_wvfrm[:samples]]
-        
+
         return time_arr, inputs_wvfrm, bool_weights
-    
+
     def accuracy_fit(self, output, target, w):
 #        print(w)
 #        print('shape of target = ', target.shape)
@@ -146,7 +146,7 @@ class experiment_config(config_class):
         X = np.stack((x, y), axis=0)[:,:,0]
         corr = np.corrcoef(X)[0,1]
         return acc*corr
-    
+
     def corr_fit(self, output, target, w,clpval=3.55):
         if np.any(np.abs(output)>clpval*self.amplification):
             #print(f'Clipping value set at {clpval}')
@@ -158,12 +158,12 @@ class experiment_config(config_class):
             corr = np.corrcoef(X)[0,1]
     #        print('corr_fit')
         return corr
-        
+
     def marx_fit(self, output, target, w, clpval = 3.55):
         if np.any(np.abs(output)>clpval*self.amplification):
             #print(f'Clipping value set at {clpval}')
             return -1
-            
+
         corr = self.corr_fit(output, target, w)
          # Apply weights w
         indices = np.argwhere(w)  #indices where w is nonzero (i.e. 1)
@@ -184,7 +184,7 @@ class experiment_config(config_class):
 #        pdb.set_trace()
         Q = np.abs(min(x1) - max(x0))/2
         return corr*np.sqrt(Q)/(1-corr)
-        
+
     def Affitness(self, output, target, w, clpval = 3.55):
         if np.any(np.abs(output)>clpval*self.amplification):
             #print(f'Clipping value set at {clpval}')
@@ -216,6 +216,6 @@ class experiment_config(config_class):
            X = np.stack((x, y), axis=0)[:,:,0]
            corr = np.corrcoef(X)[0,1]
        return self.sig(sep)*corr
-   
+
     def sig(self, x):
        return 1/(1+np.exp(-5*(x/2.5-0.5)))+ 0.1
