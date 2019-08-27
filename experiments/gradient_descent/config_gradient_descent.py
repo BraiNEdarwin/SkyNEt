@@ -11,7 +11,7 @@ class experiment_config(config_class):
     def __init__(self):
         super().__init__() 
         
-        self.device = 'NN' # Specifies whether the experiment is used on the NN or on the physical device.
+        self.device = 'chip' # Specifies whether the experiment is used on the NN or on the physical device.
         self.main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\NN_new\RMSE\\'
         self.NN_name = 'checkpoint770.pt'
         #######################
@@ -20,19 +20,19 @@ class experiment_config(config_class):
 
         self.controls = 5
         self.inputs = 2
-        self.freq = 0.05*np.array([5, 7, 9, 11, 13])  #
+        self.freq = 8*np.array([1,2,3,4,5])  #
         self.fs = 1000
-        self.n = 10               # Amount of iterations
-        self.amplification = 1000
-        self.postgain = 100
-        self.inputScaling = 1.
-        self.inputOffset = -0.5
-        self.CVrange = np.array([[-1.2, 0.7],[-1.2, 0.7],[-1.2, 0.7],[-0.8, 0.4],[-0.8, 0.4]])   # Range for the control voltages
+        self.n = 50               # Amount of iterations
+        self.amplification = 100
+        self.postgain = 1
+        self.inputScaling = 1.8
+        self.inputOffset = -1.2
+        self.CVrange = np.array([[-1.2, .8],[-1.2, .8],[-1.2, -.8],[-0.8, 0.8],[-0.8, 0.8]])   # Range for the control voltages
         
-        self.waveAmplitude = 0.005    # Amplitude of the waves used in the controls
-        self.rampT = 0.5           # time to ramp up and ramp down the voltages at start and end of a measurement.
-        self.targetGen = self.NAND
-        self.name = 'NN_NAND'
+        self.waveAmplitude = np.array([0.07, 0.03, 0.03, 0.005, 0.005])   # Amplitude of the waves used in the controls
+        self.rampT = 0.3           # time to ramp up and ramp down the voltages at start and end of a measurement.
+        self.targetGen = self.XOR
+        self.name = 'XOR_eps3E-2_f8'
         #                        Summing module S2d      Matrix module           device
         # For the first array: 7 is always the output, 0 corresponds to ao0, 1 to ao1 etc.
         self.electrodeSetup = [[0,1,2,3,4,5,6,7],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
@@ -44,19 +44,19 @@ class experiment_config(config_class):
         # rest parameters #
         ###################
         # parameters for methods
-        self.signallength = 4*4  #in seconds
+        self.signallength = 0.125*4  #in seconds
         self.edgelength = 0.01  #in seconds
         self.inputCases = 4     #amount of cases measured (4 in the case of Boolean logic)
         
         #self.fft_N = self.fs*self.signallength//self.inputCases       
         self.phase_thres = 90 # in degrees
-        self.eta = 6E-1          # Learn rate 
+        self.eta = 3E-2          # Learn rate 
         self.gradFunct =  self.cor_sigmoid_grad
         self.errorFunct = self.cor_sigmoid_loss
         self.keithley_address = 'GPIB0::17::INSTR'
         # Save settings
         #self.filepath = r'D:\data\\Mark\gradient_descent\\'
-        self.filepath =  r'C:\Users\User\APH\Thesis\Data\gradient_descent\\'
+        self.filepath =  r'D:\data\Mark\gradient_descent\paper_chip\\'
     
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
         self.gainFactor = self.amplification/self.postgain
@@ -117,7 +117,7 @@ class experiment_config(config_class):
         corr = np.mean((x-np.mean(x))*(t-np.mean(t)))/(np.std(x)*np.std(t)+1E-12)
         x_high_min = np.min(x[(t == self.gainFactor)])
         x_low_max = np.max(x[(t == 0)])
-        sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -4)/2)) + 0.05
+        sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -5)/3)) + 0.05
         return (1.1 - corr) / sigmoid  
         
     def cor_sigmoid_grad(self, x, t, w):
@@ -129,7 +129,7 @@ class experiment_config(config_class):
         x_high_min = np.min(x[(t == self.gainFactor)])
         x_low_max = np.max(x[(t == 0)])
         
-        sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -4)/2)) +0.05
+        sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -5)/3)) +0.05
         d_sigmoid = sigmoid*(1-sigmoid)
         
         return (d_corr * sigmoid - ((x == x_high_min).astype(int) - (x == x_low_max).astype(int)) * d_sigmoid * (1.1 - corr)) / sigmoid **2 
@@ -143,7 +143,7 @@ class experiment_config(config_class):
         x_high_min = np.min(x[(t == self.gainFactor)])
         x_low_max = np.max(x[(t == 0)])
         
-        sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -4)/2)) +0.05
+        sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -5)/3)) +0.05
 
         
         return d_corr / sigmoid

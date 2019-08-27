@@ -133,7 +133,7 @@ def IO_cDAQ(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
             output_task.ao_channels.add_ao_voltage_chan('cDAQ1Mod1/ao'+str(i)+'', 'ao'+str(i)+'', -5, 5)
         for i in range(len(inputPorts)):
             if(inputPorts[i] == 1):
-                input_task.ai_channels.add_ai_voltage_chan('Dev1/ai'+str(i)+'') 
+                input_task.ai_channels.add_ai_voltage_chan('Dev1/ai'+str(i)+'') #, min_val=-1, max_val=1 
 
         y = np.asarray(y)
         if len(y.shape) == 1:

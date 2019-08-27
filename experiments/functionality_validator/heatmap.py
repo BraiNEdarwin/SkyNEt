@@ -63,6 +63,7 @@ for gates in range(cf.controlVoltages.shape[0]):
                                     phase = cf.phase,
                                     amplitude = cf.amplitude,
                                     offset = cf.offset,
+                                    controlVoltages = cf.controlVoltages,
                                     filename = 'nparrays')
         end_wave = time.time()
         print('Data collection for part ' + str(i+1) + ' of ' + str(batches) + ' took '+str(end_wave-start_wave)+' sec.')
@@ -78,6 +79,7 @@ SaveLib.saveExperiment(cf.configSrc, saveDirectory,
                         phase = cf.phase,
                         amplitude = cf.amplitude,
                         offset = cf.offset,
+                        controlVoltages = cf.controlVoltages,
                         filename = 'nparrays')
   
 

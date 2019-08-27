@@ -14,26 +14,26 @@ class experiment_config(config_class):
     
     def __init__(self):
         super().__init__() 
-        self.device = 'NN'
+        self.device = 'chip'
         self.main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\champ_chip\2019_04_05_172733_characterization_2days_f_0_05_fs_50\nets\MSE_n_proper\\'
         self.NN_name = 'MSE_n_d10w90_300ep_lr3e-3_b1024_b1b2_0.90.75_seed.pt'
-        self.inputIndex = [4,5] # Electrodes that will be used as boolean input
+        self.inputIndex = [1,2] # Electrodes that will be used as boolean input
         ################################################
         ######### SPECIFY PARAMETERS ###################
         ################################################
         self.comport = 'COM3'  # COM port for the ivvi rack
         #self.filepath = r'D:\Data\Mark\spsa\\'
-        self.filepath = r'C:\Users\User\APH\Thesis\Data\SPSA\\'
+        self.filepath = r'D:\data\Mark\spsa\paper_chip\\'
         
         # Define experiment
-        self.postgain = 100
-        self.amplification = 1000
+        self.postgain = 1
+        self.amplification = 100
         self.gainFactor = self.amplification/self.postgain # gainFactor scales the output such that it is always in order of nA
-        self.inputScaling = 0.9
-        self.inputOffset = -0.5
-        self.CVrange = np.array([[-0.8, 0.2],[-0.8, 0.2],[-1.1, 0.8],[-1.1, 0.8],[-1.1, 0.8]])   # Range for the control voltages
+        self.inputScaling = 2.
+        self.inputOffset = -1.
+        self.CVrange = np.array([[-1.2, 1.2],[-1.2, 1.2],[-1.2, 1.2],[-1., 1.],[-1., 1.]])   # Range for the control voltages
         self.targetGen = self.XNOR
-        self.name = "XNOR_NN"
+        self.name = "XNOR"
         
         self.inputs = 2
         self.controls = 5
@@ -42,13 +42,15 @@ class experiment_config(config_class):
         self.c = 50 # Initial stepsize of CVs
         self.alpha = 0.4 # Decay factor of learn rate
         self.gamma = 0.101 # Decay factor of stepsize CVs
-        self.n = 100
+        self.n = 50
         
         self.loss = self.cor_separation_loss
         self.CVlabels = ['CV1/T1','CV2/T3','CV3/T11','CV4/T13','CV5/T15', 'Input scaling']
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
 
 
+        self.controlIndex = np.linspace(0,6,7,dtype=int)
+        self.controlIndex = np.delete(self.controlIndex, self.inputIndex)
 
     def LossCorr(self, x, target, W):
         '''

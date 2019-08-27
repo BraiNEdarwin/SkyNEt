@@ -30,11 +30,19 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 t = cf.InputGen()[0]  # Time array
 x = np.asarray(cf.InputGen()[1:3])  # Array with P and Q signal
 w = cf.InputGen()[3]  # Weight array
+#w = np.zeros(t.shape[0])
+#w[0:int(cf.fs*cf.signallength/cf.inputCases)] = 1
+#w[int(cf.fs*(cf.signallength/cf.inputCases + cf.edgelength)): int(cf.fs*(2*cf.signallength/cf.inputCases + cf.edgelength))] = 1
+#w[int(cf.fs*2*(cf.signallength/cf.inputCases + cf.edgelength)): int(cf.fs*(3*cf.signallength/cf.inputCases + 2*cf.edgelength))] = 1
+#w[int(cf.fs*3*(cf.signallength/cf.inputCases + cf.edgelength)): int(cf.fs*(4*cf.signallength/cf.inputCases + 3*cf.edgelength))] = 1
+
+
 target = cf.gainFactor * cf.targetGen()[1]  # Target signal
 
 # Initialize arrays
 controls = np.zeros((cf.n + 1, cf.controls)) # array that keeps track of the controls used per iteration
-controls[0,:] = np.random.random(cf.controls) * (cf.CVrange[:,1] - cf.CVrange[:,0]) + cf.CVrange[:,0] # First (random) controls
+controls[0,:] = np.random.random(cf.controls) * (cf.CVrange[:,1] - cf.CVrange[:,0]) + cf.CVrange[:,0] # First (random) controls 
+
 inputs = np.zeros((cf.n + 1, cf.controls + cf.inputs, x.shape[1] + int(2 * cf.fs * cf.rampT)))
 data = np.zeros((cf.n + 1, x.shape[1])) # '+1' bacause at the end of iterating the solution is measured without sine waves on top of the DC signal
 phases = np.zeros((cf.n + 1, cf.inputCases, cf.controls)) # iterations x # input cases x # controls 
@@ -59,12 +67,12 @@ for k in range(cf.controls + cf.inputs):
 # Main aqcuisition loop
 for i in range(cf.n + 1):
     
-    # Apply the sine waves on top of the control voltages:
+    # Apply DC control voltages:
     inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] = controls[i,:][:,np.newaxis] * np.ones(x.shape[1]) 
     
     # For all except last iteration add sine waves on top of DC voltages
     if i != cf.n:
-        inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] = inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] + np.sin(2 * np.pi * cf.freq[:,np.newaxis] * t) * cf.waveAmplitude
+        inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] = inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] + np.sin(2 * np.pi * cf.freq[:,np.newaxis] * t) * cf.waveAmplitude[:,np.newaxis]
     
     # Add (boolean) input at the correct index of the input matrix:
     for j in range(len(cf.inputIndex)):
@@ -74,7 +82,7 @@ for i in range(cf.n + 1):
     if cf.device == 'chip':
         for j in range(inputs.shape[1]):
             inputs[i, j, 0:int(cf.fs*cf.rampT)] = np.linspace(0, inputs[i, j, int(cf.fs*cf.rampT)], int(cf.fs*cf.rampT))
-            inputs[i, j, -int(cf.fs*cf.rampT):] = np.linspace(inputs[i, j, -int(cf.fs*cf.rampT)], 0, int(cf.fs*cf.rampT))    
+            inputs[i, j, -int(cf.fs*cf.rampT):] = np.linspace(inputs[i, j, -int(cf.fs*cf.rampT + 1)], 0, int(cf.fs*cf.rampT))    
         
     # Measure output
     if cf.device == 'chip':
@@ -93,7 +101,6 @@ for i in range(cf.n + 1):
     
     # Lock-in technique to determine gradients
     x_ref = np.arange(0.0, cf.signallength, 1/cf.fs)
-    
     for k in range(cf.inputCases):
         data_split[k] = data[i, round(k*cf.fs*(cf.edgelength + cf.signallength/cf.inputCases)) : round(cf.fs*(k*cf.edgelength + (k+1)*cf.signallength/cf.inputCases))]
         target_split[k] = target[round(k*cf.fs*(cf.edgelength + cf.signallength/cf.inputCases)) : round(cf.fs*(k*cf.edgelength + (k+1)*cf.signallength/cf.inputCases))]
@@ -102,27 +109,18 @@ for i in range(cf.n + 1):
             y_ref1 = np.sin(cf.freq[j] * 2.0*np.pi*x_ref[k*int(cf.fs*cf.signallength/cf.inputCases) : (k+1)*int(cf.fs*cf.signallength/cf.inputCases)])          # Reference signal 1 (phase = 0)
             y_ref2 = np.sin(cf.freq[j] * 2.0*np.pi*x_ref[k*int(cf.fs*cf.signallength/cf.inputCases) : (k+1)*int(cf.fs*cf.signallength/cf.inputCases)] + np.pi/2) # Reference signal 2 (phase = pi/2)
         
-            y1_out = y_ref1*(data_split[k] - np.mean(data_split[k]))
-            y2_out = y_ref2*(data_split[k] - np.mean(data_split[k]))
+            y1_out = y_ref1*data_split[k] # - np.mean(data_split[k]))
+            y2_out = y_ref2*data_split[k] # - np.mean(data_split[k]))
             
             amp1 = np.mean(y1_out)
             amp2 = np.mean(y2_out)
-            IVgrad[i,k,j] = 2*np.sqrt(amp1**2 + amp2**2) / cf.waveAmplitude # Amplitude of output wave (nA) / amplitude of input wave (V)
+            IVgrad[i,k,j] = 2*np.sqrt(amp1**2 + amp2**2) / cf.waveAmplitude[j] # Amplitude of output wave (nA) / amplitude of input wave (V)
             phases[i,k,j] = np.arctan2(amp2,amp1)*180/np.pi
             sign[k,j] = 1 if abs(phases[i, k, j]) < cf.phase_thres else -1
-        
-        ## Fourier transform on output data to find dI/dV
-        #yf = scipy.fftpack.fft(data_split[k,:], cf.fft_N)
-        #IVgrad[i,k,:] = 2.0 / cf.fft_N * np.abs(yf[(cf.freq*cf.fft_N/cf.fs).astype(int)]) / cf.waveAmplitude # Amplitude of output wave / amplitude of input wave
-        #phases[i,k,:] = np.arctan2(yf[(cf.freq*cf.fft_N/cf.fs).astype(int)].imag, yf[(cf.freq*cf.fft_N/cf.fs).astype(int)].real) + np.pi/2 # Add pi/2 since sine waves are used
-    
-        #for j in range(controls.shape[1]):
-        #    sign[k,j] = -1 if abs(phases[i, k, j] - np.pi) < cf.phase_thres else 1
-        
-        
+               
         # Multiply dE/dI and dI/dV to obtain the gradient w.r.t. control voltages
-        EVgrad[i] += np.mean(EIgrad[i, k*cf.signallength*cf.fs//cf.inputCases:(k+1)*cf.signallength*cf.fs//cf.inputCases][:,np.newaxis] * (sign[k,:] * IVgrad[i,k,:]), axis=0)
-            
+        EVgrad[i] += np.mean(EIgrad[i, int(k*cf.signallength*cf.fs//cf.inputCases):int((k+1)*cf.signallength*cf.fs//cf.inputCases)][:,np.newaxis] * (sign[k,:] * IVgrad[i,k,:]), axis=0)
+ 
     if i < cf.n-1:
         # Update scheme
         controls[i+1,:] = controls[i, :] - cf.eta * EVgrad[i]
@@ -134,6 +132,11 @@ for i in range(cf.n + 1):
     elif i == cf.n-1:
         controls[i+1,:] = controls[i, :] # Keep same controls, last measure is last iteration but without sine waves
     
+    # If output is clipped, reinitializee:
+    if abs(np.mean(data[i,:])) > 3.5 * cf.amplification/cf.postgain:
+        controls[i+1,:] = np.random.random(cf.controls) * (cf.CVrange[:,1] - cf.CVrange[:,0]) + cf.CVrange[:,0]
+    
+
     # Plot output, error, controls
     error[i] = cf.errorFunct(data[i,:], target, w)     
     PlotBuilder.currentGenomeEvolution(mainFig, controls[i,:])
@@ -150,8 +153,18 @@ for i in range(cf.n + 1):
 
 SaveLib.saveExperiment(cf.configSrc, saveDirectory,
                        controls = controls,
+                       inputs = inputs,
                        output = data,
                        t = t,
+                       w = w,
+                       target = target,
+                       fs = cf.fs,
+                       inputIndex = cf.inputIndex,
+                       signallength = cf.signallength,
+                       eta = cf.eta,
+                       freq = cf.freq,
+                       n = cf.n,
+                       waveAmplitude = cf.waveAmplitude,
                        x_scaled = x_scaled,
                        error = error,
                        IVgrad = IVgrad,

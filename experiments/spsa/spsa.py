@@ -11,6 +11,7 @@ import SkyNEt.experiments.spsa.config_spsa as config
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.PlotBuilder as PlotBuilder
 from SkyNEt.modules.Nets.lightNNet import lightNNet
+import matplotlib.pyplot as plt
 
 import time
 import numpy as np
@@ -42,15 +43,18 @@ delta = np.zeros((cf.n, cf.controls))       # Direction of optimization step
 ghat = np.zeros((cf.n, cf.controls))        # Changes in the controls
 outputminus = np.zeros((cf.n, x.shape[1]))  # output of thetaplus as control
 outputplus = np.zeros((cf.n, x.shape[1]))   # output of thetaminus as control
+
+inputplus = np.zeros((cf.controls + cf.inputs, x.shape[1]))
+inputminus = np.zeros((cf.controls + cf.inputs, x.shape[1]))
 # Initialize controls at a random point
-theta[0,:] = (np.random.random(cf.controls) * (cf.CVrange[:,1] - cf.CVrange[:,0]) + cf.CVrange[:,0]) * 1000 #ivvi uses mV
+theta[0,:] = (np.random.random(cf.controls) * (cf.CVrange[:,1] - cf.CVrange[:,0]) + cf.CVrange[:,0])
 
 
-if cf.device == 'chip':
+#if cf.device == 'chip':
     # Initialize instruments and set first random controls to avoid transients in main acquisition script
-    ivvi = IVVIrack.initInstrument()
-    IVVIrack.setControlVoltages(ivvi, theta[0, :])
-elif cf.device == 'NN':  
+    #ivvi = IVVIrack.initInstrument()
+    #IVVIrack.setControlVoltages(ivvi, theta[0, :])
+if cf.device == 'NN':  
     # If NN is used as proxy, load network
     net = lightNNet(cf.main_dir + cf.NN_name)
     
@@ -68,26 +72,34 @@ for k in range(0, cf.n):
     ck = cf.c / (k + 1) ** cf.gamma
     for i in range(cf.controls):
         delta[k, i] = 2 * round(random.uniform(0, 1)) - 1
-    thetaplus[k, :] = theta[k,:] + ck * delta[k, :]
-    thetaminus[k, :] = theta[k,:] - ck * delta[k, :]
-    
+    thetaplus[k, :] = theta[k,:] + (ck * delta[k, :])/1000
+    thetaminus[k, :] = theta[k,:] - (ck * delta[k, :])/1000
+
     # Check constraints on the range of theta
     for i in range(cf.controls):    
-        thetaplus[k, i] = min(cf.CVrange[i,1]*1000, thetaplus[k, i])
-        thetaminus[k, i] = max(cf.CVrange[i,0]*1000, thetaminus[k, i])
+        thetaplus[k, i] = min(cf.CVrange[i,1], thetaplus[k, i])
+        thetaminus[k, i] = max(cf.CVrange[i,0], thetaminus[k, i])
     
     # Measure for both CVs
     x_scaled = x * cf.inputScaling + cf.inputOffset #TODO: change to optimizable parameter
        
     
     if cf.device == 'chip':
-        IVVIrack.setControlVoltages(ivvi, thetaplus[k, :])
-        time.sleep(0.3)
-        outputplus[k, :] = cf.gainFactor * InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)  
-        time.sleep(0.1)
-        IVVIrack.setControlVoltages(ivvi, thetaminus[k, :])
-        time.sleep(0.1)
-        outputminus[k, :] = cf.gainFactor * InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)
+        inputplus[cf.inputIndex] = x_scaled
+        inputminus[cf.inputIndex] = x_scaled
+
+        inputplus[cf.controlIndex] = np.dot(thetaplus[k], np.ones((cf.controls, x_scaled.shape[1])))
+        inputminus[cf.controlIndex] = np.dot(thetaminus[k], np.ones((cf.controls, x_scaled.shape[1])))
+
+        outputplus[k, :] = cf.gainFactor * InstrumentImporter.nidaqIO.IO_cDAQ(inputplus, cf.fs)
+        outputminus[k, :] = cf.gainFactor * InstrumentImporter.nidaqIO.IO_cDAQ(inputminus, cf.fs)
+        #IVVIrack.setControlVoltages(ivvi, thetaplus[k, :])
+        #time.sleep(0.3)
+        #outputplus[k, :] = cf.gainFactor * InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)  
+        #time.sleep(0.1)
+        #IVVIrack.setControlVoltages(ivvi, thetaminus[k, :])
+        #time.sleep(0.1)
+        #outputminus[k, :] = cf.gainFactor * InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)
     elif cf.device == 'NN':
         ##############################
         # also set CVs
@@ -121,7 +133,7 @@ for k in range(0, cf.n):
     PlotBuilder.lossMainSPSA(mainFig, yminus)
     # Calculate gradient and update CV
     ghat[k, :] = (yplus[k] - yminus[k]) / (2 * ck * delta[k, :])
-    theta[k + 1,:] = theta[k, :] - ak * ghat[k, :]
+    theta[k + 1,:] = theta[k, :] - (ak * ghat[k, :])/1000
 
     # If the device clips, yplus = yminus so ghat = 0. We then want to randomly re-initialize one of the controls
     # and hope that the device won't clip anymore
@@ -131,8 +143,8 @@ for k in range(0, cf.n):
 
     # Check constraints on the range of theta
     for i in range(cf.controls):    
-        theta[k+1,i] = min(cf.CVrange[i,1]*1000, theta[k+1,i])
-        theta[k+1,i] = max(cf.CVrange[i,0]*1000, theta[k+1,i])
+        theta[k+1,i] = min(cf.CVrange[i,1], theta[k+1,i])
+        theta[k+1,i] = max(cf.CVrange[i,0], theta[k+1,i])
     
 SaveLib.saveExperiment(cf.configSrc, saveDirectory,
                      controls = theta,
