@@ -21,29 +21,29 @@ main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115
 #data_dir = 'MSE_n_d10w90_30ep_lr1e-3_b1024_b1b2_0.90.75.pt'
 data_dir = 'MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
 
-main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\2019_05_17_095928_trainData_3d\Nets\MSE_n\\'
-data_dir = 'MSE_n_d5w90_500ep_lr3e-3_b[2048]_b1b2_0.90.75-23-05-21h56m.pt'
+main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\NN_new\MSE\7500_and_checkpoints\\'
+data_dir = 'checkpoint3000_02-07-23h47m.pt'
 
 net1 = staNNet(main_dir+data_dir)
-input_gates=[1,2]
+input_gates=[3,4]
 input_scaling = True
 # single device web
 web = webNNet()
 web.add_vertex(net1, 'A', output=True, input_gates=input_gates)
 
-nr_sessions = 10
+nr_sessions = 20
 upper = 10.
 lower = 0.
 
 batch_size = 100
 max_epochs = 800
-lr = 0.1
-beta = 10
+lr = 0.9
+beta = 0.5
 cv_reset = 'rand'
 
-training_type = 'cor_adap' # options: None, mse, bin, binmse, cor, cormse
-add_noise = True # automatically set to false when using bin
-sigma = 0.1 # standard deviation of added noise in target
+training_type = 'cormse' # options: None, mse, bin, binmse, cor, cormse
+add_noise = False # automatically set to false when using bin
+sigma = -.5 # standard deviation of added noise in target
 
 
 # define custom stopping criteria
@@ -57,27 +57,27 @@ def stop_fn(epoch, error_list, best_error):
 
 # Load ring data 
 ring_file = r'C:\Users\User\APH\Thesis\Data\Ring\Ring_class_data_0.40_many.npz'
+#ring_file = r'C:\Users\User\APH\Thesis\Data\Ring\fig1_data.npz'
 input_data = torch.from_numpy(np.load(ring_file)['inp_wvfrm']).to(torch.float)
 target_data = torch.from_numpy((np.load(ring_file)['target'] - 1) * (-1) * upper).to(torch.float)[np.newaxis,:] # need to be [1,many] because Boolean logic finder is such that its dims are [# gates, labels]
 
 # Parameters used for regularizing the input
-inp_beta = 1000
+inp_beta = 0.5
 max_inp = torch.from_numpy(net1.info['amplitude'][input_gates] + net1.info['offset'][input_gates]).to(torch.float)
 min_inp = torch.from_numpy(-net1.info['amplitude'][input_gates] + net1.info['offset'][input_gates]).to(torch.float)
 # Regularize the input scaling and bias
 def reg_input():
     # Define max and min inputs for the input gates       
-    return torch.sum(inp_beta*torch.relu(web.scale + web.bias - max_inp) + inp_beta*torch.relu(-web.scale - web.bias + min_inp))
+    return torch.sum(inp_beta*torch.relu(abs(web.scale) + web.bias - max_inp) + inp_beta*torch.relu( -(-abs(web.scale) + web.bias - min_inp) ))
 
 # Scale the input data if desired  
 if input_scaling: 
     # rescale the input data to [-1, 1]
     input_data = input_data / torch.max(torch.abs(input_data))
             
-    scale = torch.tensor([1.],dtype=torch.float)      # Start scale at [-0.1,0.1] V
-    bias = torch.tensor([-0.,-0.],dtype=torch.float)    # Start center of data at [0,0] V
+    scale = torch.tensor([0.8],dtype=torch.float)      # Start scale at [-0.1,0.1] V
+    bias = torch.tensor([-0.2,-0.2],dtype=torch.float)    # Start center of data at [0,0] V
     web.add_parameters(['scale','bias'],[scale, bias], reg_input)
-
 
 optimizer = torch.optim.Adam
 #def cor_loss_fn(x, y):
@@ -92,7 +92,7 @@ def cor_adap_loss_fn(x, y):
     corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)
     x_high_min = torch.min(x[(y >= upper/3)]) #.item()
     x_low_max = torch.max(x[(y <= lower/3)]) #.item()
-    return (1.1 - corr)/ torch.sigmoid((x_high_min - x_low_max - 20)/20) 
+    return (1.1 - corr)/ torch.sigmoid((x_high_min - x_low_max - 5)/3) 
 
 mse_loss_fn = torch.nn.MSELoss()
 
@@ -118,7 +118,7 @@ elif training_type=='cormse':
         y = y_in[:,0]
         cor = cor_loss_fn(x, y)
         mse = mse_loss_fn(x, y)
-        return alpha*cor+(1-alpha)*mse/(upper-lower)**2
+        return alpha*cor+(1-alpha)*mse/(upper-lower) # **2
 
 
 if add_noise:
@@ -200,4 +200,7 @@ scale = best_cv['scale'].numpy()
 
 # Plot input data
 plt.figure()
-plt.plot( (input_data[:,0]*web.scale.item()+web.bias[0].item()).numpy(), (input_data[:,1]*web.scale.item()+web.bias[1].item()).numpy(),'.')
+if input_scaling:
+    plt.plot( (input_data[:,0]*web.scale.item()+web.bias[0].item()).numpy(), (input_data[:,1]*web.scale.item()+web.bias[1].item()).numpy(),'.')
+else:
+    plt.plot(input_data[:,0].numpy(), input_data[:,1].numpy, '.')

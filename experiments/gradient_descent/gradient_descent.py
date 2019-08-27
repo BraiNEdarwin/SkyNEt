@@ -93,9 +93,6 @@ for i in range(cf.n + 1):
     
     # Lock-in technique to determine gradients
     x_ref = np.arange(0.0, cf.signallength, 1/cf.fs)
-    #TODO: This is wrong! the input wave isn't 'reset' for each case, so phases are wrong
-    # Solve this by either letting x_ref contain all cases, or by defining the input waves on the control
-    # as phase=0 at every start of an input case.
     
     for k in range(cf.inputCases):
         data_split[k] = data[i, round(k*cf.fs*(cf.edgelength + cf.signallength/cf.inputCases)) : round(cf.fs*(k*cf.edgelength + (k+1)*cf.signallength/cf.inputCases))]

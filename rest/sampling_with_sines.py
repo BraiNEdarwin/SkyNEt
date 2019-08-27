@@ -12,9 +12,9 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
 dims = 7
-Fs = 30
+Fs = 50
 factor = 0.05
-skip_points = 1
+skip_points = 2
 
 freq2 = np.array([2,np.pi,5,7,13,17,19])
 freq = factor*np.sqrt(freq2[:dims])
@@ -211,7 +211,7 @@ def distanceRandomGridBrute(gridpoints, inputs, grid_range = 0.25):
     return min_dist, empty_counter
 
 
-gridpoints = 1000
+gridpoints = 10000
 #min_dist_brute, empty_counter_brute = distance5D_brute(grid, inputs)
 min_dist, empty_counter = distanceRandomGrid(gridpoints, inputs, radius = 0.25, grid_range = Vmax - 0.05)
 

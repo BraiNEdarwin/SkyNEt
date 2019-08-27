@@ -24,8 +24,8 @@ from SkyNEt.modules.SaveLib import saveArrays
 # ------------------------ configure ------------------------
 # load device simulation
 
-main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\2019_05_17_095928_trainData_3d\Nets\MSE_n\\'
-data_dir = 'MSE_n_d5w90_500ep_lr3e-3_b[2048]_b1b2_0.90.75-23-05-21h56m.pt'
+main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\NN_new\MSE\7500_and_checkpoints\\'
+data_dir = 'checkpoint3000_02-07-23h47m.pt'
 
 net1 = staNNet(main_dir+data_dir)
 input_gates=[1,2]
@@ -36,29 +36,29 @@ web = webNNet()
 web.add_vertex(net1, 'A', output=True, input_gates=input_gates)
 
 # input voltages of boolean inputs (on/upper, off/lower)
-input_lower = -1.
-input_upper = 1.
+input_lower = -1.2
+input_upper = 0.6
 
 nr_sessions = 10 # hardcoded target values of logic gates with off->lower and on->upper
 
-upper = 1.
+upper = 10.
 lower = 0.
 
 # if set to false, use output of known cv configurations as targets
 
 N = 100 # number of data points of one of four input cases, total 4*N
 
-batch_size = 150
-max_epochs = 600
-lr = 0.03
-beta = 10
+batch_size = 100
+max_epochs = 800
+lr = 0.15
+beta = 5
 cv_reset = 'rand'
 
 
-training_type = 'cor_adap' # options: None, mse, bin, binmse, cor, cormse
+training_type = 'mse' # options: None, mse, bin, binmse, cor, cormse
 
 add_noise = False # automatically set to false when using bin
-sigma = 0.01 # standard deviation of added noise in target
+sigma = 1 # standard deviation of added noise in target
 
 
 # define custom stopping criteria
@@ -137,7 +137,7 @@ def cor_adap_loss_fn(x, y):
     corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)
     x_high_min = torch.min(x[(y == upper)]) #.item()
     x_low_max = torch.max(x[(y == lower)]) #.item()
-    return (1.1 - corr)/ torch.sigmoid((x_high_min - x_low_max - 4)/20) 
+    return (1.1 - corr)/ torch.sigmoid((x_high_min - x_low_max - 5)/3) 
 
 mse_loss_fn = torch.nn.MSELoss()
 
@@ -150,8 +150,8 @@ if training_type == 'bin':
     add_noise = False
     target_data = target_data.long()
     def loss_fn(y_p, y):
-        y_pred = y_p - 0.3
-        y_pred = y_pred*10
+        y_pred = y_p# - 0.3
+        y_pred = y_pred#*10
         y_pred = torch.cat((-y_pred, y_pred), dim=1)
         return cross_fn(y_pred, y[:,0]) # cross_fn is defined below, just before training
 # default mse loss
@@ -198,8 +198,9 @@ for (i,gate) in enumerate(gates):
     web.reset_parameters(cv_reset)
     if training_type == 'bin':
         cross_fn = torch.nn.CrossEntropyLoss(weight = w[i])
+        net1.info['amplification'] = net1.info['amplification']/10 # To create targets on [0,10] instead of [0,1]
 
-    loss_l, best_cv, param_history = web.session_train(input_data, target_data[i].view(-1,1),  #\\
+    loss_l, best_cv, param_history = web.session_train(input_data, target_data[0].view(-1,1),  #\\
                      beta=beta,
                      batch_size=batch_size,
                      max_epochs=max_epochs,
@@ -212,6 +213,8 @@ for (i,gate) in enumerate(gates):
 
     losslist.append(loss_l)
     trained_cv.append(best_cv)
+    if training_type == 'bin':
+        net1.info['amplification'] = net1.info['amplification'] * 10
 
 
 def print_errors():
@@ -235,15 +238,15 @@ def print_gates():
         web.forward(input_data)
         output_data[:,i:i+1] = web.get_output()
         
-        loss = web.error_fn(output_data[:,i:i+1], target_data[i].view(-1,1), beta).item() #\\
+        loss = web.error_fn(output_data[:,i:i+1], target_data[0].view(-1,1), beta).item() #\\
         print("loss:", loss)
         
-        mseloss = mse_norm_loss_fn(output_data[:,i:i+1], target_data[i].view(-1,1).float()).item() #\\
+        mseloss = mse_norm_loss_fn(output_data[:,i:i+1], target_data[0].view(-1,1).float()).item() #\\
         print("mseloss: ", mseloss)
         
         # print output network and targets
         plt.subplot(2, 3 , 1 + i//2 + i%2*3)
-        plt.plot(10*target_data[i].numpy()) #\\
+        plt.plot(target_data[i].numpy()) #\\
         legend_list = ['target']
         if False: #training_type == 'bin':
             plt.plot(torch.sigmoid(output_data))
