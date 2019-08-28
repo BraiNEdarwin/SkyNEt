@@ -13,7 +13,7 @@ import random
 from SkyNEt.modules.GenWaveform import GenWaveform 
 import SkyNEt.modules.Grabber as Grabber
 from SkyNEt.modules.Classifiers import perceptron
-
+from SkyNEt.modules.Observers import God as Savior
 #TODO: Implemanet Saver
 #TODO: Implement Plotter
 class GA:
@@ -63,67 +63,92 @@ class GA:
         self.Platform = Grabber.get_platform(self.platform)
         self.Fitness = Grabber.get_fitness(self.fitness_function)
         
-        # Internal parameters
+        # Internal parameters and variables
         self.stop_thr = 0.9
+        #----- observers ------#
+        self._observers = set()
+        self._next_state = None
+        self.savior = Savior(config_dict)
+        self.attach(self.savior)
 
+#%% Methods implementing observer pattern for Saver and Plotter
+    def attach(self, observer):
+        #register subject in observer
+        observer.subject = self
+        #add observer to observers list
+        self._observers.add(observer)
+        
+    def detach(self, observer): #not needed but for completeness
+        observer.subject = None
+        self._observers.discard(observer)
+        
+    def _notify(self):
+        for obs in self._observers:
+            obs.update(self._next_state)
+            
+    @property
+    def next_state(self):
+        return self._next_state
     
+    @next_state.setter
+    def next_state(self,arg):
+        self._next_state = arg
+        self._notify()
+            
 #%% Method implementing evolution
-    def optimize(self, inputs, targets, generations=100, seed=None):
+    def optimize(self, inputs, targets, 
+                 generations=100, 
+                 savepath=r'../test/evolution_test/NN_testing/',
+                 dirname = 'TEST',
+                 seed=None):
+        
         assert len(inputs[0]) == len(targets), f'No. of input data {len(inputs)} does not match no. of targets {len(targets)}'
+        np.random.seed(seed=seed)
         
         self.generations = generations
         # Initialize target
         self.target_wfm = self.waveform(targets)
         # Initialize target
         self.inputs_wfm, self.filter_array = self.input_waveform(inputs)
-
+        # Generate filepath and filename for saving
+        self.savepath = savepath
+        self.dirname = dirname
+        #reset placeholder arrays and filepath in saviour
+        self.savior.reset()
+        
         self.pool = np.zeros((self.genomes, self.genes))
         self.opposite_pool = np.zeros((self.genomes, self.genes))
         for i in range(0,self.genes):
             self.pool[:,i] = np.random.uniform(self.generange[i][0], self.generange[i][1], size=(self.genomes,))
-        np.random.seed(seed=seed)
-        
-        #Define placeholders
-        self.geneArray = np.zeros((generations, self.genomes, self.genes))
-        self.outputArray = np.zeros((generations, self.genomes, len(self.target_wfm)))
-        self.fitnessArray = -np.inf*np.ones((generations, self.genomes))
         
         #Evolution loop
         for gen in range(generations):
             start = time.time()
             #-------------- Evaluate population (user specific) --------------#
-            self.output = self.Platform.evaluatePopulation(self.inputs_wfm,
+            self.outputs = self.Platform.evaluatePopulation(self.inputs_wfm,
                                                   self.pool, 
                                                   self.target_wfm)
-            self.fitness = self.Fitness(self.output, self.target_wfm)
+            self.fitness = self.Fitness(self.outputs, self.target_wfm)
             #-----------------------------------------------------------------#
             # Status print
             max_fit = max(self.fitness)
             print(f"Highest fitness: {max_fit}")
             
-            self.geneArray[gen, :, :] = self.pool
-            self.outputArray[gen, :, :] = self.output
-            self.fitnessArray[gen, :] = self.fitness
+            self.next_state = {'generation':gen, 'genes':self.pool, 
+                               'outputs':self.outputs, 'fitness': self.fitness}
+            
 
-#            #Save generation (USE OBSERVER PATTERN?)
-#            SaveLib.saveExperiment(saveDirectory,
-#                                   genes = self.geneArray,
-#                                   output = self.outputArray,
-#                                   fitness = self.fitnessArray,
-#                                   target = target[w][:,np.newaxis],
-#                                   weights = w, time = t)
             end = time.time()
             print("Generation nr. " + str(gen + 1) + " completed; took "+str(end-start)+" sec.")
             if self.StopCondition(max_fit):
+                print('--- final saving ---')
+                self.savior.save()
                 break
             #Evolve to the next generation
             self.NextGen(gen)
                         
         #Get best results
-        max_fitness = np.max(self.fitnessArray)
-        ind = np.unravel_index(np.argmax(self.fitnessArray, axis=None), self.fitnessArray.shape)
-        best_genome = self.geneArray[ind]
-        best_output = self.outputArray[ind]
+        max_fitness, best_genome, best_output = self.savior.judge()
 #        print(best_output.shape,self.target_wfm.shape)
         best_corr = self.corr(best_output)
         print(f'\n========================= BEST SOLUTION =======================')
@@ -311,7 +336,7 @@ class GA:
     #################################################
     
     def StopCondition(self, max_fit):
-        best = self.output[self.fitness==max_fit][0]
+        best = self.outputs[self.fitness==max_fit][0]
         corr = self.corr(best)
         print(f"Correlation of fittest genome: {corr}")
         if corr >= self.stop_thr:
@@ -352,8 +377,8 @@ if __name__=='__main__':
     # Define platform
     platform = {}
     platform['modality'] = 'nn'
-#    platform['path2NN'] = r'D:\UTWENTE\PROJECTS\DARWIN\Data\Mark\MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
-    platform['path2NN'] = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
+    platform['path2NN'] = r'D:\UTWENTE\PROJECTS\DARWIN\Data\Mark\MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
+#    platform['path2NN'] = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
     platform['amplification'] = 10.
     
     config_dict = {}    
