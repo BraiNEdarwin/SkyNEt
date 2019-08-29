@@ -7,7 +7,7 @@ This script generates all binary assignments of N elements.
 """
 import numpy as np
 
-from vc_dimension_test import VCDimensionTest
+from SkyNEt.experiments.vc_dim.vc_dimension_test import VCDimensionTest
 from SkyNEt.modules.GA import GA
 
 
@@ -29,11 +29,15 @@ class CapacityTest():
             inputs = self.generate_test_inputs(self.current_dimension)
             binary_labels = self.__generate_binary_target(
                 self.current_dimension).tolist()
+            aux_binary_labels = binary_labels.copy()
             for _ in range(self.configs.max_opportunities):
-                veredict, binary_labels = self.vcdimension_test.run_test(
-                    inputs, binary_labels, self.threshold)
-                if veredict:
+                aux_binary_labels, indx_nf = self.vcdimension_test.run_test(
+                    inputs, aux_binary_labels, self.threshold)
+                if self.vcdimension_test.oracle():
                     break
+            self.vcdimension_test.save(inputs, binary_labels, self.threshold, indx_nf)
+            if self.configs.plot:
+                self.vcdimension_test.plot(binary_labels, self.threshold)
             if self.__next_vcdimension() is False:
                 break
 
@@ -100,7 +104,7 @@ class CapacityTest():
 
 class CapacityTestConfigs():
     def __init__(self, from_dimension=1, to_dimension=4, voltage_false=-1.,
-                 voltage_true=0.4, threshold_numerator=1 - 0.5, max_opportunities=3):
+                 voltage_true=0.4, threshold_numerator=1 - 0.5, max_opportunities=3, plot=False):
         self.from_dimension = from_dimension
         self.to_dimension = to_dimension
         self.voltage_false = voltage_false
@@ -113,6 +117,7 @@ class CapacityTestConfigs():
         self.threshold_numerator = threshold_numerator
         # self.threshold = (1-0.5/self.N)  # 1-(0.65/N)*(1+1.0/N)
         # print('Threshold for acceptance is set at: ', self.threshold)
+        self.plot = plot
 
         platform = {}
         platform['modality'] = 'nn'
@@ -148,5 +153,5 @@ class VCDimensionException(Exception):
 
 
 if __name__ == '__main__':
-    test = CapacityTest(CapacityTestConfigs(from_dimension=4))
+    test = CapacityTest(CapacityTestConfigs(from_dimension=4, plot=True))
     test.run_test()

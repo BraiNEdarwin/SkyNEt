@@ -10,35 +10,24 @@ If successful (measured by a threshold on the correlation and by the perceptron 
 
 import numpy as np
 from matplotlib import pyplot as plt
-
-try:
-    import instruments.InstrumentImporter
-except ModuleNotFoundError:
-    print(r'No module named instruments')
-
-
 # import measure_VCdim as vcd
 
 
 class VCDimensionTest():
 
     def __init__(self, algorithm,
-                    dirname = r'/home/unai/Documents/3-programming/boron-doped-silicon-chip-simulation/checkpoint3000_02-07-23h47m.pt',
-                    plot = 'False',
-                    save = 'True'
-                    ):
+                 dirname=r'/home/unai/Documents/3-programming/boron-doped-silicon-chip-simulation/checkpoint3000_02-07-23h47m.pt',
+                 save='True'
+                 ):
         self.dirname = dirname
         self.filename = 'summary_results'
-        self.plot = plot
-        self.save = save
-        # Initialize container variables
+        # Initialise container variables
         self.fitness_classifier = []
         self.genes_classifier = []
         self.output_classifier = []
         self.accuracy_classifier = []
         self.found_classifier = []
         self.algorithm = algorithm
-
 
     def run_test(self, inputs, binary_labels, threshold):
         for label in binary_labels:
@@ -54,11 +43,11 @@ class VCDimensionTest():
         self.__to_numpy_array()
         not_found = self.found_classifier == 0
         indx_nf = self.check_not_found(len(inputs[0]), binary_labels, not_found)
-        if self.save is True:
-            self.__save(inputs, binary_labels, threshold, indx_nf)
-        if self.plot is True:
-            self.plot(binary_labels, threshold)
-        return self.oracle(), indx_nf
+        # if self.save is True:
+        #    self.__save(inputs, binary_labels, threshold, indx_nf)
+        # if self.plot is True:
+        #   self.plot(binary_labels, threshold)
+        return binary_labels, indx_nf
 
     def oracle(self):
         print(self.capacity)
@@ -70,7 +59,7 @@ class VCDimensionTest():
                 indx_nf = np.arange(2**current_dimension)[not_found]
             except IndexError as error:
                 print(f'{error} \n Trying indexing bad_gates')
-                indx_nf = self.bad_gates[not_found]
+                indx_nf = binary_labels[not_found]
             print('Classifiers not found: %s' % indx_nf)
             binaries_nf = np.array(binary_labels)[not_found]
             print('belongs to : \n', binaries_nf)
@@ -107,7 +96,7 @@ class VCDimensionTest():
         self.output_classifier = np.array(self.output_classifier)
         self.genes_classifier = np.array(self.genes_classifier)
 
-    def __save(self, inputs, binary_labels, threshold, indx_nf):
+    def save(self, inputs, binary_labels, threshold, indx_nf):
         np.savez(self.dirname + self.filename,
                  inputs=inputs,
                  binary_labels=binary_labels,
@@ -120,12 +109,7 @@ class VCDimensionTest():
                  threshold=threshold,
                  indx_nf=indx_nf)
 
-    def plot(self, binary_labels, threshold):
-        try:
-            vcd.reset(0, 0)
-        except AttributeError:
-            print(r'module evolve_VCdim has no attribute reset')
-
+    def plot(self, binary_labels, threshold):  # pylint: disable=E0202
         plt.figure()
         plt.plot(self.fitness_classifier, self.accuracy_classifier, 'o')
         plt.plot(np.linspace(np.nanmin(self.fitness_classifier),
@@ -150,15 +134,9 @@ class VCDimensionTest():
             plt.figure()
             plt.hist(self.genes_classifier[not_found, :5], 30)
             plt.legend([1, 2, 3, 4, 5])
-
             plt.show()
-        except:
+
+        except Exception:
             # @todo improve the exception management
             # @warning bare exception is not recommended
             print('Error in plotting output!')
-
-if __name__ == "__main__":
-    configs = VCDimensionTestConfigs()
-    inputs = [[-1., 0.4, -1., 0.4], [-1., -1., 0.4, 0.4]]
-    test = VCDimensionTest(configs)
-    print(test.run_test())
