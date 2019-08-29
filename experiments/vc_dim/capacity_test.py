@@ -23,23 +23,31 @@ class CapacityTest():
     def run_test(self):
         veredict = True
         while veredict is True:
-            print(
-                'Generating inputs for VC Dimension %d: ' %
-                self.current_dimension)
-            inputs = self.generate_test_inputs(self.current_dimension)
-            binary_labels = self.__generate_binary_target(
-                self.current_dimension).tolist()
+
+            inputs, binary_labels = self.__init_test()
             aux_binary_labels = binary_labels.copy()
+
             for _ in range(self.configs.max_opportunities):
                 aux_binary_labels, indx_nf = self.vcdimension_test.run_test(
                     inputs, aux_binary_labels, self.threshold)
                 if self.vcdimension_test.oracle():
                     break
-            self.vcdimension_test.save(inputs, binary_labels, self.threshold, indx_nf)
+
+            self.vcdimension_test.save(inputs, binary_labels, self.threshold, indx_nf, str(self.current_dimension))
+
             if self.configs.plot:
                 self.vcdimension_test.plot(binary_labels, self.threshold)
+
             if self.__next_vcdimension() is False:
                 break
+
+    def __init_test(self):
+        print('==== VC Dimension %d ====' % self.current_dimension)
+        self.vcdimension_test.init_containers()
+        inputs = self.generate_test_inputs(self.current_dimension)
+        binary_labels = self.__generate_binary_target(
+            self.current_dimension).tolist()
+        return inputs, binary_labels
 
     def __calculate_threshold(self):
         return self.configs.threshold_numerator / self.current_dimension
@@ -48,7 +56,7 @@ class CapacityTest():
         if self.current_dimension + 1 > self.configs.to_dimension:
             return False
         else:
-            self.current_dimension = + 1
+            self.current_dimension += 1
             self.__calculate_threshold()
 
     # @todo change generation of inputs to differetn vc dimensions
@@ -153,5 +161,5 @@ class VCDimensionException(Exception):
 
 
 if __name__ == '__main__':
-    test = CapacityTest(CapacityTestConfigs(from_dimension=4, plot=True))
+    test = CapacityTest(CapacityTestConfigs(from_dimension=4, to_dimension=8, plot=True))
     test.run_test()

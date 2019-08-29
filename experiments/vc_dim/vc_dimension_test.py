@@ -21,13 +21,16 @@ class VCDimensionTest():
                  ):
         self.dirname = dirname
         self.filename = 'summary_results'
+        self.algorithm = algorithm
+        self.init_containers()
+
+    def init_containers(self):
         # Initialise container variables
         self.fitness_classifier = []
         self.genes_classifier = []
         self.output_classifier = []
         self.accuracy_classifier = []
         self.found_classifier = []
-        self.algorithm = algorithm
 
     def run_test(self, inputs, binary_labels, threshold):
         for label in binary_labels:
@@ -72,7 +75,7 @@ class VCDimensionTest():
         if len(set(label)) == 1:
             print('Label ', label, ' ignored')
             genes, output, fitness, accuracy = np.nan, np.nan, np.nan, np.nan
-            self.found_classifier.append(1)
+            self.found_classifier.append(1)  # append
         else:
             print('Finding classifier ', label)
 
@@ -96,8 +99,8 @@ class VCDimensionTest():
         self.output_classifier = np.array(self.output_classifier)
         self.genes_classifier = np.array(self.genes_classifier)
 
-    def save(self, inputs, binary_labels, threshold, indx_nf):
-        np.savez(self.dirname + self.filename,
+    def save(self, inputs, binary_labels, threshold, indx_nf, dimension):
+        np.savez(self.dirname + "_" + self.filename + "_VCDIM" + dimension,
                  inputs=inputs,
                  binary_labels=binary_labels,
                  capacity=self.capacity,
