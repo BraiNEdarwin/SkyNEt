@@ -89,6 +89,12 @@ ENV/
 .spyderproject
 .spyproject
 
+# Visual studio code settings
+.vscode/*
+
+# Naming convenctions (flake8)
+tox.ini
+
 # Rope project settings
 .ropeproject
 

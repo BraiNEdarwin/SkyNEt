@@ -6,8 +6,10 @@ This script generates all binary assignments of N elements.
 @author: hruiz and ualegre
 """
 import numpy as np
+
 from vc_dimension_test import VCDimensionTest
 from SkyNEt.modules.GA import GA
+
 
 class CapacityTest():
 
@@ -15,16 +17,21 @@ class CapacityTest():
         self.configs = configs
         self.current_dimension = configs.from_dimension
         self.threshold = self.__calculate_threshold()
-        self.vcdimension_test = VCDimensionTest(algorithm=self.configs.algorithm)
+        self.vcdimension_test = VCDimensionTest(
+            algorithm=self.configs.algorithm)
 
     def run_test(self):
         veredict = True
         while veredict is True:
-            print('Generating inputs for VC Dimension %d: ' % self.current_dimension)
+            print(
+                'Generating inputs for VC Dimension %d: ' %
+                self.current_dimension)
             inputs = self.generate_test_inputs(self.current_dimension)
-            binary_labels = self.__generate_binary_target(self.current_dimension).tolist()
-            for i in range(self.configs.max_opportunities):
-                veredict, binary_labels = self.vcdimension_test.run_test(inputs, binary_labels, self.threshold)
+            binary_labels = self.__generate_binary_target(
+                self.current_dimension).tolist()
+            for _ in range(self.configs.max_opportunities):
+                veredict, binary_labels = self.vcdimension_test.run_test(
+                    inputs, binary_labels, self.threshold)
                 if veredict:
                     break
             if self.__next_vcdimension() is False:
@@ -41,23 +48,30 @@ class CapacityTest():
             self.__calculate_threshold()
 
     # @todo change generation of inputs to differetn vc dimensions
+
     def generate_test_inputs(self, vc_dim):
-        #@todo create a function that automatically generates non-linear inputs
+        # @todo create a function that automatically generates non-linear inputs
         try:
             if vc_dim == 4:
-                return [[-0.7,-0.7,0.7,0.7],[0.7,-0.7,0.7,-0.7]]
+                return [[-0.7, -0.7, 0.7, 0.7], [0.7, -0.7, 0.7, -0.7]]
             elif vc_dim == 5:
-                return [[-0.7,-0.7,0.7,0.7,-0.35],[0.7,-0.7,0.7,-0.7,0.0]]
+                return [[-0.7, -0.7, 0.7, 0.7, -0.35],
+                        [0.7, -0.7, 0.7, -0.7, 0.0]]
             elif vc_dim == 6:
-                return [[-0.7,-0.7,0.7,0.7,-0.35,0.35],[0.7,-0.7,0.7,-0.7,0.0,0.0]]
+                return [[-0.7, -0.7, 0.7, 0.7, -0.35, 0.35],
+                        [0.7, -0.7, 0.7, -0.7, 0.0, 0.0]]
             elif vc_dim == 7:
-                return [[-0.7,-0.7,0.7,0.7,-0.35,0.35,0.0],[0.7,-0.7,0.7,-0.7,0.0,0.0,1.0]]
+                return [[-0.7, -0.7, 0.7, 0.7, -0.35, 0.35, 0.0],
+                        [0.7, -0.7, 0.7, -0.7, 0.0, 0.0, 1.0]]
             elif vc_dim == 8:
-                return [[-0.7,-0.7,0.7,0.7,-0.35,0.35,0.0,0.0],[0.7,-0.7,0.7,-0.7,0.0,0.0,1.0,-1.0]]
+                return [[-0.7, -0.7, 0.7, 0.7, -0.35, 0.35, 0.0, 0.0],
+                        [0.7, -0.7, 0.7, -0.7, 0.0, 0.0, 1.0, -1.0]]
             else:
                 raise VCDimensionException()
         except VCDimensionException:
-            print('Dimension Exception occurred. The selected VC Dimension is %d Please insert a value between ' % vc_dim)
+            print(
+                'Dimension Exception occurred. The selected VC Dimension is %d Please insert a value between ' %
+                vc_dim)
 
     def __generate_binary_target(self, target_dim):
         # length of list, i.e. number of binary targets
@@ -86,12 +100,13 @@ class CapacityTest():
 
 class CapacityTestConfigs():
     def __init__(self, from_dimension=1, to_dimension=4, voltage_false=-1.,
-                voltage_true=0.4, threshold_numerator=1-0.5, max_opportunities=3):
+                 voltage_true=0.4, threshold_numerator=1 - 0.5, max_opportunities=3):
         self.from_dimension = from_dimension
         self.to_dimension = to_dimension
         self.voltage_false = voltage_false
         self.voltage_true = voltage_true
-        self.max_opportunities = max_opportunities # Maximum number of opportunities given to find all the gates
+        # Maximum number of opportunities given to find all the gates
+        self.max_opportunities = max_opportunities
         # The threshold is calculated as: threshold_numerator/vc_dimension
         # Create binary labels for N samples
         # bad_gates = # for N=6 on model [51]
@@ -106,23 +121,25 @@ class CapacityTestConfigs():
         # platform['path2NN'] = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
         platform['amplification'] = 10.
         config_dict = {}
-        config_dict['partition'] =  [5]*5 # Partitions of population
+        config_dict['partition'] = [5] * 5  # Partitions of population
         # Voltage range of CVs in V
-        config_dict['generange'] = [[-1.2,0.6], [-1.2, 0.6], [-1.2, 0.6], [-0.7, 0.3], [-0.7, 0.3],[1,1]]
+        config_dict['generange'] = [[-1.2, 0.6], [-1.2, 0.6],
+                                    [-1.2, 0.6], [-0.7, 0.3], [-0.7, 0.3], [1, 1]]
         config_dict['genes'] = len(config_dict['generange'])    # Nr of genes
-        config_dict['genomes'] = sum(config_dict['partition'])  # Nr of individuals in population
+        # Nr of individuals in population
+        config_dict['genomes'] = sum(config_dict['partition'])
         config_dict['mutationrate'] = 0.1
 
-        #Parameters to define target waveforms
+        # Parameters to define target waveforms
         config_dict['lengths'] = [80]     # Length of data in the waveform
-        config_dict['slopes'] = [0]        # Length of ramping from one value to the next
-        #Parameters to define task
-        config_dict['fitness'] = 'corrsig_fit'#'corr_fit'
-
-        config_dict['platform'] = platform    # Dictionary containing all variables for the platform
+        # Length of ramping from one value to the next
+        config_dict['slopes'] = [0]
+        # Parameters to define task
+        config_dict['fitness'] = 'corrsig_fit'  # 'corr_fit'
+        # Dictionary containing all variables for the platform
+        config_dict['platform'] = platform
 
         self.algorithm = GA(config_dict)
-
 
 
 class VCDimensionException(Exception):
