@@ -17,8 +17,8 @@ def get_platform(platform):
         return Platforms.chip(platform)
     elif platform['modality'] == 'nn':
         return Platforms.nn(platform)
-    elif platform['modality'] == 'simulation':
-        return Platforms.simulation(platform)
+    elif platform['modality'] == 'kmc':
+        return Platforms.kmc(platform)
     else:
         raise NotImplementedError(f"Platform {platform['modality']} is not recognized!")
 
