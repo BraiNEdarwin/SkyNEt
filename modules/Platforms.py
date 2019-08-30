@@ -64,7 +64,7 @@ class nn:
         return inputs_wfm*params_trafo
 
 #%% Simulation platform for physical MC simulations of devices 
-class simulation:
+class kmc:
     def __init__(self, platform_dict):
         pass
     

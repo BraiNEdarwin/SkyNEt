@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """ Contains class implementing the Genetic Algorithm for all SkyNEt platforms.
 Created on Thu May 16 18:16:36 2019
-@author: HCRuiz (some code taken from contributions of other SkyNEt members)
+@author: HCRuiz and A. Uitzetter
 """
 
 import numpy as np
@@ -14,7 +14,6 @@ from SkyNEt.modules.GenWaveform import GenWaveform
 import SkyNEt.modules.Grabber as Grabber
 from SkyNEt.modules.Classifiers import perceptron
 from SkyNEt.modules.Observers import God as Savior
-#TODO: Implemanet Saver
 #TODO: Implement Plotter
 class GA:
     '''This is a class implementing the genetic algorithm (GA).
@@ -97,7 +96,7 @@ class GA:
             
 #%% Method implementing evolution
     def optimize(self, inputs, targets, 
-                 generations=100, 
+                 epochs=100, 
                  savepath=r'../test/evolution_test/NN_testing/',
                  dirname = 'TEST',
                  seed=None):
@@ -105,7 +104,7 @@ class GA:
         assert len(inputs[0]) == len(targets), f'No. of input data {len(inputs)} does not match no. of targets {len(targets)}'
         np.random.seed(seed=seed)
         
-        self.generations = generations
+        self.generations = epochs
         # Initialize target
         self.target_wfm = self.waveform(targets)
         # Initialize target
@@ -122,7 +121,7 @@ class GA:
             self.pool[:,i] = np.random.uniform(self.generange[i][0], self.generange[i][1], size=(self.genomes,))
         
         #Evolution loop
-        for gen in range(generations):
+        for gen in range(self.generations):
             start = time.time()
             #-------------- Evaluate population (user specific) --------------#
             self.outputs = self.Platform.evaluatePopulation(self.inputs_wfm,
