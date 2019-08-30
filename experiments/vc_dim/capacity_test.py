@@ -133,26 +133,26 @@ class CapacityTestConfigs():
         platform['path2NN'] = r'/home/unai/Documents/3-programming/boron-doped-silicon-chip-simulation/checkpoint3000_02-07-23h47m.pt'
         # platform['path2NN'] = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
         platform['amplification'] = 10.
-        config_dict = {}
-        config_dict['partition'] = [5] * 5  # Partitions of population
+        ga_configs = {}
+        ga_configs['partition'] = [5] * 5  # Partitions of population
         # Voltage range of CVs in V
-        config_dict['generange'] = [[-1.2, 0.6], [-1.2, 0.6],
-                                    [-1.2, 0.6], [-0.7, 0.3], [-0.7, 0.3], [1, 1]]
-        config_dict['genes'] = len(config_dict['generange'])    # Nr of genes
+        ga_configs['generange'] = [[-1.2, 0.6], [-1.2, 0.6],
+                                   [-1.2, 0.6], [-0.7, 0.3], [-0.7, 0.3], [1, 1]]
+        ga_configs['genes'] = len(ga_configs['generange'])    # Nr of genes
         # Nr of individuals in population
-        config_dict['genomes'] = sum(config_dict['partition'])
-        config_dict['mutationrate'] = 0.1
+        ga_configs['genomes'] = sum(ga_configs['partition'])
+        ga_configs['mutationrate'] = 0.1
 
         # Parameters to define target waveforms
-        config_dict['lengths'] = [80]     # Length of data in the waveform
+        ga_configs['lengths'] = [80]     # Length of data in the waveform
         # Length of ramping from one value to the next
-        config_dict['slopes'] = [0]
+        ga_configs['slopes'] = [0]
         # Parameters to define task
-        config_dict['fitness'] = 'corrsig_fit'  # 'corr_fit'
+        ga_configs['fitness'] = 'corrsig_fit'  # 'corr_fit'
         # Dictionary containing all variables for the platform
-        config_dict['platform'] = platform
+        ga_configs['platform'] = platform
 
-        self.algorithm = GA(config_dict)
+        self.algorithm = GA(ga_configs)
 
 
 class VCDimensionException(Exception):

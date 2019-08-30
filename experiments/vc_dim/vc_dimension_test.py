@@ -10,7 +10,6 @@ If successful (measured by a threshold on the correlation and by the perceptron 
 
 import numpy as np
 from matplotlib import pyplot as plt
-# import measure_VCdim as vcd
 
 
 class VCDimensionTest():
