@@ -13,7 +13,6 @@ import os
 import datetime
 import numpy as np
 import torch
-from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import math 
 import pdb
@@ -166,20 +165,18 @@ def PrepData(main_dir, data_filename = 'training_NN_data.npz',
     np.savez(save_to, inputs = inputs, outputs = outputs,
          meta=raw_data['meta'], data_path = raw_data['data_path'])
     
-#%% STEP 2: Load Data, prepare for NN and return as torch tensors
+#%% STEP 2: Load Data, prepare for NN and return as list with information dict
 def DataLoader(data_dir, file_name,
                val_size = 0.1, batch_size = 4*512, 
-               syst = 'cuda', test_size = 0.0, steps=1):
+               test_size = 0.0, steps=1):
     '''
     This function loads the data and returns it in a format suitable for the NN to handle:
         -Partitions the data into training, validation and test sets (if test_size is not None)
         -It defines the type of the tensor used by NN and defining if training is in CPU or GPU
-        -Numpy arrays are converted to torch variables
     Arguments data_dir and file_name required are strings: a path to the directory containing the data and the name of the data file respectively.
     Default keyword arguments are:
                 val_size = 0.1, 
                 test_size = 0, 
-                syst = 'cuda', 
                 batch_size = 4*512
     Data structure loaded must be a .npz file with a directory having keys: 'inputs','outputs'.
     The inputs follow the convention that the first dimension is over CV configs and the second index is
@@ -191,7 +188,7 @@ def DataLoader(data_dir, file_name,
     with np.load(data_dir+file_name) as data:
         meta = data['meta'].tolist()
 #        print(type(meta))
-        print('Metainfo about data:\n',meta)
+        print('Metainfo about data:\n',meta.keys())
         bf_inp = data['inputs'][::steps] # shape: Nx#electrodes
         bf_out = data['outputs'][::steps] #Outputs need dim Nx1
         print(f'Shape of outputs: {bf_out.shape}; shape of inputs: {bf_inp.shape}')
@@ -242,24 +239,11 @@ def DataLoader(data_dir, file_name,
     assert nr_minibatches*batch_size + n_val + n_test == nr_samples, 'Data points not properly allocated!'
     if not outputs_train.shape[0] == inputs_train.shape[0]:
         raise ValueError('Input and Output Batch Sizes do not match!')
-    
-    ### Define Data Type for PyTorch ###
-    if syst is 'cuda':
-        print('Train with GPU')
-        dtype = torch.cuda.FloatTensor
-    else: 
-        print('Train with CPU')
-        dtype = torch.FloatTensor
-    
-    x_train = torch.from_numpy(inputs_train).type(dtype)
-    y_train = torch.from_numpy(outputs_train).type(dtype)
-    x_val = torch.from_numpy(inputs_val).type(dtype)
-    y_val = torch.from_numpy(outputs_val).type(dtype)
 
-    return [[x_train,y_train],[x_val,y_val],meta]
+    return [[inputs_train,outputs_train],[inputs_val,outputs_val],meta]
 
 #%% EXTRA: Just load data and return as torch.tensor
-def GetData(dir_file, syst = 'cuda'):
+def GetData(dir_file, device = 'cuda'):
     '''Get data from dir_file. Returns the inputs as torch.Tensor and targets/outputs as numpy-arrays. 
     dtype of inputs is defined with kwarg syst. Default is 'cuda'.
     NOTES:
@@ -270,7 +254,7 @@ def GetData(dir_file, syst = 'cuda'):
     targets = np.load(dir_file)['outputs']
     inputs = np.load(dir_file)['inputs']
     
-    if syst is 'cuda':
+    if device is 'cuda':
         print('Inputs dtype defined for CUDA')
         dtype = torch.cuda.FloatTensor
 
