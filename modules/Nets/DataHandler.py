@@ -170,9 +170,8 @@ def DataLoader(data_dir, file_name,
                val_size = 0.1, batch_size = 4*512, 
                test_size = 0.0, steps=1):
     '''
-    This function loads the data and returns it in a format suitable for the NN to handle:
-        -Partitions the data into training, validation and test sets (if test_size is not None)
-        -It defines the type of the tensor used by NN and defining if training is in CPU or GPU
+    This function loads the data and returns it in a format suitable for the NN to handle.
+    Partitions the data into training, validation and test sets (if test_size is not None)
     Arguments data_dir and file_name required are strings: a path to the directory containing the data and the name of the data file respectively.
     Default keyword arguments are:
                 val_size = 0.1, 
