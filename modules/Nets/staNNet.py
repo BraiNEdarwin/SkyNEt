@@ -24,10 +24,10 @@ import torch.nn as nn
 import numpy as np 
 #import pdb
 
-class staNNet:
+class staNNet(nn.Module):
 
     def __init__(self,*args, activation=nn.ReLU(), device='cpu', conversion=100):
-        
+        super(staNNet, self).__init__()
         ### Define Data Type for PyTorch ###
         #Need to do it like this instead of with torch.cuda.is_available()
         # because DELL laptop has cuda but it is not supported (too old)
