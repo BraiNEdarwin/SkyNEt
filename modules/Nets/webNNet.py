@@ -212,8 +212,13 @@ class webNNet(torch.nn.Module):
         if not v['evaluated']:
             # control voltages, repeated to match batch size of train_data
             cv_data = getattr(self, vertex).repeat(self._batch_size, 1)
+            
             # concatenate input with control voltage data
-            data = torch.cat((v['train_data'], cv_data), dim=1)
+            try:
+                data = torch.cat((v['train_data']*self.scale + self.bias, cv_data), dim=1) # If scale and bias are parameters
+            except AttributeError: 
+                data = torch.cat((v['train_data'], cv_data), dim=1)
+            
             # swap columns according to input/control indices
             data = data[:,self.graph[vertex]['swapindices']]
             
@@ -228,18 +233,22 @@ class webNNet(torch.nn.Module):
                     # insert data from arc into control voltage parameters with correct transfer function
                     data[:, sink_gate] = v['transfer'][sink_gate](self.graph[source_name]['output'][:,0])
             # feed through network
-            v['output'] = v['network'].model(data)
+
+            v['output'] = v['network'].outputs(data,grad=True)
             v['evaluated'] = True
+
     
     def error_fn(self, y_pred, y, beta):
         """Error function: loss function with added regularization"""        
         # calculate regularization of control voltage parameters
         reg_loss = 0
+
         for name in self.graph.keys():
             x = getattr(self, name)
             voltage_bounds = self.graph[name]['voltage_bounds']
             reg_loss += torch.sum(torch.relu(voltage_bounds[0] - x) + torch.relu(-voltage_bounds[1] + x))
         return self.loss_fn(y_pred, y) + beta*reg_loss + self.custom_reg()
+
     
     def _set_input_data(self, x):
         """Store training data for each network, assumes the torch tensor has the same ordering as in the dictionary"""
@@ -279,6 +288,7 @@ class webNNet(torch.nn.Module):
                         diff = (voltage_bounds[1]-voltage_bounds[0])
                         param.data = torch.rand(len(param), device=self.cuda)*diff + voltage_bounds[0]
                     else:
+
                         param.data = torch.tensor(self.custom_par[name].clone(), device=self.cuda)
         elif isinstance(value, dict):
             assert self.get_parameters().keys() == value.keys(), "Different keys in given dict"
@@ -310,7 +320,7 @@ class webNNet(torch.nn.Module):
 
     def check_cuda(self, *args):
         """Converts tensors that are going to be used to cuda"""
-        if torch.cuda.is_available():
+        if False: #torch.cuda.is_available():
             self.cuda = torch.device('cuda')
             
             # move registered parameters (control voltages)
