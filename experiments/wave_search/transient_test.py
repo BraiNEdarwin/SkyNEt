@@ -9,7 +9,6 @@ This script tests for transients in the sampled data. It requires the input data
 from SkyNEt.instruments import InstrumentImporter
 import numpy as np
 import time
-import matplotlib.pyplot as plt
 
 def transient_test(waves, data, fs, sampleTime, n):
     T = 3 # Amount of time of sampling one datapoint
@@ -18,7 +17,6 @@ def transient_test(waves, data, fs, sampleTime, n):
     testdata = np.zeros((iterations, n, (T*fs - 2*rampT)))
     #testdata = np.zeros((n, T*fs))
     test_cases = np.random.randint(waves.shape[1], size=(1,n)) # Index for the wave
-    #test_cases = np.sort(test_cases)
     difference = np.zeros((iterations, n, 1))
     
     for it in range(iterations):
@@ -41,9 +39,5 @@ def transient_test(waves, data, fs, sampleTime, n):
             end_wave = time.time()
             print('Transient test data point ' + str(it*n + i+1) + ' of ' + str(iterations * n) + ' took ' + str(end_wave-start_wave)+' sec.')
 
-    #plt.plot(data)
-    #plt.errorbar(test_cases[0,:], np.mean(testdata[-1,:,:], axis=1), yerr=np.amax(testdata[-1,:,:],axis=1) - np.amin(testdata[-1,:,:],axis=1),ls='',marker='o',color='r',linewidth=2) 
-    #plt.plot(test_cases[0,:], np.mean(testdata, axis=1), '.')
-    #plt.show()
 
     return testdata, difference, test_cases

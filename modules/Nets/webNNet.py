@@ -215,7 +215,7 @@ class webNNet(torch.nn.Module):
             
             # concatenate input with control voltage data
             try:
-                data = torch.cat((v['train_data']*self.scale + self.bias, cv_data), dim=1) #\\
+                data = torch.cat((v['train_data']*self.scale + self.bias, cv_data), dim=1) # If scale and bias are parameters
             except AttributeError: 
                 data = torch.cat((v['train_data'], cv_data), dim=1)
             

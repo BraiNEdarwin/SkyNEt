@@ -1,5 +1,7 @@
 '''
 In this script the control voltages corresponding to different functionalities is set and a measurement is performed.
+Any measurement equipment can be used. However, cDAQ is most flexible since you don't have to change input electrodes on the hardware side.
+@author: Mark
 '''
 
 # SkyNEt imports

@@ -30,12 +30,6 @@ saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 t = cf.InputGen()[0]  # Time array
 x = np.asarray(cf.InputGen()[1:3])  # Array with P and Q signal
 w = cf.InputGen()[3]  # Weight array
-#w = np.zeros(t.shape[0])
-#w[0:int(cf.fs*cf.signallength/cf.inputCases)] = 1
-#w[int(cf.fs*(cf.signallength/cf.inputCases + cf.edgelength)): int(cf.fs*(2*cf.signallength/cf.inputCases + cf.edgelength))] = 1
-#w[int(cf.fs*2*(cf.signallength/cf.inputCases + cf.edgelength)): int(cf.fs*(3*cf.signallength/cf.inputCases + 2*cf.edgelength))] = 1
-#w[int(cf.fs*3*(cf.signallength/cf.inputCases + cf.edgelength)): int(cf.fs*(4*cf.signallength/cf.inputCases + 3*cf.edgelength))] = 1
-
 
 target = cf.gainFactor * cf.targetGen()[1]  # Target signal
 

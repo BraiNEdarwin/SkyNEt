@@ -17,11 +17,7 @@ from SkyNEt.modules.SaveLib import saveArrays
 # ------------------------ configure ------------------------
 # load device simulation
 
-main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\\'
-#data_dir = 'MSE_n_d10w90_30ep_lr1e-3_b1024_b1b2_0.90.75.pt'
-data_dir = 'MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
-
-main_dir = r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip\2019_04_27_115357_train_data_2d_f_0_05\NN_new\MSE\7500_and_checkpoints\\'
+main_dir = r'filepath'
 data_dir = 'checkpoint3000_02-07-23h47m.pt'
 
 net1 = staNNet(main_dir+data_dir)
@@ -56,8 +52,7 @@ def stop_fn(epoch, error_list, best_error):
 # ------------------------ END configure ------------------------
 
 # Load ring data 
-ring_file = r'C:\Users\User\APH\Thesis\Data\Ring\Ring_class_data_0.40_many.npz'
-#ring_file = r'C:\Users\User\APH\Thesis\Data\Ring\fig1_data.npz'
+ring_file = r'ring_data_path'
 input_data = torch.from_numpy(np.load(ring_file)['inp_wvfrm']).to(torch.float)
 target_data = torch.from_numpy((np.load(ring_file)['target'] - 1) * (-1) * upper).to(torch.float)[np.newaxis,:] # need to be [1,many] because Boolean logic finder is such that its dims are [# gates, labels]
 
@@ -80,9 +75,6 @@ if input_scaling:
     web.add_parameters(['scale','bias'],[scale, bias], reg_input)
 
 optimizer = torch.optim.Adam
-#def cor_loss_fn(x, y):
-#    corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))
-#    return 1.0-corr/(torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-16)/()
 
 def cor_loss_fn(x, y):
     corr = torch.mean((x-torch.mean(x))*(y-torch.mean(y)))/ (torch.std(x,unbiased=False)*torch.std(y,unbiased=False)+1e-10)
@@ -191,12 +183,12 @@ def print_output():
 
 print_output()
 
-
+# Change relevant input data into numpy arrays
 CV = best_cv['A'].numpy()[np.newaxis,:]
 bias = best_cv['bias'].numpy()
 scale = best_cv['scale'].numpy()
 
-#saveArrays(r'C:\Users\User\APH\Thesis\Data\wave_search\paper_chip_dataset2\2019_05_17_095928_trainData_3d\predictions\Ring\\', filename="results_ring",max_epochs = max_epochs, nr_sessions=nr_sessions,sigma=sigma,CV=CV,bias=bias,scale=scale,training_type=training_type,lr=lr,t_upper=upper,t_lower=lower,input_gates=input_gates,pred=output_data,losslist=losslist,data_dir=data_dir,main_dir=main_dir)
+#saveArrays(r'filepath', filename="results_ring",max_epochs = max_epochs, nr_sessions=nr_sessions,sigma=sigma,CV=CV,bias=bias,scale=scale,training_type=training_type,lr=lr,t_upper=upper,t_lower=lower,input_gates=input_gates,pred=output_data,losslist=losslist,data_dir=data_dir,main_dir=main_dir)
 
 # Plot input data
 plt.figure()
