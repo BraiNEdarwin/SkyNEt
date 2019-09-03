@@ -5,10 +5,10 @@ Created on Thu Nov 15 16:32:25 2018
 This script generates all binary assignments of N elements.
 @author: hruiz and ualegre
 """
-import numpy as np
 
 from SkyNEt.experiments.vc_dim.vc_dimension_test import VCDimensionTest
 from SkyNEt.modules.GA import GA
+import numpy as np
 
 
 class CapacityTest():
@@ -21,43 +21,38 @@ class CapacityTest():
             algorithm=self.configs.algorithm)
 
     def run_test(self):
-        veredict = True
-        while veredict is True:
-
-            inputs, binary_labels = self.__init_test()
-            aux_binary_labels = binary_labels.copy()
-
-            for _ in range(self.configs.max_opportunities):
-                aux_binary_labels, indx_nf = self.vcdimension_test.run_test(
-                    inputs, aux_binary_labels, self.threshold)
-                if self.vcdimension_test.oracle():
+        while True:
+            self.__init_test()
+            opportunity = 0
+            not_found = np.array([])
+            while True:
+                test_data = self.vcdimension_test.run_test(binary_labels=not_found)
+                not_found = test_data['gate'].loc[test_data['found'] == False]  # noqa: E712
+                opportunity += 1
+                if (not_found.size == 0) or (opportunity >= self.configs.max_opportunities):
                     break
 
-            self.vcdimension_test.save(inputs, binary_labels, self.threshold, indx_nf, str(self.current_dimension))
-
-            if self.configs.plot:
-                self.vcdimension_test.plot(binary_labels, self.threshold)
-
-            if self.__next_vcdimension() is False:
+            if not self.vcdimension_test.close_test(self.threshold, self.current_dimension) or not self.next_vcdimension():
+                self.vcdimension_test.writer.save()
                 break
 
     def __init_test(self):
         print('==== VC Dimension %d ====' % self.current_dimension)
-        self.vcdimension_test.init_containers()
+
         inputs = self.generate_test_inputs(self.current_dimension)
-        binary_labels = self.__generate_binary_target(
-            self.current_dimension).tolist()
-        return inputs, binary_labels
+        binary_labels = self.__generate_binary_target(self.current_dimension).tolist()
+        self.vcdimension_test.init_data(inputs, binary_labels, self.threshold)
 
     def __calculate_threshold(self):
         return self.configs.threshold_numerator / self.current_dimension
 
-    def __next_vcdimension(self):
+    def next_vcdimension(self):
         if self.current_dimension + 1 > self.configs.to_dimension:
             return False
         else:
             self.current_dimension += 1
             self.__calculate_threshold()
+            return True
 
     # @todo change generation of inputs to differetn vc dimensions
 
@@ -146,11 +141,9 @@ class CapacityTestConfigs():
         # Parameters to define target waveforms
         ga_configs['lengths'] = [80]     # Length of data in the waveform
         # Length of ramping from one value to the next
-        ga_configs['slopes'] = [0]
-        # Parameters to define task
+        ga_configs['slopes'] = [0]  # Parameters to define task
         ga_configs['fitness'] = 'corrsig_fit'  # 'corr_fit'
-        # Dictionary containing all variables for the platform
-        ga_configs['platform'] = platform
+        ga_configs['platform'] = platform  # Dictionary containing all variables for the platform
 
         self.algorithm = GA(ga_configs)
 
@@ -161,5 +154,5 @@ class VCDimensionException(Exception):
 
 
 if __name__ == '__main__':
-    test = CapacityTest(CapacityTestConfigs(from_dimension=4, to_dimension=8, plot=True))
+    test = CapacityTest(CapacityTestConfigs(from_dimension=4, to_dimension=5, plot=True))
     test.run_test()
