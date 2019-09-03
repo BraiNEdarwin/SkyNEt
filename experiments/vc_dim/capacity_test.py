@@ -7,7 +7,7 @@ This script generates all binary assignments of N elements.
 """
 
 from SkyNEt.experiments.vc_dim.vc_dimension_test import VCDimensionTest
-from SkyNEt.modules.GA import GA
+from SkyNEt.modules.genetic_algorithm import GA
 import numpy as np
 
 
@@ -111,7 +111,7 @@ class VCDimensionException(Exception):
 if __name__ == '__main__':
 
     platform = {}
-    platform['modality'] = 'nn'
+    platform['modality'] = 'simulation_nn'
     # platform['path2NN'] = r'D:\UTWENTE\PROJECTS\DARWIN\Data\Mark\MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
     platform['path2NN'] = r'/home/unai/Documents/3-programming/boron-doped-silicon-chip-simulation/checkpoint3000_02-07-23h47m.pt'
     # platform['path2NN'] = r'/home/hruiz/Documents/PROJECTS/DARWIN/Data_Darwin/Devices/Marks_Data/April_2019/MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
