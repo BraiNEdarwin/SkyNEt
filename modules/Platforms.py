@@ -15,6 +15,7 @@ import importlib
 
 #TODO: Add chip platform
 #TODO: Add simulation platform
+#TODO: Target wave form as argument can be left out if output dimension is known internally
 
 #%% Chip platform to measure the current output from voltage configurations of disordered NE systems
 class chip:
@@ -37,7 +38,9 @@ class nn:
         self.dtype = self.torch.FloatTensor #torch.cuda.FloatTensor
         
         # Set parameters 
-        self.amplification = platform_dict['amplification']
+        self.amplification = self.net.info['amplification']
+        self.input_indx = platform_dict['in_list']
+        self.nn_input_dim = len(self.net.info['amplitude'])
         
     def evaluatePopulation(self,inputs_wfm, genePool, target_wfm):
         genomes = len(genePool)
@@ -50,8 +53,11 @@ class nn:
             # Feed input to NN
             #target_wfm.shape, genePool.shape --> (time-steps,) , (nr-genomes,nr-genes)
             g = np.ones_like(target_wfm)[:,np.newaxis]*genePool[j,:5,np.newaxis].T
+            g_index = np.delete(np.arange(self.nn_input_dim),self.input_indx)
             #g.shape,x_trafo.shape --> (time-steps,nr-CVs) , (input-dim, time-steps)
-            x_dummy = np.concatenate((x_trafo.T,g),axis=1) # First input then genes; dims of input TxD
+            x_dummy = np.empty((g.shape[0],self.nn_input_dim)) # dims of input (time-steps)xD_in
+            x_dummy[:,self.input_indx] = x_trafo.T
+            x_dummy[:,g_index] = g 
             inputs = self.torch.from_numpy(x_dummy).type(self.dtype)
             output = self.net.outputs(inputs)
             outputPopul[j] = output
@@ -76,7 +82,12 @@ if __name__ == '__main__':
     
     # Define platform
     platform = {}
-    platform['path2NN'] = r'D:\UTWENTE\PROJECTS\DARWIN\Data\Mark\MSE_n_d10w90_200ep_lr1e-3_b1024_b1b2_0.90.75.pt'
-    platform['amplification'] = 10.
-    
+    platform['path2NN'] = r'../test/NN_test/checkpoint3000_02-07-23h47m.pt'
+    platform['in_list'] = [0,5,6]
     nn = nn(platform)
+    
+    out = nn.evaluatePopulation(np.array([[0.3,0.5,0],[0.3,0.5,0],[0.3,0.5,0]]),
+                                np.array([[0.1,-0.5,0.33,-1.2],[0.1,-0.5,0.33,-1.2]]),
+                                np.array([1,1,1]))
+    
+    print(f'nn output: \n {out}')
