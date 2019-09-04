@@ -17,7 +17,7 @@ class CapacityTest():
         self.configs = configs
         self.current_dimension = configs['from_dimension']
         self.threshold = self.__calculate_threshold()
-        self.vcdimension_test = VCDimensionTest(algorithm=configs['algorithm'])
+        self.vcdimension_test = VCDimensionTest(algorithm=configs['algorithm'], output_dir=configs['output_dir'], surrogate_model_name=configs['surrogate_model_name'])
 
     def run_test(self):
         while True:
@@ -31,7 +31,7 @@ class CapacityTest():
                 if (not_found.size == 0) or (opportunity >= self.configs['max_opportunities']):
                     break
 
-            if not self.vcdimension_test.close_test(self.threshold, self.current_dimension) or not self.next_vcdimension():
+            if not self.vcdimension_test.close_test(self.threshold, self.current_dimension, self.configs['show_plot']) or not self.next_vcdimension():
                 self.vcdimension_test.writer.save()
                 break
 
@@ -42,7 +42,7 @@ class CapacityTest():
         self.vcdimension_test.init_data(inputs, binary_labels, self.threshold)
 
     def __calculate_threshold(self):
-        return self.configs['threshold_numerator'] / self.current_dimension
+        return 1 - (self.configs['threshold_parameter'] / self.current_dimension)
 
     def next_vcdimension(self):
         if self.current_dimension + 1 > self.configs['to_dimension']:
@@ -134,11 +134,13 @@ if __name__ == '__main__':
     ga_configs['platform'] = platform  # Dictionary containing all variables for the platform
 
     capacity_test_configs = {}
+    capacity_test_configs['output_dir'] = r'/home/unai/Documents/3-programming/boron-doped-silicon-chip-simulation/'
+    capacity_test_configs['surrogate_model_name'] = 'checkpoint3000_02-07-23h47m'
     capacity_test_configs['from_dimension'] = 4
     capacity_test_configs['to_dimension'] = 5
     capacity_test_configs['max_opportunities'] = 3
-    capacity_test_configs['threshold_numerator'] = 1 - 0.5
-    capacity_test_configs['plot'] = False
+    capacity_test_configs['threshold_parameter'] = 0.5
+    capacity_test_configs['show_plot'] = False
     capacity_test_configs['algorithm'] = GA(ga_configs)
 
     test = CapacityTest(capacity_test_configs)

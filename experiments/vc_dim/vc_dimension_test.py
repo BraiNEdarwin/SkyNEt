@@ -15,15 +15,20 @@ from matplotlib import pyplot as plt
 
 class VCDimensionTest():
 
-    def __init__(self, algorithm,
-                 dirname=r'/home/unai/Documents/3-programming/boron-doped-silicon-chip-simulation/checkpoint3000_02-07-23h47m.pt',
-                 save='True'
-                 ):
-        self.dirname = dirname
-        self.filename = 'summary_results'
+    def __init__(self, algorithm, output_dir, surrogate_model_name):
         self.algorithm = algorithm
-        name = self.dirname + "_" + self.filename + '.xlsx'
-        self.writer = pd.ExcelWriter(name, engine='openpyxl')  # pylint: disable=abstract-class-instantiated
+        self.output_dir = output_dir
+        self.init_filenames(surrogate_model_name)
+        self.init_excel_writer()
+
+    def init_filenames(self, surrogate_model_name):
+        self.surrogate_model_name = surrogate_model_name
+        self.test_data_name = '_capacity_test_data.xlsx'
+        self.test_data_plot_name = '_plot.png'
+
+    def init_excel_writer(self):
+        path = self.output_dir + self.surrogate_model_name + self.test_data_name
+        self.writer = pd.ExcelWriter(path, engine='openpyxl')  # pylint: disable=abstract-class-instantiated
 
     def init_data(self, inputs, binary_labels, threshold):
         column_names = ['gate', 'found', 'accuracy', 'fitness', 'output', 'genes']
@@ -46,21 +51,6 @@ class VCDimensionTest():
     #             self.genes_classifier[i] = np.nan * np.ones_like(self.genes_classifier[1])
     #             self.output_classifier[i] = np.nan * np.ones_like(self.output_classifier[1])
 
-    # def check_not_found(self, current_dimension, binary_labels, not_found):
-    #     if not_found.size > 0:
-    #         try:
-    #             indx_nf = np.arange(2**current_dimension)[not_found]
-    #         except IndexError as error:
-    #             print(f'{error} \n Trying indexing bad_gates')
-    #             indx_nf = binary_labels[not_found]
-    #         print('Classifiers not found: %s' % indx_nf)
-    #         binaries_nf = np.array(binary_labels)[not_found]
-    #         print('belongs to : \n', binaries_nf)
-    #     else:
-    #         print('All classifiers found!')
-    #         indx_nf = None
-    #     return indx_nf
-
     def __test_label(self, inputs, label, threshold):
 
         if len(set(label)) == 1:
@@ -77,8 +67,9 @@ class VCDimensionTest():
         row = {'gate': label, 'found': found, 'genes': np.array(genes), 'output': np.array(output), 'fitness': np.array(fitness), 'accuracy': np.array(accuracy)}
         self.data.loc[str(label)] = pd.Series(row)
 
-    def close_test(self, threshold, dimension):
+    def close_test(self, threshold, dimension, show_plot):
         self.save_tab(threshold, dimension)
+        self.save_plot(threshold, dimension, show_plot)
         return self.oracle()
 
     def oracle(self):
@@ -87,10 +78,10 @@ class VCDimensionTest():
     def save_tab(self, threshold, dimension):
         aux = self.data.copy()
         aux.index = range(len(aux.index))
-        name = 'VC Dimension ' + str(dimension) + ' Threshold ' + str(threshold)
-        aux.to_excel(self.writer, sheet_name=name)
+        tab_name = 'VC Dimension ' + str(dimension) + ' Threshold ' + str(threshold)
+        aux.to_excel(self.writer, sheet_name=tab_name)
 
-    def plot(self, threshold):  # pylint: disable=E0202
+    def save_plot(self, threshold, dimension, show_plot):  # pylint: disable=E0202
         plt.figure()
         fitness_classifier = self.data['fitness'].to_numpy()
         plt.plot(fitness_classifier, self.data['accuracy'].to_numpy(), 'o')
@@ -99,9 +90,11 @@ class VCDimensionTest():
                  threshold * np.ones_like(np.linspace(0, 1)), '-k')
         plt.xlabel('Fitness')
         plt.ylabel('Accuracy')
-        plt.show()
+        plt.savefig(self.output_dir + self.surrogate_model_name + '_dimension_' + str(dimension) + self.test_data_plot_name)
+        if show_plot:
+            plt.show()
 
-        # try:  # solo hacerlo en las primeras dimensions
+        # try:
         # not_found = self.found_classifier == 0
         # print('Classifiers not found: %s' %
         #       np.arange(len(self.found_classifier))[not_found])
@@ -119,6 +112,5 @@ class VCDimensionTest():
         # plt.show()
 
         # except Exception:
-        # @todo improve the exception management
-        # @warning bare exception is not recommended
+        #     @todo improve the exception management
         #     print('Error in plotting output!')
