@@ -2,32 +2,37 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Oct  5 11:46:46 2018
-Class to create a web of connected neural networks.
+
+IMPORTANT: 
+    - for documentation on train function, see webNNetTrain.py
+    - functions starting with _ are meant for internal use only
+
+
+Class to create a web of connected neural networks (device simulations),
+ this web can be seen as a non-cyclic directed graph.
 The graph consists of vertices (networks) and arcs (connections between vertices).
+
+See Skynet/experiments/Web/webNN_template.py for example use.
+
+The structure of the web is layed out below.
 
 Vertices:
 Structure of self.graph (dictionary):
     keys: names of vertex, values: info of vertex
     vertex info (dictionary):
-        'network'   : neural network object
-        'input'     : input data which is added to control voltages (torch tensor)
-        'isoutput'  : wether vertex is output vertex (boolean)
-        'output'    : output data of vertex calculated by forward_vertex (torch tensor)
+        'network'       : neural network object which simulates a device
+        'train_data'    : input data which is automatically added to control voltages (torch tensor)
+        'isoutput'      : wether vertex is output vertex (boolean)
+        'output'        : output data of vertex calculated by _forward_vertex (torch tensor)
+        'swapindices'   : indices which are used to swap columns to correct gate positions before a vertex is evaluated
+        'voltage_bounds': first row contains minimum voltage values a gate can handle, second row are maxima
+        'transfer'      : list of transfer functions used to map the output of a network to correct voltage range of gate
 
 Arcs:
 Each arc consist of a source and sink, where the data flows from source to sink.
 Structure of self.arcs (dictionary):
     keys: tuple: (sink_name, sink_gate)
     values: source_name
-    
-See webNN_template.py for example use.
-
-Shape of input data:
-    (batch size, input_dimension * nr_output_networks)
-Shape of target data:
-    depends on loss function, but for MSEloss, target needs to be same shape as output of web:
-    (batch size, nr_output_networks)
-
 
 @author: ljknoll
 """
@@ -35,9 +40,11 @@ Shape of target data:
 import torch
 from collections import OrderedDict as odict
 
-# imports for GA
-import numpy as np
-import SkyNEt.modules.Evolution as Evolution
+import SkyNEt.modules.Nets.webNNetTrain as webNNetTrain
+
+# import additional methods (see 'optional#1' below)
+import SkyNEt.modules.Nets.webNNetTrainGA as GA
+
 
 # imports for plotting graph
 import matplotlib.pyplot as plt
@@ -47,215 +54,100 @@ from matplotlib.collections import PatchCollection
 class webNNet(torch.nn.Module):
     def __init__(self):
         super(webNNet, self).__init__()
-        self.graph = odict() # vertices of graph
-        self.arcs = odict() # arcs of graph
-        self.output_data = None # output data of graph
-        self.nr_output_vertices = 0 # number of networks whose output data is used
+        self.graph = odict()            # vertices of graph
+        self.arcs = odict()             # arcs of graph
+        self.output_data = None         # output data of graph
+        self.nr_output_vertices = 0     # number of networks whose output data is used
+        self.nr_of_params = 0           # number of parameters of network which need to be trained (excluding those set by add_parameters)
+        self._params = [{'params':[]}]  # attribute which builds the parameter groups, passed to optimizer
         
         # setting defaults
         self.cuda = 'cpu'
-        self.default_param = 0.8 # value to initialize control voltage parameters
-        self.loss = torch.nn.MSELoss() # loss function (besides regularization)
-        self.optimizer = torch.optim.Adam # optimizer function
-        
-        # initialize empty bias and scale list, 
-        # these store bias and scale for each output vertex
-        self.register_parameter('bias', torch.nn.Parameter(torch.tensor([])))
-        self.register_parameter('scale', torch.nn.Parameter(torch.tensor([])))
+        self.loss_fn = torch.nn.MSELoss()                   # loss function (besides regularization)
+        self.custom_par = {}                                # keeps track of  custom parameters added
+        self.nr_of_custom_params = 0
+        self.custom_reg = lambda : torch.FloatTensor([0])   # function which returns the regularization of custom parameters
+        self.optimizer = torch.optim.Adam                   # optimizer function
+        self.transfer = torch.sigmoid                       # function which maps output to input [0,1]
     
-    ############################################################
-    ### ---------------- Genetic Algorithm ----------------- ###
-    ############################################################
-    def prepare_config_obj(self, cf, loss_fn):
-        """ prepares config object for GA use with the web class """
-        # total number of genes: 5 control voltages for each vertex, one less for each arc
-        cf.genes = len(self.graph)*5 - len(self.arcs)
-        # number of genomes in each of the 5 partitions
-        cf.partition = [3, cf.genes, 5, 5, cf.genes]
-        # total number of genomes
-        cf.genomes = sum(cf.partition)
-        
-        # set fitness functino of cf to default loss
-        # loss function must return the error, not the fitness!
-        if loss_fn is None:
-            cf.Fitness = self.loss
-        else:
-            cf.Fitness = loss_fn
+    #attach training function to class
+    train, session_train = webNNetTrain.train, webNNetTrain.session_train
     
-    def set_dict_indices_from_pool(self, pool):
-        """ For each registered parameter in this web object, 
-        store the indices of the parameters which are used.
-        
-        Example:
-            when there is an arc from 'A' to 'B' at gate 5, 
-            the GA does not need to update this control voltage as it is overwritten by the arc data.
-            Therefore, these parameters are not included in the pool.
-            The indices for A will then be [2,3,4,6] and gate 5 will not be passed to evolution
-        """
-        parameters = self.get_parameters()
-        indices = {}
-        # loop through parameters of network
-        for par_name, par_params in parameters.items():
-            indices[par_name] = []
-            # check if parameter is a vertex or bias/scale
-            if 'bias' in par_name or 'scale' in par_name:
-                # TODO: implement checking for including bias and scale in pool,
-                # for now don't include them
-                indices[par_name] = []
-            else:
-                # loop through control voltages of vertex 'par_name'
-                for j in range(len(par_params)):
-                    # check if current control voltage is in use by an arc, thus no value is needed
-                    # TODO: replace +2 by actual number of datainputs of network
-                    if (par_name, j+2) not in self.arcs.keys():
-                        indices[par_name].append(j)
-        
-        self.indices = indices
+    # attach GA functions to class (optional#1)
+    prepare_config_obj, set_dict_indices_from_pool, set_parameters_from_pool, trainGA = GA.prepare_config_obj, GA.set_dict_indices_from_pool, GA.set_parameters_from_pool, GA.trainGA
+    noveltyGA = GA.noveltyGA
 
-    def set_parameters_from_pool(self, pool):
-        """ Uses the indices set by set_dict_indices_from_pool() to 
-        update parameters with values from pool """
-        pool_iter = iter(pool)
-        with torch.no_grad(): # do not track gradients
-            for par_name, indices in self.indices.items():
-                # replace parameter par_name values with values from pool
-                replacement = [next(pool_iter) for _ in range(len(indices))]
-                getattr(self, par_name)[indices] = torch.tensor(replacement, dtype=torch.float32, device=self.cuda)
     
-    def trainGA(self, 
-                train_data,
-                target_data,
-                cf,
-                loss_fn = None,
-                verbose = False):
-        """ Train web with Genetic Algorithm """
-        
-        train_data, target_data = self.check_cuda(train_data, target_data)
-        
-        self.check_graph()
-        
-        # prepare config object with information of web, # of genes, partitions, genomes, etc
-        self.prepare_config_obj(cf, loss_fn)
-        # initialize genepool
-        genepool = Evolution.GenePool(cf)
-        # stores which indices of self.parameters to change during training
-        self.set_dict_indices_from_pool(genepool.pool[0])
-        
-        # np arrays to save genePools, outputs and fitness
-        geneArray = np.zeros((cf.generations, cf.genomes, cf.genes))
-        outputArray = np.zeros((cf.generations, cf.genomes, train_data.shape[0], self.nr_output_vertices))
-        fitnessArray = np.zeros((cf.generations, cf.genomes))
-        
-        # Temporary arrays, overwritten each generation
-        fitnessTemp = np.zeros((cf.genomes, cf.fitnessavg))
-        outputAvg = torch.zeros(cf.fitnessavg, train_data.shape[0], self.nr_output_vertices, device=self.cuda)
-        outputTemp = torch.zeros(cf.genomes, train_data.shape[0], self.nr_output_vertices, device=self.cuda)
-
-        for i in range(cf.generations):
-            for j in range(cf.genomes):
-                for avgIndex in range(cf.fitnessavg):
-                    # update parameters of each network
-                    self.set_parameters_from_pool(genepool.pool[j])
-                    self.forward(train_data)
-                    outputAvg[avgIndex] = self.get_output()
-                    # use negative loss as fitness for genepool.NextGen()
-                    fitnessTemp[j, avgIndex] = -cf.Fitness(outputAvg[avgIndex], target_data).item()
-                    
-                outputTemp[j] = outputAvg[np.argmin(fitnessTemp[j])]
-            
-            genepool.fitness = fitnessTemp.min(1)  # Save best fitness
-
-            # Save generation data
-            geneArray[i, :, :] = genepool.pool
-            outputArray[i, :, :] = outputTemp
-            fitnessArray[i, :] = genepool.fitness
-
-            if verbose:
-                print("Generation nr. " + str(i + 1) + " completed")
-                print("Best fitness: " + str(-max(genepool.fitness)))
-            
-            genepool.NextGen()
-
-        return geneArray, outputArray, fitnessArray
-    
-    
-    ############################################################
-    ### ----------------- Gradient Descent ----------------- ###
-    ############################################################
-    def train(self, 
-              train_data,
-              target_data,
-              batch_size,
-              nr_epochs=100,
-              verbose=False,
-              beta=0.1,
-              optimizer=None,
-              loss_fn=None,
-              bias = False,
-              scale=False,
-              **kwargs):
-        """verbose: prints error at each iteration
-        beta: scaling parameter for relu regularization outside [0,1] for cv
-        maxiterations: the number of iterations after which training stops
-        """
-        train_data, target_data = self.check_cuda(train_data, target_data)
-        
-        self.check_graph()
-        
-        if optimizer is None:
-            print("INFO: Using Adam with: ", kwargs)
-            optimizer = self.optimizer(self.parameters(), **kwargs)
-        else:
-            print("INFO: Using custom optimizer with, ", kwargs)
-            optimizer = optimizer(self.parameters(), **kwargs)
-        
-        error_list = []
-        best_error = 10e5
-        best_params = self.get_parameters()
-        for epoch in range(nr_epochs):
-            permutation = torch.randperm(len(train_data))
-            for i in range(0,len(permutation), batch_size):
-                indices = permutation[i:i+batch_size]
-                y_pred = self.forward(train_data[indices], bias=bias, scale=scale)
-                error = self.error_fn(y_pred, target_data[indices], beta, loss_fn)
-                optimizer.zero_grad()
-                error.backward()
-                optimizer.step()
-            
-            predictions = self.forward(train_data, bias=bias, scale=scale)
-            error_value = self.error_fn(predictions, target_data, beta, loss_fn).item()
-            error_list.append(error_value)
-            if verbose:
-                print("INFO: error at epoch %s: %s" % (epoch, error_value))
-            if error_value < best_error:
-                best_error = error_value
-                best_params = self.get_parameters()
-        return error_list, best_params
-
-    ##################################################
-    ### ---------------- General ----------------- ###
-    ##################################################
-    def add_vertex(self, network, name, output=False):
+    def add_vertex(self, network, name, output=False, input_gates=None, voltage_bounds=None):
         """Adds neural network as a vertex to the graph.
         Args:
-            network: vertex (object with attribute D_in and method output())
-            name: key of graph dictionary in which vertex is created (str)
-            cv: control voltages, the parameters which are trained
+            network:        (object with attribute D_in and method output()) vertex
+            name:           (str) key of graph dictionary in which vertex is created (str)
+            output:         (bool) wheter of not this vertex' output is output of complete graph (boolean)
+            input_gates:    (list) numbers of gates which should be used as inputs
+            voltage_bounds: (2 by D_in tensor) first row are lower bounds of all control voltages, second row are upper bounds
+            evaluated:      (bool) flag indicating if vertex has already been evaluated
         """
         
         assert not hasattr(self, name), "Name %s already in use, choose other name for vertex!" % name
-        assert 'bias' not in name, "Name should not contain 'bias'"
-        assert 'scale' not in name, "Name should not contain 'scale'"
-        cv = self.default_param*torch.ones(5)
-        self.register_parameter(name, torch.nn.Parameter(cv))
+        
+        D_in = network.D_in
+        
+        # set default input_gates
+        if input_gates is None:
+            input_gates = [0,1]
+        assert max(input_gates, default=0)<D_in, "Gate number (%i) exceeds range (0-%i)" % (max(input_gates), D_in-1)
+        
+        # generate control_gates with remaining gates
+        control_gates = []
+        for i in range(D_in):
+            if i not in input_gates:
+                control_gates.append(i)
+        
+        
+        if voltage_bounds is None:
+            if hasattr(network, 'info') and 'offset' in network.info and 'amplitude' in network.info:
+                # collect voltage bounds from info of network
+                info = network.info
+                voltage_bounds = torch.cat((torch.FloatTensor(info['offset']-info['amplitude']),
+                                            torch.FloatTensor(info['offset']+info['amplitude']))).view(-1,D_in)
+            else:
+                # default to [[zeros], [ones]]
+                voltage_bounds = torch.cat((torch.zeros(D_in), torch.ones(D_in))).view(-1,D_in)
+        else:
+            voltage_bounds = torch.tensor(voltage_bounds)
+        
+        assert voltage_bounds.shape == (2, D_in), "shape of voltage bounds (%s) does not match expected shape (%s)"
+
+        # define full transfer functions for each gate (may not be used)
+        transfer = [(lambda y: (lambda x: self.transfer(x)*(y[1]-y[0])+y[0]))(ii) for ii in voltage_bounds.t()]
+        
+        # keep only the values of control gates, input gate values are not used
+        voltage_bounds = voltage_bounds[:, control_gates]
+
+        # add parameter to model
+        number_cv = len(control_gates)                          # nr of control voltages
+        cv = torch.rand(number_cv)*(voltage_bounds[1]-voltage_bounds[0]) + voltage_bounds[0] # initialize randomly
+        self.register_parameter(name, torch.nn.Parameter(cv))   # register parameter to object
+        self.nr_of_params += number_cv                          # update number of parameters in graph
+        self._params[0]['params'].append(getattr(self, name))   # add vertex parameter to first group
+        
+        # In forward_vertex inputs and controls are concatenated to e.g. [I,I,c,c,c,c] with gate numbers [2,3,0,1,4,5,6]
+        # here, I generate a list of indices such that can be swapped in correct order [0-7]
+        swapindices = [i for i in range(len(input_gates), D_in)]
+        for c,i in enumerate(input_gates):
+            swapindices.insert(i,c)
         
         self.graph[name] = {  'network':network,
-                              'isoutput':output}
+                              'isoutput':output,
+                              'swapindices':swapindices,
+                              'voltage_bounds':voltage_bounds,
+                              'transfer':transfer,
+                              'evaluated':False}
+        
         if output:
-            self.bias = torch.nn.Parameter(torch.cat((self.bias, torch.tensor([0.0]))))
-            self.scale = torch.nn.Parameter(torch.cat((self.scale, torch.tensor([0.0]))))
             self.nr_output_vertices  += 1
-    
+            
     def add_arc(self, source_name, sink_name, sink_gate):
         """Adds arc to graph, which connects an output of one vertex to the input of another.
         Args:
@@ -266,45 +158,69 @@ class webNNet(torch.nn.Module):
         # check if gate is already in use, combination of sink gate and sink name must be unique!
         assert (sink_name, sink_gate) not in self.arcs, "Sink gate (%s, %s), already in use!" % (sink_name, sink_gate)
         self.arcs[(sink_name, sink_gate)] = source_name
+    
+    def add_parameters(self, parameter_names, parameters, custom_reg = None, **kwargs):
+        """Adds custom parameters to be trained to web
+        parameter_names     list of strings, names of parameters
+        parameters          list of torch tensors (these values are also used when resetting parameters)
+        custom_reg          (optional) function which regularizes the custom parameters
+        **kwargs            (optional) keyword arguments for this group of parameters passed to optimizer, 
+                            for example, lr=0.2, which means the learning rate for these parameters are overwritten,
+                            see https://pytorch.org/docs/stable/optim.html#per-parameter-options
+        """
+        assert len(parameter_names) == len(parameters), 'Parameters and names have different length!'
+        for i, name in enumerate(parameter_names):
+            self.register_parameter(name, torch.nn.Parameter(parameters[i]))
+            self.custom_par[name] = parameters[i].clone()
+            self.nr_of_custom_params += len(parameters[i])
         
-    def forward(self, x, bias=False, scale=False, verbose=False):
+        # add parameters as new group to be passed in optimizer
+        self._params.append({'params':[getattr(self, name) for name in parameter_names], **kwargs})
+        
+        if custom_reg is not None:
+            self.custom_reg = custom_reg
+    
+    def forward(self, x):
         """Evaluates the graph, returns output (torch.tensor)
         Start at network which is the output of the whole graph, 
         then recursively step through graph vertex by vertex
         """
         
         # reset output of the graph
-        self.clear_output()
+        self._clear_output()
         
         # define input data for all networks
-        self.set_input_data(x, verbose = verbose)
+        self._set_input_data(x)
         
-        tuple_scaled_data = ()
+        tuple_data = ()
         for key,value in self.graph.items():
             # start at vertex which is defined as output
             if value['isoutput']:
                 # recursively evaluate vertices
-                self.forward_vertex(key)
+                self._forward_vertex(key)
                 return_value = value['output']
-                tuple_scaled_data += (return_value,)
-        returned_data = torch.cat(tuple_scaled_data, dim=1)
+                tuple_data += (return_value,)
+        returned_data = torch.cat(tuple_data, dim=1)
         self.output_data = returned_data.data
-        if scale:
-            returned_data *= self.scale+1.
-        if bias:
-            returned_data += self.bias
         return returned_data
 
-    def forward_vertex(self, vertex):
+    def _forward_vertex(self, vertex):
         """Calculates output of vertex"""
         v = self.graph[vertex]
         
         # skip if vertex is already evaluated
-        if 'output' not in v:
+        if not v['evaluated']:
             # control voltages, repeated to match batch size of train_data
-            cv_data = getattr(self, vertex).repeat(len(v['train_data']), 1)
+            cv_data = getattr(self, vertex).repeat(self._batch_size, 1)
+            
             # concatenate input with control voltage data
-            data = torch.cat((v['train_data'], cv_data), dim=1)
+            try:
+                data = torch.cat((v['train_data']*self.scale + self.bias, cv_data), dim=1) # If scale and bias are parameters
+            except AttributeError: 
+                data = torch.cat((v['train_data'], cv_data), dim=1)
+            
+            # swap columns according to input/control indices
+            data = data[:,self.graph[vertex]['swapindices']]
             
             # check dependencies of vertex by looping through all arcs
             for sink,source_name in self.arcs.items():
@@ -313,48 +229,41 @@ class webNNet(torch.nn.Module):
                 # that means we need the data through that arc
                 if sink_name == vertex:
                     # first evaluate vertices on which this input depends
-                    self.forward_vertex(source_name)
-                    # insert data from arc into control voltage parameters
-                    data[:, sink_gate] = torch.sigmoid(self.graph[source_name]['output'])[0]
-            
+                    self._forward_vertex(source_name)
+                    # insert data from arc into control voltage parameters with correct transfer function
+                    data[:, sink_gate] = v['transfer'][sink_gate](self.graph[source_name]['output'][:,0])
             # feed through network
-            v['output'] = v['network'].model(data)
+
+            v['output'] = v['network'].outputs(data,grad=True)
+            v['evaluated'] = True
+
     
-    def error_fn(self, y_pred, y, beta, loss=None):
-        """Error function: loss function with added regularization"""
-        # default loss function: MSE
-        if loss is None:
-            loss = self.loss
-        
-        # calculate regularization
+    def error_fn(self, y_pred, y, beta):
+        """Error function: loss function with added regularization"""        
+        # calculate regularization of control voltage parameters
         reg_loss = 0
-        for name, x in self.named_parameters():
-            if 'bias' in name:
-                pass
-            elif 'scale' in name:
-#                reg_loss += torch.sum(torch.abs(x))                
-                pass
-            else:
-                reg_loss += torch.sum(torch.relu(-x) + torch.relu(x-1.0))
-        return loss(y_pred, y) + beta*reg_loss
+
+        for name in self.graph.keys():
+            x = getattr(self, name)
+            voltage_bounds = self.graph[name]['voltage_bounds']
+            reg_loss += torch.sum(torch.relu(voltage_bounds[0] - x) + torch.relu(-voltage_bounds[1] + x))
+        return self.loss_fn(y_pred, y) + beta*reg_loss + self.custom_reg()
+
     
-    def set_input_data(self, x, verbose=False):
+    def _set_input_data(self, x):
         """Store training data for each network, assumes the torch tensor has the same ordering as in the dictionary"""
+        # assumes each vertex has same number of parameters (could change in future)
         dim = x.shape[1]
         # if input data is provided for each network
-        if int(dim/2) is len(self.graph):
+        if dim+self.nr_of_params is 7*len(self.graph):
             i = 0
             for key,v in self.graph.items():
-                v['train_data'] = x[:,i:i+2]
-                i += 2
-        # if input data is supposed to be reused for each network
-        elif dim==2:
-            for v in self.graph.values():
-                v['train_data'] = x
-            if verbose:
-                print("INFO: reusing input data for all networks")
+                nr_columns = v['network'].D_in-v['voltage_bounds'].shape[1] # nr of columns of x to be used for this vertex
+                v['train_data'] = x[:,i:i+nr_columns]
+                i += nr_columns
         else:
-            assert False, "Number of input columns/2 (%s) should match number of vertices in graph (%s)" % (dim/2, len(self.graph))
+            assert False, "Size of input data is incorrect, expected (%i), got (%i)" % (7*len(self.graph) - self.nr_of_params, dim)
+        self._batch_size = x.shape[0]
 
     def get_parameters(self):
         """Returns a copy of all learnable parameters of object in dictionary"""
@@ -364,53 +273,50 @@ class webNNet(torch.nn.Module):
         return params
     
     def reset_parameters(self, value = None):
-        """Sets the control voltages of all networks to:
-        None: default value
-        'rand': randomly generated values
-        can also be number, single tensor for each parameter or list of tensors 
+        """Sets the control voltage parameters of all devices.
+        (custom parameters are set to their initial values)
+        options for value are:
+            None or 'rand'  randomly generated values
+            dict            use values from dictionary, must include custom parametes
+            iterable        replace values one by one from single iterable (e.g. from param_history)
         """
-        if value is None:
-            value = self.default_param
-        # set parameters, control voltages of networks
-        for name, param in self.named_parameters():
+        if value is None or (isinstance(value, str) and value == 'rand'):
             with torch.no_grad():
-                # 'rand' => random values except for bias and scale, bias and scale are zeroed
-                if value is 'rand':
-                    if 'bias' in name or 'scale' in name:
-                        param.data = torch.zeros(len(param), device=self.cuda)
+                for name, param in self.named_parameters():
+                    if name in self.graph.keys():
+                        voltage_bounds = self.graph[name]['voltage_bounds']
+                        diff = (voltage_bounds[1]-voltage_bounds[0])
+                        param.data = torch.rand(len(param), device=self.cuda)*diff + voltage_bounds[0]
                     else:
-                        param.data = torch.rand(len(param), device=self.cuda)
-                # dictionary => dict containing all parameters of web structure
-                elif isinstance(value, dict):
-                    param.data = value[name]
-                # single tensor => used for all vertices, bias and scale are zeroed
-                elif isinstance(value, torch.Tensor):
-                    if 'bias' in name or 'scale' in name:
-                        param.data = torch.zeros(len(param), device=self.cuda)
-                    else:
-                        param.data = value
-                # single value => same number copied and used for all vertices, bias and scale are zeroed
-                else:
-                    if 'bias' in name or 'scale' in name:
-                        param.data = torch.zeros(len(param), device=self.cuda)
-                    else:
-                        param.data = value*torch.ones(len(param), device=self.cuda)
+
+                        param.data = torch.tensor(self.custom_par[name].clone(), device=self.cuda)
+        elif isinstance(value, dict):
+            assert self.get_parameters().keys() == value.keys(), "Different keys in given dict"
+            with torch.no_grad():
+                for name, param in self.named_parameters():
+                     param.data = value[name]
+        else:
+            try:
+                assert len(value) == self.nr_of_params+self.nr_of_custom_params, "length of given list of parameters (%i) does not match nr of parameters (%i)"% (len(value), self.nr_of_params)
+                with torch.no_grad():
+                    c = 0
+                    for name, param in self.named_parameters():
+                        for i in range(len(param)):
+                            param[i] = value[c]
+                            c += 1
+            except TypeError:
+                print("type of given parameters (%s) is not available to set parameters of web" % type(value).__name__)
     
-    def get_output(self, scale=True, bias=True):
+    def get_output(self):
         """Returns last computed output of web"""
-        d = torch.tensor(self.output_data.data, device=self.cuda)
-        if scale:
-            d *= 1+self.scale.data
-        if bias:
-            d += self.bias.data
-        return d
+        return torch.tensor(self.output_data.data, device=self.cuda)
     
-    def clear_output(self):
+    def _clear_output(self):
         """Reset output data of graph, NOT the parameters"""
         self.output_data = None
         for v in self.graph.values():
-            # remove output data of vertex, return None if key does not exist
-            v.pop('output', None)
+            # reset evaluated flag
+            v['evaluated'] = False
 
     def check_cuda(self, *args):
         """Converts tensors that are going to be used to cuda"""
@@ -426,9 +332,13 @@ class webNNet(torch.nn.Module):
                 buf_lst.append(arg.to(self.cuda))
         else:
             buf_lst = args
-        return tuple(buf_lst)
+        if len(buf_lst) == 1:
+            return buf_lst[0]
+        else:
+            return tuple(buf_lst)
 
-    def check_graph(self, print_graph=False):
+
+    def check_graph(self, print_graph=False, verbose=True):
         """Checks if the build graph is valid, optional plotting of graph"""
         vertices = [*self.graph.keys()]
         arcs = self.arcs.copy()
@@ -455,9 +365,10 @@ class webNNet(torch.nn.Module):
                     del arcs[sink]
         
         input_order = self.graph.keys()
-        print('INFO: Assumed order of input data is: ' + ' '.join(input_order))
         output_order = [key if value['isoutput'] else '' for key,value in self.graph.items()]
-        print('INFO: Order of output data is: ' + ' '.join(output_order))
+        if verbose:
+            print('INFO: Assumed order of input data is: ' + ' '.join(input_order))
+            print('INFO: Order of output data is: ' + ' '.join(output_order))
         
         # ------------------- START plot graph ------------------- 
         if print_graph:

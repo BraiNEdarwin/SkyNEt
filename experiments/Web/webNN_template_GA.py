@@ -5,14 +5,13 @@ Created on Thu Nov 29 18:07:01 2018
 
 @author: ljknoll
 
-testing evolution script for training web of neural networks
+Testing evolution script for training web of neural networks, both GA and GD
 
-removed dependency on config.config_class
 """
 import torch
 import matplotlib.pyplot as plt
 
-from SkyNEt.modules.Nets.predNNet import predNNet
+from SkyNEt.modules.Nets.staNNet import staNNet
 from SkyNEt.modules.Nets.webNNet import webNNet
 import SkyNEt.experiments.boolean_logic.config_evolve_NN as config
 
@@ -24,18 +23,16 @@ cf.fitnessavg = 1
 
 # Initialize NN
 nn_file = r'/home/lennart/Dropbox/afstuderen/search_scripts/lr2e-4_eps400_mb512_20180807CP.pt'
-net = predNNet(nn_file)
+net = staNNet(nn_file)
 
 # build web
 web = webNNet()
 web.add_vertex(net, 'A', output=True)
-#web.add_vertex(net, 'B')
-#web.add_arc('B', 'A', 3)
 
 
 # batch size
 N = 7
-# input data, size (N, 2*number of networks)
+# input data, size (N, 2 * nr of networks)
 x = torch.cat((torch.zeros(N), torch.linspace(-0.9, 0.9, N))).view(2, -1).t()
 # target data, size (N, nr output vertices)
 target = torch.linspace(0, 0.5, N).view(-1,1)
@@ -51,15 +48,14 @@ plt.title('GA error')
 # plot best output
 plt.figure()
 plt.plot(outputArray[-1, 0])
-plt.plot(target)
+plt.plot(target.numpy())
 plt.legend(['web output', 'target'])
 plt.title('GA output')
 
 
 web.reset_parameters()
+loss, params, param_history = web.train(x, target, batch_size=1, max_epochs=200, lr=0.05, beta=0.1, verbose=True)
 
-
-loss, params = web.train(x, target, 1, 200, lr=0.05, beta=0.1)
 web.reset_parameters(params)
 web.forward(x)
 
@@ -69,7 +65,7 @@ plt.title('GD error')
 
 plt.figure()
 plt.plot(web.get_output().view(-1,1).numpy())
-plt.plot(target)
+plt.plot(target.numpy())
 plt.legend(['web output', 'target'])
 plt.title('GD output')
 
