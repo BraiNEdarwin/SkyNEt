@@ -12,7 +12,7 @@ Created on Wed Aug 21 11:34:14 2019
 
 import numpy as np
 import importlib
-
+from SkyNEt.config.acceleration import Accelerator
 #TODO: Add chip platform
 #TODO: Add simulation platform
 #TODO: Target wave form as argument can be left out if output dimension is known internally
@@ -35,39 +35,45 @@ class nn:
         
         # Initialize NN
         self.net = self.staNNet(platform_dict['path2NN'])
-        self.dtype = self.torch.FloatTensor #torch.cuda.FloatTensor
         
         # Set parameters 
         self.amplification = self.net.info['amplification']
         self.input_indx = platform_dict['in_list']
         self.nn_input_dim = len(self.net.info['amplitude'])
+        self.nr_control_genes = self.nn_input_dim - len(self.input_indx)
+        print(f'Initializing NN platform with {self.nr_control_genes} control genes')
+        self.control_indx = platform_dict['control_indx']
+        assert self.nr_control_genes == len(self.control_indx)
         
+        if platform_dict.__contains__('trafo_indx'):
+            self.trafo_indx = platform_dict['trafo_indx']
+            self.trafo = platform_dict['trafo'] # explicitly define the trafo func
+        else:  
+            self.trafo_indx = None
+            self.trafo = lambda x,y: x #define trafo as identity
+
     def evaluatePopulation(self,inputs_wfm, genePool, target_wfm):
         genomes = len(genePool)
         outputPopul = np.zeros((genomes,target_wfm.shape[-1]))
         
         for j in range(genomes):
             # Set the input scaling
-            x_trafo = self.trafo(inputs_wfm, genePool[j, -1])
+            # inputs_wfm.shape -> (nr-inputs,nr-time-steps)
+            x = self.trafo(inputs_wfm, genePool[j, self.trafo_indx])
         
             # Feed input to NN
             #target_wfm.shape, genePool.shape --> (time-steps,) , (nr-genomes,nr-genes)
-            g = np.ones_like(target_wfm)[:,np.newaxis]*genePool[j,:5,np.newaxis].T
+            g = np.ones_like(target_wfm)[:,np.newaxis]*genePool[j,self.control_indx,np.newaxis].T
             g_index = np.delete(np.arange(self.nn_input_dim),self.input_indx)
-            #g.shape,x_trafo.shape --> (time-steps,nr-CVs) , (input-dim, time-steps)
+            #g.shape,x.shape --> (time-steps,nr-CVs) , (input-dim, time-steps)
             x_dummy = np.empty((g.shape[0],self.nn_input_dim)) # dims of input (time-steps)xD_in
-            x_dummy[:,self.input_indx] = x_trafo.T
+            x_dummy[:,self.input_indx] = x.T
             x_dummy[:,g_index] = g 
-            inputs = self.torch.from_numpy(x_dummy).type(self.dtype)
+            inputs = Accelerator.format_numpy(x_dummy)
             output = self.net.outputs(inputs)
             outputPopul[j] = output
         
         return self.amplification*np.asarray(outputPopul)
-    
-    def trafo(self,inputs_wfm,params_trafo):
-        # inputs_wfm.shape -> (nr-inputs,nr-time-steps)
-        # params_trafo.shape -> ()
-        return inputs_wfm*params_trafo
 
 #%% Simulation platform for physical MC simulations of devices 
 class kmc:
@@ -83,7 +89,9 @@ if __name__ == '__main__':
     # Define platform
     platform = {}
     platform['path2NN'] = r'../test/NN_test/checkpoint3000_02-07-23h47m.pt'
-    platform['in_list'] = [0,5,6]
+    platform['in_list'] = [0,5,6] #indices of NN input
+    platform['control_indx'] = np.arange(4) #indices of gene array
+    
     nn = nn(platform)
     
     out = nn.evaluatePopulation(np.array([[0.3,0.5,0],[0.3,0.5,0],[0.3,0.5,0]]),
