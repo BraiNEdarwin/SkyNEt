@@ -18,6 +18,7 @@ TODOs:
     - amplification must be done in DataHandler.DataLoader
     - documentation
 """
+from SkyNEt.config.acceleration import Accelerator
 
 import torch
 import torch.nn as nn
@@ -50,7 +51,6 @@ class staNNet(nn.Module):
            for key, item in data[2].items():
                self.info[key] = item 
            
-           self.amplification = self.info['amplification']
             #Prepare data
            self._data(data)
            
@@ -204,9 +204,9 @@ class staNNet(nn.Module):
     def outputs(self,inputs,grad=False):
         data = self.load_data(inputs) 
         if grad: #why this?
-          return self.model(data) * self.amplification
+          return self.model(data) * Accelerator.format_numpy(self.info['amplification'])
         else:
-          return self.model(data).data.cpu().numpy()[:,0] * self.amplification
+          return self.model(data).data.cpu().numpy()[:,0] * self.info['amplification']
       
     def save_model(self, path):
         """
@@ -227,18 +227,18 @@ class staNNet(nn.Module):
     def _errors(self, x, y):
         get_indices = torch.randperm(len(x)).type(self.itype)[:len(self.x_val)]
         x = self.load_data(x[get_indices])
-        prediction = self.model(x) * self.amplification
-        target = y[get_indices] * self.amplification
+        prediction = self.model(x) * Accelerator.format_numpy(self.info['amplification'])
+        target = y[get_indices] * Accelerator.format_numpy(self.info['amplification'])
         return self.loss_fn(prediction, target).item()
     
     def _data(self,data):
         self.x_train = self._to_torch(data[0][0])
         self.y_train = data[0][1]
-        self.y_train = self.y_train/self.amplification
+        self.y_train = self.y_train/self.info['amplification']
         self.y_train = self._to_torch(self.y_train)
         self.x_val = self._to_torch(data[1][0])
         self.y_val = data[1][1]
-        self.y_val = self.y_val/self.amplification
+        self.y_val = self.y_val/self.info['amplification']
         self.y_val = self._to_torch(self.y_val)
 
     def _tests(self):
