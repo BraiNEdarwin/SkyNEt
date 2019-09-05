@@ -15,7 +15,7 @@ INPUT: -data: a list of (input,output) pairs for training and validation
 TODOs:
     - Better handling of device availability (use accelerator.py)
     - Implement more flexible training? (eg. choice of optimizer?)
-    - amplitude conversion must be done in DataHandler.DataLoader
+    - amplification must be done in DataHandler.DataLoader
     - documentation
 """
 
@@ -26,7 +26,7 @@ import numpy as np
 
 class staNNet(nn.Module):
 
-    def __init__(self,*args, activation=nn.ReLU(), device='cpu', conversion=100):
+    def __init__(self,*args, activation=nn.ReLU(), device='cpu'):
         super(staNNet, self).__init__()
         ### Define Data Type for PyTorch ###
         #Need to do it like this instead of with torch.cuda.is_available()
@@ -46,10 +46,12 @@ class staNNet(nn.Module):
            data, self.hidden_sizes = args
            
            #Define info dict
-           self.info = {'activation':activation, 'conversion':conversion}
+           self.info = {'activation':activation}
            for key, item in data[2].items():
                self.info[key] = item 
-           #Prepare data
+           
+           self.amplification = self.info['amplification']
+            #Prepare data
            self._data(data)
            
            self.D_in = self.load_data(self.x_train).size()[1]
@@ -202,9 +204,9 @@ class staNNet(nn.Module):
     def outputs(self,inputs,grad=False):
         data = self.load_data(inputs) 
         if grad: #why this?
-          return self.model(data) * self.info['conversion']
+          return self.model(data) * self.amplification
         else:
-          return self.model(data).data.cpu().numpy()[:,0] * self.info['conversion']
+          return self.model(data).data.cpu().numpy()[:,0] * self.amplification
       
     def save_model(self, path):
         """
@@ -225,18 +227,18 @@ class staNNet(nn.Module):
     def _errors(self, x, y):
         get_indices = torch.randperm(len(x)).type(self.itype)[:len(self.x_val)]
         x = self.load_data(x[get_indices])
-        prediction = self.model(x) * self.info['conversion']
-        target = y[get_indices] * self.info['conversion']
+        prediction = self.model(x) * self.amplification
+        target = y[get_indices] * self.amplification
         return self.loss_fn(prediction, target).item()
     
     def _data(self,data):
         self.x_train = self._to_torch(data[0][0])
         self.y_train = data[0][1]
-        self.y_train = self.y_train/self.info['conversion']
+        self.y_train = self.y_train/self.amplification
         self.y_train = self._to_torch(self.y_train)
         self.x_val = self._to_torch(data[1][0])
         self.y_val = data[1][1]
-        self.y_val = self.y_val/self.info['conversion']
+        self.y_val = self.y_val/self.amplification
         self.y_val = self._to_torch(self.y_val)
 
     def _tests(self):
