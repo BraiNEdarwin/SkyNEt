@@ -232,3 +232,4 @@ Currently the users with admin rights on this repo are:
 * Bram van de Ven, [@bbroo1](https://github.com/bbroo1) 
 (b.vandeven@utwente.nl)
 * Unai Alegra Ibara [@ualegre](https://github.com/ualegre)
+(u.alegre@utwente.nl)
