@@ -98,7 +98,7 @@ class VCDimensionTest():
         # not_found = self.found_classifier == 0
         # print('Classifiers not found: %s' %
         #       np.arange(len(self.found_classifier))[not_found])
-        # binaries_nf = np.array(binary_labels)[not_found]  # labels que no encontro
+        # binaries_nf = np.array(binary_labels)[not_found]  # labels not found
         # print('belongs to : \n', binaries_nf)
         # output_nf = self.output_classifier[not_found]
         # # plt output of failed classifiers

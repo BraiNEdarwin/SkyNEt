@@ -20,6 +20,7 @@ class CapacityTest():
         self.vcdimension_test = VCDimensionTest(algorithm=configs['algorithm'], output_dir=configs['output_dir'], surrogate_model_name=configs['surrogate_model_name'])
 
     def run_test(self):
+        results = {}
         while True:
             self.__init_test()
             opportunity = 0
@@ -30,15 +31,17 @@ class CapacityTest():
                 opportunity += 1
                 if (not_found.size == 0) or (opportunity >= self.configs['max_opportunities']):
                     break
-
-            if not self.vcdimension_test.close_test(self.threshold, self.current_dimension, self.configs['show_plot']) or not self.next_vcdimension():
+            results[str(self.current_dimension)] = self.vcdimension_test.close_test(self.threshold, self.current_dimension, self.configs['show_plot'])
+            if not results[str(self.current_dimension)] or not self.next_vcdimension():
                 self.vcdimension_test.writer.save()
-                break
+                self.results = results
+                return results
 
     def __init_test(self):
         print('==== VC Dimension %d ====' % self.current_dimension)
         inputs = self.generate_test_inputs(self.current_dimension)
         binary_labels = self.__generate_binary_target(self.current_dimension).tolist()
+        self.threshold = self.__calculate_threshold()
         self.vcdimension_test.init_data(inputs, binary_labels, self.threshold)
 
     def __calculate_threshold(self):
