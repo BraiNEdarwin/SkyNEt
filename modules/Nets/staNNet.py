@@ -160,16 +160,22 @@ class staNNet(nn.Module):
         self.info = state_dic['info']
         print(f'Meta-info: \n {self.info.keys()}')
         state_dic.pop('info')
-
-        self.D_in = self.info['D_in']
-        self.D_out = self.info['D_out']
-        self.hidden_sizes = self.info['hidden_sizes']
+        
+        try:
+            self.D_in = self.info['D_in']
+            self.D_out = self.info['D_out']
+            self.hidden_sizes = self.info['hidden_sizes']
+        except KeyError:
+            print(KeyError," continue with standard architecture (d=5,w=90,out=1)")
+            self.D_in = len(self.info['offset'])
+            self.D_out = 1
+            self.hidden_sizes = [90]*6     
 
         self._contruct_model()
         
         self.model.load_state_dict(state_dic)
 
-        if isinstance(list(net.model.parameters())[-1],torch.FloatTensor): 
+        if isinstance(list(self.model.parameters())[-1],torch.FloatTensor): 
             self.itype = torch.LongTensor
         else: 
             self.itype = torch.cuda.LongTensor
@@ -180,7 +186,10 @@ class staNNet(nn.Module):
 
         self.l_in = nn.Linear(self.D_in, self.hidden_sizes[0])
         self.l_out = nn.Linear(self.hidden_sizes[-1], self.D_out)
-        activ_func = self.info['activation']
+        if type(self.info['activation']) is str:
+            activ_func = nn.ReLU()
+        else:
+            activ_func = self.info['activation']
         
         modules = [self.l_in,activ_func]
         
@@ -191,8 +200,8 @@ class staNNet(nn.Module):
             modules.append(activ_func)
         
         modules.append(self.l_out)
-        self.model = nn.Sequential(*modules)
         print('Model constructed with modules: \n' ,modules)
+        self.model = nn.Sequential(*modules)
         
         self.loss_fn = nn.MSELoss()
         print(f'Loss is {self.loss_fn}')
