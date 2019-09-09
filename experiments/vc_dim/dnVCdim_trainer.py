@@ -48,7 +48,8 @@ def neg_sig_corr(output, target):
     x1 = x1[x1==torch.min(x1)]
     dx = torch.mean(x1) - torch.mean(x0)
     f = 1.0/(1.0+torch.exp(-dx))
-    return (1.0-corr)/f
+    print(f'corr: {corr}; sig: {f}')
+    return (1.0-corr)/(f + 1e-7)
 
 def input_waveform(inputs,lengths):
     assert len(inputs) == 2, 'Input must be 2 dimensional!'
@@ -61,7 +62,7 @@ def input_waveform(inputs,lengths):
 #%% Function definition
 def train(inputs, binary_labels, net, loss_fn,
           filepath = r'../../test/NN_test/nnVCdim_testing/',
-          epochs = 3000):
+          epochs = 1000, beta=5):
     
     cost = np.zeros(epochs)
     
@@ -74,13 +75,13 @@ def train(inputs, binary_labels, net, loss_fn,
     targets = Accelerator.format_numpy(targets).view(-1,1)
     
     #Define optimizer
-    optim = torch.optim.SGD(net.parameters(),lr=0.75,weight_decay=0.)
+    optim = torch.optim.Adam(net.parameters(),lr=0.01)
     #Train net
     c_min = np.inf
     for ep in range(epochs): #need to use minibatch for such a small network?
         
         out = net(input_wfrm)
-        loss = loss_fn(out,targets)
+        loss = loss_fn(out,targets) + beta*net.regularizer()
 
         optim.zero_grad()
         loss.backward()
@@ -102,13 +103,13 @@ if __name__=='__main__':
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     import matplotlib.pyplot as plt
-    from SkyNEt.modules.Nets.net_collection import single_layer_net as NN
+    from SkyNEt.modules.Nets.dopantNet import dopantNet as NN
     #NN parameters
-    nn_params = 2 # hidden_neurons for single_layer_net
+    nn_params = [1,2] # list with data input indices
     #Initialize net
     net = NN(nn_params)
     #Define loss function 
-    loss_fn  = torch.nn.BCELoss()
+    loss_fn  = neg_sig_corr
     
     inputs = [[-0.7,0.7,-0.7,0.7],[-0.7,-0.7,0.7,0.7]]
 #    [[-0.7,0.7,-0.7,0.7,-0.35,0.35,0.,0.],[-0.7,-0.7,0.7,0.7,0.,0.,-1.0,1.0]]
@@ -118,7 +119,7 @@ if __name__=='__main__':
                                                                net, loss_fn)
     
     print(f'accuracy: {accuracy}')
-    
+    print(best_weights)
     plt.figure()
     plt.plot(cost)
     plt.show()

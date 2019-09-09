@@ -34,12 +34,17 @@ class dopantNet(nn.Module):
         
         self.min_voltage = offset - amplitude
         self.max_voltage = offset + amplitude
-        bias = self.min_voltage + (self.max_voltage - self.min_voltage)*np.random.rand(1,self.nr_cv)
+        bias = self.min_voltage[self.indx_cv] + \
+            (self.max_voltage[self.indx_cv] - self.min_voltage[self.indx_cv])* \
+            np.random.rand(1,self.nr_cv)
+            
         bias = torch.tensor(bias,dtype=torch.float32).to(device)
         self.bias = nn.Parameter(bias)
         #Set as torch Tensors and send to device
         self.indx_cv = torch.tensor(self.indx_cv).to(device)
         self.amplification = torch.tensor(self.net.info['amplification']).to(device)
+        self.min_voltage = torch.tensor(self.min_voltage,dtype=torch.float32).to(device)
+        self.max_voltage  = torch.tensor(self.max_voltage,dtype=torch.float32).to(device)
     
     def forward(self,x):
         
@@ -56,12 +61,15 @@ class dopantNet(nn.Module):
     
     
     def regularizer(self):
-        assert any(self.min_voltage[self.indx_cv]<0), \
+        x = self.bias
+        low = self.min_voltage[self.indx_cv]
+        high = self.max_voltage[self.indx_cv]
+#        print(x.dtype,low.dtype,high.dtype)
+        assert any(low<0), \
         "Min. Voltage is assumed to be negative, but value is positive!"
-        assert any(self.max_voltage[self.indx_cv]>0), \
+        assert any(high>0), \
         "Max. Voltage is assumed to be positive, but value is negative!"
-        reg = torch.sum(torch.relu(self.min_voltage[self.indx_cv] - x) 
-                        + torch.relu(x-self.max_voltage[self.indx_cv])) 
+        reg = torch.sum( torch.relu(low - x) + torch.relu(x - high) ) 
         return reg
         
 
@@ -72,10 +80,11 @@ if __name__ == '__main__':
     x = 0.5*np.random.randn(1,3) 
     x = torch.Tensor(x).to(device)
     
-    loss = nn.MSELoss()
     target = torch.Tensor([5]).to(device)
     
     node = dopantNet([0,3,4])
+    loss = nn.MSELoss()
+    
     print(list(node.parameters())[0])
     print(list(node.parameters())[-1][:8])
 
@@ -90,7 +99,7 @@ if __name__ == '__main__':
         if np.isnan(out.data.cpu().numpy()[0]):
             break
 #        print(out.data.cpu())
-        l = loss(out,target)
+        l = loss(out,target) + node.regularizer()
         l.backward()
         optimizer.step()
         loss_array.append(l.data.cpu().numpy())
