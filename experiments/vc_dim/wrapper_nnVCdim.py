@@ -11,8 +11,8 @@ the entry 1 is set in a vector corresponding to all labellings.
 from create_binary import bintarget
 import time
 import nnVCdim as vcd
-#from SkyNEt.modules.Nets.net_collection import single_layer_net as NN
-from SkyNEt.modules.Nets.dopantNet import dopantNet as NN
+from SkyNEt.modules.Nets.net_collection import single_layer_net as NN
+
 import torch
 import numpy as np
 from matplotlib import pyplot as plt
@@ -20,12 +20,18 @@ import os
 
 inputs = [[-0.7,0.7,-0.7,0.7],[-0.7,-0.7,0.7,0.7]]
 # [[-0.7,0.7,-0.7,0.7,-0.35,0.35,0.,0.],[-0.7,-0.7,0.7,0.7,0.,0.,-1.0,1.0]] for paper
+#NN parameters
+ # hidden_neurons for single_layer_net
+nn_params = 2
+#Define loss function 
+    # torch.nn.BCELoss() for binary classification
+loss_fn  = torch.nn.BCELoss()
 
 N=len(inputs[0])
 #Create save directory
-filepath0 = r'D:/UTWENTE/Data/VC_dim'
+filepath0 = r'../../test/VC_dim'
 
-filepath1 = filepath0+'/Capacity_N'+str(N)
+filepath1 = filepath0+f'/{nn_params}-hidden_nodes/Capacity_N{str(N)}'
 date = time.strftime('%Y_%m_%d_%H-%M_TEST')
 dirname = filepath1+'/'+date+'/'
 if os.path.exists(filepath0):
@@ -45,15 +51,6 @@ else:
 
 threshold = (1-0.5/N)
 print('Threshold for acceptance is set at: ',threshold)
-
-#NN parameters
- # hidden_neurons for single_layer_net
- # list with input indices
-nn_params = [1,2]
-#Define loss function 
-    # torch.nn.BCELoss() for single_layer_net
-    # vcd.neg_sig_corr for dopantNet
-loss_fn  = vcd.neg_sig_corr
 
 #Initialize container variables
 cost_classifier = []

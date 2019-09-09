@@ -26,7 +26,7 @@ Notes:
 # SkyNEt imports
 #import SkyNEt.modules.SaveLib as SaveLib
 from SkyNEt.modules.Classifiers import perceptron
-#from SkyNEt.config.acceleration import Accelerator
+from SkyNEt.config.acceleration import Accelerator
 from SkyNEt.modules.GenWaveform import GenWaveform
 # Other imports
 import torch
@@ -36,7 +36,7 @@ import numpy as np
 
 #%% Define loss function
 def neg_sig_corr(output, target):
-    
+
     vx = output - torch.mean(output)
     vy = target - torch.mean(target)
     c = torch.sum(vx * vy)
@@ -44,10 +44,11 @@ def neg_sig_corr(output, target):
     
     x0 = output[target==target.min()]
     x1 = output[target==target.max()]
-    dx = torch.mean(x1)-torch.mean(x0)
-    f = 1/(1+torch.exp(-2*(dx-2)))
-    
-    return -corr*f
+    x0 = x0[x0==torch.max(x0)]
+    x1 = x1[x1==torch.min(x1)]
+    dx = torch.mean(x1) - torch.mean(x0)
+    f = 1.0/(1.0+torch.exp(-dx))
+    return (1.0-corr)/f
 
 def input_waveform(inputs,lengths):
     assert len(inputs) == 2, 'Input must be 2 dimensional!'
@@ -67,9 +68,10 @@ def train(inputs, binary_labels, net, loss_fn,
     #Generate and process data
     length = [100]
     input_wfrm = input_waveform(inputs,length).T
-    input_wfrm = torch.from_numpy(input_wfrm)  
+    input_wfrm = Accelerator.format_numpy(input_wfrm)
     targets = GenWaveform(binary_labels,length)
-    targets = torch.Tensor(targets).view(-1,1)
+    targets = np.asarray(targets)
+    targets = Accelerator.format_numpy(targets).view(-1,1)
     
     #Define optimizer
     optim = torch.optim.SGD(net.parameters(),lr=0.75,weight_decay=0.)
@@ -79,22 +81,26 @@ def train(inputs, binary_labels, net, loss_fn,
         
         out = net(input_wfrm)
         loss = loss_fn(out,targets)
+
         optim.zero_grad()
         loss.backward()
         optim.step()
         # Save training cost
-        cost[ep] = loss.data.numpy()
+        cost[ep] = loss.data.cpu().numpy()
         if cost[ep]<c_min:
-            best_output = out.data.numpy()
+            best_output = out.data.cpu().numpy()
             c_min = cost[ep]
-            weights = np.asarray([params.data.numpy() for params in net.parameters()])
-
-    accuracy, _, _ = perceptron(best_output,targets.data.numpy())
-    return weights, best_output, cost, accuracy, targets.data.numpy()
+            params = list(filter(lambda p: p.requires_grad, net.parameters()))
+            weights = np.asarray([p.data.cpu().numpy() for p in params])
+    
+    targets = targets.data.cpu().numpy()
+    accuracy, _, _ = perceptron(best_output,targets)
+    return weights, best_output, cost, accuracy, targets
 
 #%% Initialization
 if __name__=='__main__':
     
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     import matplotlib.pyplot as plt
     from SkyNEt.modules.Nets.net_collection import single_layer_net as NN
     #NN parameters
