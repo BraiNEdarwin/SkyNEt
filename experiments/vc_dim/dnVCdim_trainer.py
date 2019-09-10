@@ -62,7 +62,7 @@ def input_waveform(inputs,lengths):
 #%% Function definition
 def train(inputs, binary_labels, net, loss_fn,
           filepath = r'../../test/NN_test/nnVCdim_testing/',
-          epochs = 1000, beta=5):
+          epochs = 1000, learning_rate=0.03, beta=5):
     
     cost = np.zeros(epochs)
     
@@ -75,7 +75,7 @@ def train(inputs, binary_labels, net, loss_fn,
     targets = Accelerator.format_numpy(targets).view(-1,1)
     
     #Define optimizer
-    optim = torch.optim.Adam(net.parameters(),lr=0.01)
+    optim = torch.optim.Adam(net.parameters(),lr=learning_rate)
     #Train net
     c_min = np.inf
     for ep in range(epochs): #need to use minibatch for such a small network?
