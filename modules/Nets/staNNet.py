@@ -27,7 +27,7 @@ import numpy as np
 
 class staNNet(nn.Module):
 
-    def __init__(self,*args, activation=nn.ReLU(), device='cpu'):
+    def __init__(self,*args, activation=nn.ReLU(), device='cpu',verbose=False):
         super(staNNet, self).__init__()
         ### Define Data Type for PyTorch ###
         #Need to do it like this instead of with torch.cuda.is_available()
@@ -38,7 +38,7 @@ class staNNet(nn.Module):
         else: 
             print('Train with CPU')
             self.dtype = torch.FloatTensor
-            
+        self.verbose = verbose    
         if len(args)==1 and type(args[0]) is str:
             self._load_model(args[0])
             
@@ -60,7 +60,8 @@ class staNNet(nn.Module):
            self.info['D_in'] = self.D_in
            self.info['D_out'] = self.D_out
            self.info['hidden_sizes'] = self.hidden_sizes
-           print(f'Meta-info: \n {self.info.keys()}')
+           if self.verbose:
+               print(f'Meta-info: \n {self.info.keys()}')
            self.ttype = self.x_train.type()
            self._tests()
         
@@ -158,7 +159,8 @@ class staNNet(nn.Module):
  
         # move info key from state_dic to self
         self.info = state_dic['info']
-        print(f'Meta-info: \n {self.info.keys()}')
+        if self.verbose:
+            print(f'Meta-info: \n {self.info.keys()}')
         state_dic.pop('info')
         
         try:
@@ -166,7 +168,8 @@ class staNNet(nn.Module):
             self.D_out = self.info['D_out']
             self.hidden_sizes = self.info['hidden_sizes']
         except KeyError:
-            print(KeyError," continue with standard architecture (d=5,w=90,out=1)")
+            if self.verbose:
+                print(KeyError," continue with standard architecture (d=5,w=90,out=1)")
             self.D_in = len(self.info['offset'])
             self.D_out = 1
             self.hidden_sizes = [90]*6     
@@ -200,11 +203,13 @@ class staNNet(nn.Module):
             modules.append(activ_func)
         
         modules.append(self.l_out)
-        print('Model constructed with modules: \n' ,modules)
+        if self.verbose:
+            print('Model constructed with modules: \n' ,modules)
         self.model = nn.Sequential(*modules)
         
         self.loss_fn = nn.MSELoss()
-        print(f'Loss is {self.loss_fn}')
+        if self.verbose:
+            print(f'Loss is {self.loss_fn}')
         
 #%% ###########################################################################
     ########################### Helper methods ################################

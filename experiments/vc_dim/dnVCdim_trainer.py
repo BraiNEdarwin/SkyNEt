@@ -48,8 +48,8 @@ def neg_sig_corr(output, target):
     x1 = x1[x1==torch.min(x1)]
     dx = torch.mean(x1) - torch.mean(x0)
     f = 1.0/(1.0+torch.exp(-dx))
-    print(f'corr: {corr}; sig: {f}')
-    return (1.0-corr)/(f + 1e-7)
+#    print(f'corr: {corr}; sig: {f}')
+    return -corr*f #(1.0-corr)/(f + 1e-7)
 
 def input_waveform(inputs,lengths):
     assert len(inputs) == 2, 'Input must be 2 dimensional!'
