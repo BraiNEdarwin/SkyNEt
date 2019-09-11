@@ -49,7 +49,7 @@ def neg_sig_corr(output, target):
     dx = torch.mean(x1) - torch.mean(x0)
     f = 1.0/(1.0+torch.exp(-dx))
 #    print(f'corr: {corr}; sig: {f}')
-    return -corr*f #(1.0-corr)/(f + 1e-7)
+    return  (1.0-corr)/(f + 1e-3) # -corr*f #
 
 def input_waveform(inputs,lengths):
     assert len(inputs) == 2, 'Input must be 2 dimensional!'
@@ -61,8 +61,7 @@ def input_waveform(inputs,lengths):
 
 #%% Function definition
 def train(inputs, binary_labels, net, loss_fn,
-          filepath = r'../../test/NN_test/nnVCdim_testing/',
-          epochs = 1000, learning_rate=0.03, beta=5):
+          epochs = 2000, learning_rate=0.01, beta=5):
     
     cost = np.zeros(epochs)
     
@@ -111,9 +110,9 @@ if __name__=='__main__':
     #Define loss function 
     loss_fn  = neg_sig_corr
     
-    inputs = [[-0.7,0.7,-0.7,0.7],[-0.7,-0.7,0.7,0.7]]
+    inputs = [[-0.6,0.6,-0.6,0.6],[-0.6,-0.6,0.6,0.6]]#[[-0.8,0.6,-0.8,0.6],[-0.8,-0.8,0.6,0.6]]
 #    [[-0.7,0.7,-0.7,0.7,-0.35,0.35,0.,0.],[-0.7,-0.7,0.7,0.7,0.,0.,-1.0,1.0]]
-    binary_labels = [0,1,1,0]
+    binary_labels = [0,0,0,1]
     best_weights, best_output, cost, accuracy, targets = train(inputs,
                                                                binary_labels,
                                                                net, loss_fn)

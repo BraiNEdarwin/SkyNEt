@@ -10,7 +10,7 @@ the entry 1 is set in a vector corresponding to all labellings.
 """
 from create_binary import bintarget
 import time
-import nnVCdim as vcd
+import dnVCdim_trainer as vcd
 #from SkyNEt.modules.Nets.net_collection import single_layer_net as NN
 from SkyNEt.modules.Nets.dopantNet import dopantNet as NN
 import torch
@@ -18,15 +18,15 @@ import numpy as np
 from matplotlib import pyplot as plt
 import os
 
-inputs = [[-0.7,0.7,-0.7,0.7],[-0.7,-0.7,0.7,0.7]]
-# [[-0.7,0.7,-0.7,0.7,-0.35,0.35,0.,0.],[-0.7,-0.7,0.7,0.7,0.,0.,-1.0,1.0]] for paper
+inputs = [[-0.6,0.6,-0.6,0.6,-0.3],[-0.6,-0.6,0.6,0.6,0.]]
+# [[-0.7,0.7,-0.7,0.7,-0.35,0.35,0.,0.],[-0.7,-0.7,0.7,0.7,0.,0.,-1.0,1.0]] for device
 
 N=len(inputs[0])
 #Create save directory
-filepath0 = r'../../test/VC_dim'
+filepath0 = r'../../results/VC_dim'
 
-filepath1 = filepath0+'/Capacity_N'+str(N)
-date = time.strftime('%Y_%m_%d_%H-%M_TEST')
+filepath1 = filepath0+'/Model/Capacity_N'+str(N)
+date = time.strftime('%Y_%m_%d_%H-%M_Run3-2019_09_11_12-58')
 dirname = filepath1+'/'+date+'/'
 if os.path.exists(filepath0):
     os.makedirs(dirname)
@@ -34,11 +34,11 @@ else:
     assert 1==0, 'No directory created. Parent target directory '+filepath0+' does not exist'
     
 ## Create binary labels for N samples
-bad_gates = None # 'yes' # 
+bad_gates = 'yes' # None # 
 if bad_gates is None:
     binary_labels = bintarget(N).tolist()
 else:
-    bad_gates_dir = f'D:/UTWENTE/Data/VC_dim/Capacity_N{str(N)}/k/'
+    bad_gates_dir = filepath1+f'/2019_09_11_13-18_Run2.1-2019_09_11_12-58/'
     bad_gates = np.load(bad_gates_dir+'Summary_Results.npz')['indx_nf']
     binary_labels = bintarget(N)[bad_gates].tolist() 
     print(f'Missed classifiers ({len(bad_gates)}) in previous run: \n {bad_gates}')
@@ -73,14 +73,16 @@ for bl in binary_labels:
         #Initialize net
         net = NN(nn_params)
         #Train net
-        weights, output, cost, accuracy, _ = vcd.train(inputs,bl,net, loss_fn,
-                                                       filepath=dirname)
+        weights, output, cost, accuracy, _ = vcd.train(inputs,bl,net, loss_fn)
+        del net
+        print("Acuracy: ", accuracy, " cost: ", cost[-1])
+        print("Weights : \n",weights)
         if accuracy>threshold:
             found_classifier.append(1)
-            print('Found!')
+            print('FOUND!')
         else:
             found_classifier.append(0)
-            print('Not found!')
+            print('NOT FOUND!')
         cost_classifier.append(cost[-1])
         
     weights_classifier.append(weights)
@@ -142,11 +144,11 @@ else:
     plt.hist(cost_classifier)
     plt.show()
 
-#mask = (cost_classifier<0.21)*(accuracy_classifier<threshold)
-#plt.figure()
-#plt.plot(output_classifier[mask,:,0].T,'-o')
-#plt.legend(np.asarray(binary_labels)[mask])
-#plt.show()
+mask = (cost_classifier[1:-1]>0.5)*(accuracy_classifier[1:-1]>threshold)
+plt.figure()
+plt.plot(output_classifier[1:-1][mask,:,0].T,'-o')
+plt.legend(np.asarray(binary_labels)[1:-1][mask])
+plt.show()
 
 try:
     output_nf = output_classifier[not_found,:,0]

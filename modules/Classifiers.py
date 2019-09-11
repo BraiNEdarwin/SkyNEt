@@ -18,7 +18,7 @@ def perceptron(wvfrm,target,tolerance=0.01,max_iter=200):
     inp = np.concatenate([np.ones_like(wvfrm),wvfrm],axis=1)
     shuffle = np.random.permutation(len(inp))
     
-    n_test = int(0.25*n_total)
+    n_test = int(0.1*n_total)
     x_test = inp[shuffle[:n_test]]
     y_test = target[shuffle[:n_test]]
     
@@ -41,17 +41,19 @@ def perceptron(wvfrm,target,tolerance=0.01,max_iter=200):
         j += 1
 #        print('Prediction Error: ',error, ' in ', j,' iters')
     
-    buffer = np.zeros_like(y_test)
-    buffer[y_test==predict] = 1
+    predict = np.array(list(map(f,np.dot(inp,weights))))
+    buffer = np.zeros_like(target)
+#    print(predict.shape,target.shape,inp.shape)
+    buffer[target[:,0]==predict] = 1
     n_correct = np.sum(buffer)
-    accuracy = n_correct/n_test
+    accuracy = n_correct/n_total
     
-    predicted = (shuffle[:n_test],predict)
+    predicted = predict
 #    print('Fraction of iterations used: ', j/max_iter)
 #    pdb.set_trace()
-    corrcoef = np.corrcoef(y_test.T,x_test[:,1].T)[0,1]
-    if accuracy>0.9 and weights[0]<0 and corrcoef<0:
-        print('Weight is negative',weights[0],' and correlation also: ', corrcoef)
+    corrcoef = np.corrcoef(target.T,inp[:,1].T)[0,1]
+    if corrcoef<-0.001:
+        print('Correlation is negative: ', corrcoef)
         accuracy = 0.
         print('Accuracy is set to zero!')
         
@@ -62,12 +64,12 @@ if __name__=='__main__':
     
     #XOR as target
     target = np.zeros((800,1))
-    target[200:600] = 1 
+    target[:200] = 1 
     
     #Create wave form
     noise = 0.05
     output = np.zeros((800,1))
-    output[200:600] = 1 #XOR
+    output[200:] = 1 
 #    output[600:] = 1.75 
     wvfrm = output + noise*np.random.randn(len(target),1)
     
@@ -76,8 +78,8 @@ if __name__=='__main__':
     plt.figure()
     plt.plot(target)
     plt.plot(wvfrm,'.')
-    plt.plot(np.arange(len(target)),(-weights[0]/weights[1])*np.ones_like(target))
-    plt.plot(predicted[0],predicted[1],'xk')
+    plt.plot(np.arange(len(target)),(-weights[0]/weights[1])*np.ones_like(target),'g')
+    plt.plot(predicted,'xk')
     plt.show()
     
     nr_examples = 100
