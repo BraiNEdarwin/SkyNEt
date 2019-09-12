@@ -9,8 +9,9 @@ import SkyNEt.modules.Evolution as Evolution
 import SkyNEt.modules.PlotBuilder as PlotBuilder
 import config_ring as config
 try:
-    from SkyNEt.instruments.DAC import IVVIrack
-    from SkyNEt.instruments.ADwin import adwinIO
+    from SkyNEt.instruments import InstrumentImporter
+    # from SkyNEt.instruments.DAC import IVVIrack
+    # from SkyNEt.instruments.ADwin import adwinIO
 except:
     print('WARNING! Random input will be generated, IVVIrack or nidaqIO not imported')    
 from SkyNEt.modules.Classifiers import perceptron
@@ -22,7 +23,7 @@ import numpy as np
 import pdb
 
 #%%
-def evolve(inputs, binary_labels, filepath = r'D:/data/Bram/Ring/', hush=False):
+def evolve(inputs, binary_labels, filepath = r'Y:/Brains_data/Bram/Ring_DDN/', hush=False):
     signal.signal(signal.SIGINT, reset)
     # Initialize config object
     cf = config.experiment_config(inputs, binary_labels, filepath=filepath)
@@ -52,11 +53,8 @@ def evolve(inputs, binary_labels, filepath = r'D:/data/Bram/Ring/', hush=False):
         mainFig = PlotBuilder.initMainFigEvolution(cf.genes, cf.generations, cf.genelabels, cf.generange)
     
     # Initialize instruments
-    try:
-        ivvi = IVVIrack.initInstrument()
-        adwin = adwinIO.initInstrument()
-    except:
-        pass
+    ivvi = InstrumentImporter.IVVIrack.initInstrument()
+    
     # Initialize genepool
     genePool = Evolution.GenePool(cf)
     
@@ -65,26 +63,40 @@ def evolve(inputs, binary_labels, filepath = r'D:/data/Bram/Ring/', hush=False):
         start = time.time()
         for j in range(cf.genomes):
             # Set the DAC voltages
-            for k in range(cf.genes-1):
+            for k in range(cf.genes-2):
                 controlVoltages[k] = genePool.MapGenes(
                                         cf.generange[k], genePool.pool[j, k])
-            try:
-                IVVIrack.setControlVoltages(ivvi, controlVoltages)
-                time.sleep(1)  # Wait after setting DACs
-            except:
-                pass
+            
+            InstrumentImporter.IVVIrack.setControlVoltages(ivvi, controlVoltages)
+            time.sleep(1)  # Wait after setting DACs
+           
             # Set the input scaling
-            x_scaled = x * genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])+250
+            s1 = genePool.MapGenes(cf.generange[-2], genePool.pool[j, -2])
+            s2 = genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
+            shift = np.array([s1,s2])[:,np.newaxis]
+#            pdb.set_trace()
+            x += shift
 
-    
+            up1 = np.linspace(0,x[0,0],cf.Slope_points)
+            down1 = np.linspace(x[0,np.shape(x)[1]-1],0,cf.Slope_points)
+            up2 = np.linspace(0,x[1,0],cf.Slope_points)
+            down2 = np.linspace(x[1,np.shape(x)[1]-1],0,cf.Slope_points)
+            Inp1 = np.append(up1,x[0])
+            Input1 = np.append(Inp1,down1)
+            Inp2 = np.append(up2,x[1])
+            Input2 = np.append(Inp2,down2)
+
+            x_scaled = np.zeros((2,len(Input1)))
+            x_scaled[0] = Input1
+            x_scaled[1] = Input2
+   
             # Measure cf.fitnessavg times the current configuration
             for avgIndex in range(cf.fitnessavg):
                 # Feed input to niDAQ
-                try:
-                    output = adwinIO.IO(adwin, x_scaled, cf.fs)
-                    output = output[0]
-                except:
-                    output = np.random.standard_normal(len(x[0]))
+                
+                output = InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)
+                output = output[0, cf.Slope_points:len(x_scaled[0])-cf.Slope_points]
+            
     
                 # Plot genome
                 try:
@@ -165,6 +177,7 @@ def evolve(inputs, binary_labels, filepath = r'D:/data/Bram/Ring/', hush=False):
     print('Max. Fitness: ', max_fitness)
     print('Best genome: ', best_genome)
     print('Accuracy of best genome: ', accuracy)
+    InstrumentImporter.IVVIrack.setControlVoltages(ivvi, [0,0,0,0,0,0,0,0])
     return best_genome, best_output, max_fitness, accuracy
 
 #%% Help functions
@@ -177,7 +190,7 @@ def reset(signum, frame):
         '''
         try:
             global ivvi
-            ivvi.set_dacs_zero()
+            InstrumentImporter.IVVIrack.setControlVoltages(ivvi, [0,0,0,0,0,0,0,0])
             print('ivvi DACs set to zero')
             del ivvi  # Test if this works!
         except:

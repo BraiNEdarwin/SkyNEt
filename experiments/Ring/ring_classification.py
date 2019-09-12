@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 import ring_evolve as re
 import numpy as np
 import config_ring as config
+import sys
 
 steps = 3
 
@@ -22,8 +23,7 @@ plt.figure()
 plt.plot(t,inp_wave.T)
 plt.plot(t,target_wave,'k')
 plt.show()
-#print(sys.path)
-#_,_,_,_ = re.evolve(inputs,labels)
+# _,_,_,_ = re.evolve(inputs,labels)
 
 try:
     re.reset(0, 0)

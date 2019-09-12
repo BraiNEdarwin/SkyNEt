@@ -43,7 +43,7 @@ def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     with nidaqmx.Task() as output_task, nidaqmx.Task() as input_task:
       # Define ao/ai channels
         for i in range(n_ao):
-            output_task.ao_channels.add_ao_voltage_chan('Dev1/ao'+str(i)+'', 'ao'+str(i)+'', -5, 5)
+            output_task.ao_channels.add_ao_voltage_chan('Dev1/ao'+str(i)+'', 'ao'+str(i)+'', -2, 2)
         for i in range(len(inputPorts)):
             if(inputPorts[i] == 1):
                 input_task.ai_channels.add_ai_voltage_chan('Dev1/ai'+str(i)+'') 
@@ -81,7 +81,7 @@ def IO(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     return data
 
 
-    def IO_cDAQ9132(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
+def IO_cDAQ9132(y, Fs, inputPorts = [1, 0, 0, 0, 0, 0, 0]):
     '''
     Input/output function for communicating with the NI USB 6216 when measuring
     with one input and one output.

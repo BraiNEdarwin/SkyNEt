@@ -26,9 +26,9 @@ class experiment_config(object):
         self.name = 'test'
         
         #define the IV you want to take in volts.
-        self.v_low = -0.9
-        self.v_high = 0.9
-        self.n_points = 1000
+        self.v_low = -0.1
+        self.v_high = 0.1
+        self.n_points = 100
         self.direction = 'up'
 
         #define the input and output amplifications.
@@ -36,7 +36,7 @@ class experiment_config(object):
         self.source_gain = 1
 
         #measurment tool settings.
-        self.device = 'adwin'
+        self.device = 'nidaq'
         self.fs = 1000
 
 

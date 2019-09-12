@@ -61,7 +61,7 @@ class experiment_config(config_class):
     Fitness; specify the fitness function, as the accuracy of a perceptron separating the data
     '''
 
-    def __init__(self, inputs, labels, filepath=r'D:/data/Bram/Ring'):
+    def __init__(self, inputs, labels, filepath=r'Y:/Brains_data/Bram/Ring_DDN/'):
         super().__init__() #DO NOT REMOVE!
         ################################################
         ######### SPECIFY PARAMETERS ###################
@@ -71,12 +71,12 @@ class experiment_config(config_class):
         # Define experiment
         self.lengths, self.slopes = [60], [10] # in 1/fs
         self.InputGen = self.input_waveform(inputs)
-        self.amplification = 1
+        self.amplification = 100
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 100
-        self.generange = [[-1500,1500], [-1500, 1500], [-1500, 1500], [-1500, 1500], [-1500, 1500], [0.4, 1]]
+        self.generations = 1
+        self.generange = [[-1200,600], [-1200, 600], [-1200, 600], [-700,300], [-700, 300], [-.35,.35], [-.35,.35]]
         self.input_scaling = 0.5
-        print('INPUT will be SCALED with',self.input_scaling)  
+        # print('INPUT will be SCALED with',self.input_scaling)  
 
         self.Fitness = self.corr_fit
 
@@ -85,11 +85,12 @@ class experiment_config(config_class):
 #        self.partition = [2, 6, 6, 6, 5]
 
         # Documentation
-        self.genelabels = ['CV1','CV2','CV3','CV4','CV5','inp']
+        self.genelabels = ['CV1','CV2','CV3','CV4','CV5','shift1','shift2']
+        self.Slope_points = 50
 
         # Save settings
-        self.filepath = r'D:/data/Bram/Ring/'
-        self.name = 'Ring-'
+        self.filepath = r'Y:/Brains_data/Bram/Ring_DDN/'
+        self.name = 'Ring_0.4-1DEV'
 
         ################################################
         ################# OFF-LIMITS ###################
@@ -143,7 +144,7 @@ class experiment_config(config_class):
         return acc*corr
     
     def corr_fit(self, output, target, w):
-        if np.any(output>3.5):
+        if np.any(output>3.5*100):
             corr = -1
         else:
             x = output[w][:,np.newaxis]

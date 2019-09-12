@@ -9,13 +9,15 @@ import config_IV as config
 config = config.experiment_config()
 
 # Initialize save directory.
-saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.name)
+# saveDirectory = SaveLib.createSaveDirectory(config.filepath, config.name)
 
 # Define the device input using the function in the config class.
 Input = np.zeros([2, config.n_points])
 Input = config.Sweepgen( config.v_high, config.v_low, config.n_points, config.direction)
-
-
+ivvi = InstrumentImporter.IVVIrack.initInstrument()
+controlVoltages = np.array([1250,250,500,750,1000])
+print(controlVoltages)
+InstrumentImporter.IVVIrack.setControlVoltages(ivvi, controlVoltages)
 # Measure using the device specified in the config class.
 if config.device == 'nidaq':
     Output = InstrumentImporter.nidaqIO.IO(Input, config.fs)
@@ -26,14 +28,15 @@ else:
     print('specify measurement device')
 
 # Save the Input and Output
-SaveLib.saveExperiment(saveDirectory, input = Input, output = Output)
+# SaveLib.saveExperiment(saveDirectory, input = Input, output = Output)
 
-# Final reset
-InstrumentImporter.reset(0, 0)
 
 # Plot the IV curve.
 plt.figure()
-plt.plot(Input[0], Output[0,:])
+plt.plot(Input, Output[0,:])
 plt.show()
+
+# Final reset
+InstrumentImporter.reset(0, 0)
 
 
