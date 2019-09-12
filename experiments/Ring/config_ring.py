@@ -73,7 +73,7 @@ class experiment_config(config_class):
         self.InputGen = self.input_waveform(inputs)
         self.amplification = 100
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 1
+        self.generations = 10
         self.generange = [[-1200,600], [-1200, 600], [-1200, 600], [-700,300], [-700, 300], [-.35,.35], [-.35,.35]]
         self.input_scaling = 0.5
         # print('INPUT will be SCALED with',self.input_scaling)  

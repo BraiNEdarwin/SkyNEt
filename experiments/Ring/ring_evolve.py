@@ -69,21 +69,22 @@ def evolve(inputs, binary_labels, filepath = r'Y:/Brains_data/Bram/Ring_DDN/', h
             
             InstrumentImporter.IVVIrack.setControlVoltages(ivvi, controlVoltages)
             time.sleep(1)  # Wait after setting DACs
-           
+            
+
             # Set the input scaling
             s1 = genePool.MapGenes(cf.generange[-2], genePool.pool[j, -2])
             s2 = genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
             shift = np.array([s1,s2])[:,np.newaxis]
 #            pdb.set_trace()
-            x += shift
+            x_shift = x + shift
 
-            up1 = np.linspace(0,x[0,0],cf.Slope_points)
-            down1 = np.linspace(x[0,np.shape(x)[1]-1],0,cf.Slope_points)
-            up2 = np.linspace(0,x[1,0],cf.Slope_points)
-            down2 = np.linspace(x[1,np.shape(x)[1]-1],0,cf.Slope_points)
-            Inp1 = np.append(up1,x[0])
+            up1 = np.linspace(0,x_shift[0,0],cf.Slope_points)
+            down1 = np.linspace(x_shift[0,-1],0,cf.Slope_points)
+            up2 = np.linspace(0,x_shift[1,0],cf.Slope_points)
+            down2 = np.linspace(x_shift[1,-1],0,cf.Slope_points)
+            Inp1 = np.append(up1,x_shift[0])
             Input1 = np.append(Inp1,down1)
-            Inp2 = np.append(up2,x[1])
+            Inp2 = np.append(up2,x_shift[1])
             Input2 = np.append(Inp2,down2)
 
             x_scaled = np.zeros((2,len(Input1)))

@@ -23,7 +23,7 @@ plt.figure()
 plt.plot(t,inp_wave.T)
 plt.plot(t,target_wave,'k')
 plt.show()
-# _,_,_,_ = re.evolve(inputs,labels)
+_,_,_,_ = re.evolve(inputs,labels)
 
 try:
     re.reset(0, 0)
