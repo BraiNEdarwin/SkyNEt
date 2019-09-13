@@ -18,7 +18,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import os
 
-inputs = [[-0.6,0.6,-0.6,0.6,-0.3],[-0.6,-0.6,0.6,0.6,0.]]
+inputs = [[-0.6,0.6,-0.6,0.6,-0.5,0.5,0.,0.],[-0.6,-0.6,0.6,0.6,0.,0.,-0.5,0.5]]
 # [[-0.7,0.7,-0.7,0.7,-0.35,0.35,0.,0.],[-0.7,-0.7,0.7,0.7,0.,0.,-1.0,1.0]] for device
 
 N=len(inputs[0])
@@ -26,7 +26,7 @@ N=len(inputs[0])
 filepath0 = r'../../results/VC_dim'
 
 filepath1 = filepath0+'/Model/Capacity_N'+str(N)
-date = time.strftime('%Y_%m_%d_%H-%M_Run3-2019_09_11_12-58')
+date = time.strftime('%Y_%m_%d_%H-%M')
 dirname = filepath1+'/'+date+'/'
 if os.path.exists(filepath0):
     os.makedirs(dirname)
@@ -34,11 +34,11 @@ else:
     assert 1==0, 'No directory created. Parent target directory '+filepath0+' does not exist'
     
 ## Create binary labels for N samples
-bad_gates = 'yes' # None # 
+bad_gates = None # 'yes' # 
 if bad_gates is None:
     binary_labels = bintarget(N).tolist()
 else:
-    bad_gates_dir = filepath1+f'/2019_09_11_13-18_Run2.1-2019_09_11_12-58/'
+    bad_gates_dir = filepath1+f'/5/'
     bad_gates = np.load(bad_gates_dir+'Summary_Results.npz')['indx_nf']
     binary_labels = bintarget(N)[bad_gates].tolist() 
     print(f'Missed classifiers ({len(bad_gates)}) in previous run: \n {bad_gates}')
@@ -73,7 +73,7 @@ for bl in binary_labels:
         #Initialize net
         net = NN(nn_params)
         #Train net
-        weights, output, cost, accuracy, _ = vcd.train(inputs,bl,net, loss_fn)
+        weights, output, cost, accuracy, _ = vcd.train(inputs,bl,net, loss_fn,beta=1)
         del net
         print("Acuracy: ", accuracy, " cost: ", cost[-1])
         print("Weights : \n",weights)
@@ -143,19 +143,26 @@ else:
     plt.figure()
     plt.hist(cost_classifier)
     plt.show()
-
-mask = (cost_classifier[1:-1]>0.5)*(accuracy_classifier[1:-1]>threshold)
-plt.figure()
-plt.plot(output_classifier[1:-1][mask,:,0].T,'-o')
-plt.legend(np.asarray(binary_labels)[1:-1][mask])
-plt.show()
-
+    
 try:
     output_nf = output_classifier[not_found,:,0]
     #plt output of failed classifiers
     plt.figure()
     plt.plot(output_nf.T,'-o')
     plt.legend(binaries_nf)
-    
+    plt.show()
 except:
     print('Error in plotting output!')
+    
+if bad_gates is None:
+    mask = (cost_classifier[1:-1]>0.5)*(accuracy_classifier[1:-1]>threshold)
+    plt.figure()
+    plt.plot(output_classifier[1:-1][mask,:,0].T,'-o')
+    plt.legend(np.asarray(binary_labels)[1:-1][mask])
+    plt.show()
+else:
+    mask = (cost_classifier>0.5)*(accuracy_classifier>threshold)
+    plt.figure()
+    plt.plot(output_classifier[mask,:,0].T,'-o')
+    plt.legend(np.asarray(binary_labels)[mask])
+    plt.show()

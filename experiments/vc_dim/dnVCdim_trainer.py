@@ -110,9 +110,9 @@ if __name__=='__main__':
     #Define loss function 
     loss_fn  = neg_sig_corr
     
-    inputs = [[-0.6,0.6,-0.6,0.6],[-0.6,-0.6,0.6,0.6]]#[[-0.8,0.6,-0.8,0.6],[-0.8,-0.8,0.6,0.6]]
+    inputs = [[-0.6,0.6,-0.6,0.6,-0.5,0.5],[-0.6,-0.6,0.6,0.6,0.,0]]
 #    [[-0.7,0.7,-0.7,0.7,-0.35,0.35,0.,0.],[-0.7,-0.7,0.7,0.7,0.,0.,-1.0,1.0]]
-    binary_labels = [0,0,0,1]
+    binary_labels = [1, 1, 0, 0, 1, 1]
     best_weights, best_output, cost, accuracy, targets = train(inputs,
                                                                binary_labels,
                                                                net, loss_fn)
