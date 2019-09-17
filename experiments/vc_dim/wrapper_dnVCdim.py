@@ -26,114 +26,124 @@ N=len(inputs[0])
 filepath0 = r'../../results/VC_dim'
 
 filepath1 = filepath0+'/Model/Capacity_N'+str(N)
-date = time.strftime('%Y_%m_%d_%H-%M')
-dirname = filepath1+'/'+date+'/'
-if os.path.exists(filepath0):
-    os.makedirs(dirname)
-else:
-    assert 1==0, 'No directory created. Parent target directory '+filepath0+' does not exist'
-    
-## Create binary labels for N samples
-bad_gates = None # 'yes' # 
-if bad_gates is None:
-    binary_labels = bintarget(N).tolist()
-else:
-    bad_gates_dir = filepath1+f'/5/'
-    bad_gates = np.load(bad_gates_dir+'Summary_Results.npz')['indx_nf']
-    binary_labels = bintarget(N)[bad_gates].tolist() 
-    print(f'Missed classifiers ({len(bad_gates)}) in previous run: \n {bad_gates}')
 
-threshold = (1-0.5/N)
-print('Threshold for acceptance is set at: ',threshold)
+start = '2019_09_12_18-24'
+bad_gates_dir = '2019_09_13_14-30_Run12_2019_09_12_18-24' # None # 
 
-#NN parameters
- # hidden_neurons for single_layer_net
- # list with input indices
-nn_params = [1,2]
-#Define loss function 
-    # torch.nn.BCELoss() for single_layer_net
-    # vcd.neg_sig_corr for dopantNet
-loss_fn  = vcd.neg_sig_corr
+for i in range(13,15):
+    date = time.strftime('%Y_%m_%d_%H-%M')
+    if not start == date:
+        dir2save = date + f'_Run{i}_{start}'
 
-#Initialize container variables
-cost_classifier = []
-weights_classifier = []
-output_classifier = []
-accuracy_classifier = []
-found_classifier = []
-    
-for bl in binary_labels:
-    if len(set(bl))==1:
-        print('Label ',bl,' ignored')
-        weights, output, cost, accuracy = np.nan, np.nan, np.nan, np.nan
-        found_classifier.append(1)
-        cost_classifier.append(cost)
+    dirname = filepath1+'/'+dir2save+'/'
+    if os.path.exists(filepath0):
+        os.makedirs(dirname)
     else:
-        print('Finding classifier ',bl)
-        #Initialize net
-        net = NN(nn_params)
-        #Train net
-        weights, output, cost, accuracy, _ = vcd.train(inputs,bl,net, loss_fn,beta=1)
-        del net
-        print("Acuracy: ", accuracy, " cost: ", cost[-1])
-        print("Weights : \n",weights)
-        if accuracy>threshold:
-            found_classifier.append(1)
-            print('FOUND!')
-        else:
-            found_classifier.append(0)
-            print('NOT FOUND!')
-        cost_classifier.append(cost[-1])
+        assert 1==0, 'No directory created. Parent target directory '+filepath0+' does not exist'
         
-    weights_classifier.append(weights)
-    output_classifier.append(output)
-    accuracy_classifier.append(accuracy)
+    ## Create binary labels for N samples
+    if bad_gates_dir is None:
+        binary_labels = bintarget(N).tolist()
+    else:
+        bad_gates = np.load(filepath1+f'/{bad_gates_dir}/Summary_Results.npz')['indx_nf']
+        binary_labels = bintarget(N)[bad_gates].tolist() 
+        print(f'Missed classifiers ({len(bad_gates)}) in previous run: \n {bad_gates}')
     
-cost_classifier = np.array(cost_classifier)
-accuracy_classifier = np.array(accuracy_classifier)
-found_classifier = np.array(found_classifier)
-capacity = np.mean(found_classifier)
-
-for i in range(len(weights_classifier)):
-    if weights_classifier[i] is np.nan:
-        weights_classifier[i] = np.nan*np.ones_like(weights_classifier[1])
-        output_classifier[i] = np.nan*np.ones_like(output_classifier[1])
+    threshold = (1-0.5/N)
+    print('Threshold for acceptance is set at: ',threshold)
+    
+    #NN parameters
+     # hidden_neurons for single_layer_net
+     # list with input indices
+    nn_params = [1,2]
+    #Define loss function 
+        # torch.nn.BCELoss() for single_layer_net
+        # vcd.neg_sig_corr for dopantNet
+    loss_fn  = vcd.neg_sig_corr
+    
+    #Initialize container variables
+    cost_classifier = []
+    weights_classifier = []
+    output_classifier = []
+    accuracy_classifier = []
+    found_classifier = []
         
-output_classifier = np.array(output_classifier)
-weights_classifier = np.array(weights_classifier)
-
-not_found = found_classifier==0
-if not_found.size > 0:
-    try:
-        indx_nf = np.arange(2**N)[not_found]
-    except IndexError as error:
-        print(f'{error} \n Trying indexing bad_gates')
-        indx_nf = bad_gates[not_found]
-    print('Classifiers not found: %s' % indx_nf)
-    binaries_nf = np.array(binary_labels)[not_found]
-    print('belongs to : \n', binaries_nf)
-else:
-    print('All classifiers found!')
-    indx_nf = None
-
-np.savez(dirname+'Summary_Results',
-         inputs = inputs,
-         binary_labels = binary_labels,
-         capacity = capacity,
-         found_classifier = found_classifier,
-         cost_classifier = cost_classifier,
-         accuracy_classifier = accuracy_classifier,
-         output_classifier = output_classifier,
-         weights_classifier = weights_classifier,
-         threshold = threshold,
-         indx_nf = indx_nf)
-
-plt.figure()
-plt.plot(cost_classifier,accuracy_classifier,'o')
-plt.plot(np.linspace(np.nanmin(cost_classifier),np.nanmax(cost_classifier)),threshold*np.ones_like(np.linspace(0,1)),'-k')
-plt.xlabel('cost')
-plt.ylabel('Accuracy')
-plt.show()
+    for bl in binary_labels:
+        if len(set(bl))==1:
+            print('Label ',bl,' ignored')
+            weights, output, cost, accuracy = np.nan, np.nan, np.nan, np.nan
+            found_classifier.append(1)
+            cost_classifier.append(cost)
+        else:
+            print('Finding classifier ',bl)
+            #Initialize net
+            net = NN(nn_params)
+            #Train net
+            weights, output, cost, accuracy, _ = vcd.train(inputs,bl,net, loss_fn,beta=1)
+            del net
+            print("Acuracy: ", accuracy, " cost: ", cost[-1])
+            print("Weights : \n",weights)
+            if accuracy>threshold:
+                found_classifier.append(1)
+                print('FOUND!')
+            else:
+                found_classifier.append(0)
+                print('NOT FOUND!')
+            cost_classifier.append(cost[-1])
+            
+        weights_classifier.append(weights)
+        output_classifier.append(output)
+        accuracy_classifier.append(accuracy)
+        
+    cost_classifier = np.array(cost_classifier)
+    accuracy_classifier = np.array(accuracy_classifier)
+    found_classifier = np.array(found_classifier)
+    capacity = np.mean(found_classifier)
+    
+    for i in range(len(weights_classifier)):
+        if weights_classifier[i] is np.nan:
+            weights_classifier[i] = np.nan*np.ones_like(weights_classifier[1])
+            output_classifier[i] = np.nan*np.ones_like(output_classifier[1])
+            
+    output_classifier = np.array(output_classifier)
+    weights_classifier = np.array(weights_classifier)
+    
+    not_found = found_classifier==0
+    if not_found.size > 0:
+        try:
+            indx_nf = np.arange(2**N)[not_found]
+        except IndexError as error:
+            print(f'{error} \n Trying indexing bad_gates')
+            indx_nf = bad_gates[not_found]
+        print('Classifiers not found: %s' % indx_nf)
+        binaries_nf = np.array(binary_labels)[not_found]
+        print('belongs to : \n', binaries_nf)
+    else:
+        print('All classifiers found!')
+        indx_nf = None
+    
+    np.savez(dirname+'Summary_Results',
+             inputs = inputs,
+             binary_labels = binary_labels,
+             capacity = capacity,
+             found_classifier = found_classifier,
+             cost_classifier = cost_classifier,
+             accuracy_classifier = accuracy_classifier,
+             output_classifier = output_classifier,
+             weights_classifier = weights_classifier,
+             threshold = threshold,
+             indx_nf = indx_nf)
+    
+    plt.figure()
+    plt.plot(cost_classifier,accuracy_classifier,'o')
+    plt.plot(np.linspace(np.nanmin(cost_classifier),np.nanmax(cost_classifier)),threshold*np.ones_like(np.linspace(0,1)),'-k')
+    plt.xlabel('cost')
+    plt.ylabel('Accuracy')
+    plt.xscale("log")
+    plt.savefig(dirname+'cost-vs-accuracy')
+    plt.show()
+    #Pass to the current dirrectory
+    bad_gates_dir = dir2save
 
 if bad_gates is None:
     plt.figure()
