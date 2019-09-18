@@ -77,16 +77,16 @@ class dopantNet(nn.Module):
 if __name__ == '__main__':
     
     import matplotlib.pyplot as plt
-    x = 0.5*np.random.randn(1,3) 
+    x = 0.5*np.random.randn(10,3) 
     x = torch.Tensor(x).to(device)
     
-    target = torch.Tensor([5]).to(device)
+    target = torch.Tensor(np.random.randn(10,1)).to(device)
     
-    node = dopantNet([0,3,4])
+    node = dopantNet([0,3,5])
     loss = nn.MSELoss()
 
 #    optimizer = torch.optim.SGD([{'params':filter(lambda p: p.requires_grad, node.parameters())}],lr=0.0001)
-    optimizer = torch.optim.SGD([{'params':node.parameters()}],lr=0.00001)
+    optimizer = torch.optim.SGD([{'params':node.parameters()}],lr=0.0001)
     
     loss_array = []
     change_params_net = []
@@ -105,6 +105,7 @@ if __name__ == '__main__':
         l.backward()
         optimizer.step()
         loss_array.append(l.data.cpu().numpy())
+        print(loss_array[-1])
         current_params = [p.clone().detach() for p in node.parameters()]
         diff_params = [(current-start).sum() for current,start in zip(current_params,start_params)]
         change_params0.append(diff_params[0])
