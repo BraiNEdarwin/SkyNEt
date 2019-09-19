@@ -76,7 +76,7 @@ def evolve(inputs, binary_labels, filepath = r'Y:/Brains_data/Bram/Ring_DDN/', h
             s2 = genePool.MapGenes(cf.generange[-1], genePool.pool[j, -1])
             shift = np.array([s1,s2])[:,np.newaxis]
 #            pdb.set_trace()
-            x_shift = x + shift
+            x_shift = x*cf.input_scaling + shift
 
             up1 = np.linspace(0,x_shift[0,0],cf.Slope_points)
             down1 = np.linspace(x_shift[0,-1],0,cf.Slope_points)

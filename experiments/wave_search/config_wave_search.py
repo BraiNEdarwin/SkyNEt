@@ -18,7 +18,7 @@ class experiment_config(config_class):
         self.freq2 = np.array([2,np.pi,5,7,13,17,19]) 
         self.freq = np.sqrt(self.freq2[:self.waveElectrodes])*self.factor
         self.phase = np.zeros(self.waveElectrodes)
-        self.sampleTime = 500 # Sample time of the sine waves for one grid point (in seconds)
+        self.sampleTime = 60*3600 # Sample time of the sine waves for one grid point (in seconds)
         self.fs = 50
         self.transientTest = False
         self.n = 500 # Amount of test points for the transient test
@@ -33,10 +33,10 @@ class experiment_config(config_class):
         self.electrodeSetup = [['ao5','ao3','ao1','ao0','a02','ao4','ao6','out'],[1,3,5,6,11,13,15,17],[5,6,7,8,1,2,3,4]]
 
         # Save settings
-        self.filepath = r'filepath'        
-        self.name = 'name'
+        self.filepath = r'D:/data/Bram/Wave_search/'        
+        self.name = 'Re_search_MHpaper_Dev'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))        
-        self.inputData = self.generateTriangle
+        self.inputData = self.generateSineWave
 
 
 

@@ -6,7 +6,7 @@ import sys
 
 steps = 3
 
-with np.load('Class_data_0.40.npz') as data:
+with np.load('Class_data.npz') as data:
     inputs = data['inp_wvfrm'][::steps,:].T
     print('Input shape: ', inputs.shape)
     labels = data['target'][::steps]

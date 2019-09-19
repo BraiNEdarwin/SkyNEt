@@ -73,9 +73,9 @@ class experiment_config(config_class):
         self.InputGen = self.input_waveform(inputs)
         self.amplification = 100
         self.TargetGen = np.asarray(GenWaveform(labels, self.lengths, slopes=self.slopes))
-        self.generations = 10
+        self.generations = 100
         self.generange = [[-1200,600], [-1200, 600], [-1200, 600], [-700,300], [-700, 300], [-.35,.35], [-.35,.35]]
-        self.input_scaling = 0.5
+        self.input_scaling = 1
         # print('INPUT will be SCALED with',self.input_scaling)  
 
         self.Fitness = self.corr_fit
@@ -89,8 +89,8 @@ class experiment_config(config_class):
         self.Slope_points = 50
 
         # Save settings
-        self.filepath = r'Y:/Brains_data/Bram/Ring_DDN/'
-        self.name = 'Ring_0.4-1DEV'
+        self.filepath = r'D:/data/Bram/Ring/'
+        self.name = 'Ring_0.05-1DEV_load'
 
         ################################################
         ################# OFF-LIMITS ###################
