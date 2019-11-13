@@ -17,7 +17,7 @@ from SkyNEt.modules.SaveLib import saveArrays
 # ------------------------ configure ------------------------
 # load device simulation
 
-main_dir = r'filepath'
+main_dir = r'C:\Users\User\APH\Thesis\Data\Paper_data\\'
 data_dir = 'checkpoint3000_02-07-23h47m.pt'
 
 net1 = staNNet(main_dir+data_dir)
@@ -52,7 +52,7 @@ def stop_fn(epoch, error_list, best_error):
 # ------------------------ END configure ------------------------
 
 # Load ring data 
-ring_file = r'ring_data_path'
+ring_file = r'C:\Users\User\APH\Thesis\Data\Ring\Ring_class_data_0.40_many.npz'
 input_data = torch.from_numpy(np.load(ring_file)['inp_wvfrm']).to(torch.float)
 target_data = torch.from_numpy((np.load(ring_file)['target'] - 1) * (-1) * upper).to(torch.float)[np.newaxis,:] # need to be [1,many] because Boolean logic finder is such that its dims are [# gates, labels]
 
