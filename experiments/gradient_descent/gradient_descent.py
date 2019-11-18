@@ -36,10 +36,8 @@ target = cf.gainFactor * cf.targetGen()[1]  # Target signal
 # Initialize arrays
 controls = np.zeros((cf.n + 1, cf.controls)) # array that keeps track of the controls used per iteration
 controls[0,:] = np.random.random(cf.controls) * (cf.CVrange[:,1] - cf.CVrange[:,0]) + cf.CVrange[:,0] # First (random) controls 
-
 inputs = np.zeros((cf.n + 1, cf.controls + cf.inputs, x.shape[1] + int(2 * cf.fs * cf.rampT)))
 data = np.zeros((cf.n + 1, x.shape[1])) # '+1' bacause at the end of iterating the solution is measured without sine waves on top of the DC signal
-phases = np.zeros((cf.n + 1, cf.inputCases, cf.controls)) # iterations x # input cases x # controls 
 IVgrad = np.zeros((cf.n + 1, cf.inputCases, cf.controls)) # dI_out/dV_in
 EIgrad = np.zeros((cf.n + 1, int(np.sum(w)))) # gradient using cost function and the output (dE/dI)
 EVgrad = np.zeros((cf.n + 1, cf.controls)) # gradient from cost function to control voltage (dE/dV)
@@ -59,14 +57,12 @@ for k in range(cf.controls + cf.inputs):
     if k not in cf.inputIndex: indices += [k]
     
 # Main aqcuisition loop
-for i in range(cf.n + 1):
-    
+for i in range(cf.n + 1):  
     # Apply DC control voltages:
-    inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] = controls[i,:][:,np.newaxis] * np.ones(x.shape[1]) 
-    
+    inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] = controls[i,:][:,np.newaxis] * np.ones(x.shape[1])    
     # For all except last iteration add sine waves on top of DC voltages
     if i != cf.n:
-        inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] = inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] + np.sin(2 * np.pi * cf.freq[:,np.newaxis] * t) * cf.waveAmplitude[:,np.newaxis]
+        inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] = inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] + np.sin(2 * np.pi * cf.freq[:,np.newaxis] * t) * cf.A_in[:,np.newaxis]
     
     # Add (boolean) input at the correct index of the input matrix:
     for j in range(len(cf.inputIndex)):
@@ -98,22 +94,9 @@ for i in range(cf.n + 1):
     for k in range(cf.inputCases):
         data_split[k] = data[i, round(k*cf.fs*(cf.edgelength + cf.signallength/cf.inputCases)) : round(cf.fs*(k*cf.edgelength + (k+1)*cf.signallength/cf.inputCases))]
         target_split[k] = target[round(k*cf.fs*(cf.edgelength + cf.signallength/cf.inputCases)) : round(cf.fs*(k*cf.edgelength + (k+1)*cf.signallength/cf.inputCases))]
-                       
-        for j in range(controls.shape[1]):
-            y_ref1 = np.sin(cf.freq[j] * 2.0*np.pi*x_ref[k*int(cf.fs*cf.signallength/cf.inputCases) : (k+1)*int(cf.fs*cf.signallength/cf.inputCases)])          # Reference signal 1 (phase = 0)
-            y_ref2 = np.sin(cf.freq[j] * 2.0*np.pi*x_ref[k*int(cf.fs*cf.signallength/cf.inputCases) : (k+1)*int(cf.fs*cf.signallength/cf.inputCases)] + np.pi/2) # Reference signal 2 (phase = pi/2)
-        
-            y1_out = y_ref1*data_split[k] # - np.mean(data_split[k]))
-            y2_out = y_ref2*data_split[k] # - np.mean(data_split[k]))
-            
-            amp1 = np.mean(y1_out)
-            amp2 = np.mean(y2_out)
-            IVgrad[i,k,j] = 2*np.sqrt(amp1**2 + amp2**2) / cf.waveAmplitude[j] # Amplitude of output wave (nA) / amplitude of input wave (V)
-            phases[i,k,j] = np.arctan2(amp2,amp1)*180/np.pi
-            sign[k,j] = 1 if abs(phases[i, k, j]) < cf.phase_thres else -1
-               
-        # Multiply dE/dI and dI/dV to obtain the gradient w.r.t. control voltages
-        EVgrad[i] += np.mean(EIgrad[i, int(k*cf.signallength*cf.fs//cf.inputCases):int((k+1)*cf.signallength*cf.fs//cf.inputCases)][:,np.newaxis] * (sign[k,:] * IVgrad[i,k,:]), axis=0)
+          
+        IVgrad[i,k,:] = cf.lock_in_gradient(data_split[k], cf.freq, cf.A_in)
+        EVgrad[i] += np.mean(EIgrad[i, int(k*cf.signallength*cf.fs//cf.inputCases):int((k+1)*cf.signallength*cf.fs//cf.inputCases)][:,np.newaxis] * IVgrad[i,k,:], axis=0)
  
     if i < cf.n-1:
         # Update scheme
@@ -144,26 +127,26 @@ for i in range(cf.n + 1):
                                              error[:,np.newaxis],
                                              i + 1)
 
-
-SaveLib.saveExperiment(cf.configSrc, saveDirectory,
-                       controls = controls,
-                       inputs = inputs,
-                       output = data,
-                       t = t,
-                       w = w,
-                       target = target,
-                       fs = cf.fs,
-                       inputIndex = cf.inputIndex,
-                       signallength = cf.signallength,
-                       eta = cf.eta,
-                       freq = cf.freq,
-                       n = cf.n,
-                       waveAmplitude = cf.waveAmplitude,
-                       x_scaled = x_scaled,
-                       error = error,
-                       IVgrad = IVgrad,
-                       EVgrad = EVgrad,
-                       EIgrad = EIgrad)
+if cf.device == 'chip':
+    SaveLib.saveExperiment(cf.configSrc, saveDirectory,
+                           controls = controls,
+                           inputs = inputs,
+                           output = data,
+                           t = t,
+                           w = w,
+                           target = target,
+                           fs = cf.fs,
+                           inputIndex = cf.inputIndex,
+                           signallength = cf.signallength,
+                           eta = cf.eta,
+                           freq = cf.freq,
+                           n = cf.n,
+                           A_in = cf.A_in,
+                           x_scaled = x_scaled,
+                           error = error,
+                           IVgrad = IVgrad,
+                           EVgrad = EVgrad,
+                           EIgrad = EIgrad)
     
 PlotBuilder.finalMain(mainFig)
 

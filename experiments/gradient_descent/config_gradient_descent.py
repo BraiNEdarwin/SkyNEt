@@ -11,9 +11,9 @@ class experiment_config(config_class):
     def __init__(self):
         super().__init__() 
         
-        self.device = 'chip' # Specifies whether the experiment is used on the NN or on the physical device. Is either 'chip' or 'NN'
-        self.main_dir = r'NN_folder_string'
-        self.NN_name = 'NN.pt'
+        self.device = 'NN' # Specifies whether the experiment is used on the NN or on the physical device. Is either 'chip' or 'NN'
+        self.main_dir = r'..\\..\\test\\'
+        self.NN_name = 'checkpoint3000_02-07-23h47m.pt'
         #######################
         # Physical parameters #
         #######################
@@ -29,7 +29,7 @@ class experiment_config(config_class):
         self.inputOffset = -1.2
         self.CVrange = np.array([[-1.2, .8],[-1.2, .8],[-1.2, -.8],[-0.8, 0.8],[-0.8, 0.8]])   # Range for the control voltages
         
-        self.waveAmplitude = np.array([0.07, 0.03, 0.03, 0.005, 0.005])   # Amplitude of the waves used in the controls
+        self.A_in = np.array([0.07, 0.03, 0.03, 0.005, 0.005])   # Amplitude of the waves used in the controls
         self.rampT = 0.3     # time to ramp up and ramp down the voltages at start and end of a measurement.
         self.targetGen = self.XOR
         self.name = 'name'
@@ -57,6 +57,34 @@ class experiment_config(config_class):
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
         self.gainFactor = self.amplification/self.postgain
 
+
+    def lock_in_gradient(self, output, freq, A_in, fs=1000, phase_thres=90): 
+        ''' This function calculates the gradients of the output with respect to
+        the given frequencies using the lock-in method and outputs them in the 
+        same order as the frequencies are given.
+        output:         output data to compute derivative for
+        freq:           frequencies for the derivatives
+        A_in:           amplitude used for input waves
+        fs:             sample frequency
+        phase_thres:    threshold for the phase of the output wave, determines whether the gradient is positive or negative
+        '''
+        
+        t = np.arange(0,output.shape[0]/fs,1/fs)
+        y_ref1 = np.sin(freq[:,np.newaxis] * 2*np.pi*t)
+        y_ref2 = np.sin(freq[:,np.newaxis] * 2*np.pi*t + np.pi/2)
+        
+        y_out1 = y_ref1 * (output - np.mean(output))
+        y_out2 = y_ref2 * (output - np.mean(output))
+        
+        amp1 = (np.mean(y_out1,axis=1)) # 'Integrating' over the multiplied signal
+        amp2 = (np.mean(y_out2,axis=1))
+        
+        A_out = 2*np.sqrt(amp1**2 + amp2**2)
+        phase_out = np.arctan2(amp2,amp1)*180/np.pi
+        sign = 2*(abs(phase_out) < phase_thres) - 1
+        
+        return sign * A_out/A_in
+        
     def MSE_loss(self,x,t,w):
         return np.sum(((x - t) * w)**2)/np.sum(w)
 

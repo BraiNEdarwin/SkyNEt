@@ -29,23 +29,33 @@ IVgrad: [F x C+1 x N x C]:      For every electrode (and all simultaneously) and
 """
 import SkyNEt.experiments.GD_multiwave_accuracy.config_GD_multiwave_accuracy as config
 import SkyNEt.modules.SaveLib as SaveLib
-from SkyNEt.instruments import InstrumentImporter
+from SkyNEt.modules.Nets.staNNet import staNNet
 import numpy as np
 import math
+import matplotlib.pyplot as plt
 
 # Initialize config object
 cf = config.experiment_config()
 
+if cf.device == 'chip':
+    from SkyNEt.instruments import InstrumentImporter
+elif cf.device == 'NN':
+    import torch
+    
 # Initialize save directory
-saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
+if cf.device == 'chip': # Don't save for NN bug testing
+    saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
 # Initialize arrays
 controls = cf.staticControls*np.ones(cf.controls) # the DC values of the inputs (which are kept constant for the experiment)
 
 phases = np.zeros((cf.factors.shape[0], cf.controls + 1, cf.n, cf.controls)) # iterations x # input cases x # controls 
 IVgrad = np.zeros((cf.factors.shape[0], cf.controls + 1, cf.n, cf.controls)) # dI_out/dV_in
-sign = np.zeros((cf.factors.shape[0], cf.controls + 1, cf.n, cf.controls)) # Sign of the outputting wave form (+1 or -1 depending on the phase)
 
+# If NN is used as proxy, load network
+if cf.device == 'NN':  
+    net = staNNet(cf.main_dir + cf.NN_name)
+    
 # Generate inputs and outputs for experiment
 # Since the sample time decreases as the factor for the sample frequencies increases,
 # The size of the arrays for different F will vary. Therefore, we use a list which contains
@@ -65,56 +75,72 @@ for h in range(cf.factors.shape[0]):
         if g == 7: indices = [0,1,2,3,4,5,6] # except for the last measurement, now they all obtain an AC signal
         pre_inputs[g,indices,:] += np.sin(2 * np.pi * freq[indices,np.newaxis] * t) * cf.waveAmplitude[indices,np.newaxis]
         
-    # Add ramping up and down to the inputs
-    ramp = np.ones(cf.controls+1)[:,np.newaxis,np.newaxis]*(np.ones((cf.controls, 1)) * np.linspace(0, cf.staticControls, int(cf.fs*cf.rampT)))    
-    inputs_ramped = np.concatenate((ramp,pre_inputs,ramp[:,:,:-1]),axis=2)
-    
-    inputs += [inputs_ramped] # Now we have [F, C+1, C, L+ramptime]
-
+    # Add ramping up and down to the inputs for device safety
+    if cf.device == 'chip':
+        ramp = np.ones(cf.controls+1)[:,np.newaxis,np.newaxis]*(cf.staticControls[:,np.newaxis] * np.linspace(0, 1, int(cf.fs*cf.rampT)))    
+        inputs_ramped = np.concatenate((ramp,pre_inputs,ramp[:,:,:-1]),axis=2)    
+        inputs += [inputs_ramped] # Now we have [F, C+1, C, L+ramptime]
+    elif cf.device == 'NN':
+        inputs += [pre_inputs]
+        
 # Data acquisition loop
 print('Estimated time required for experiment: ' + str(np.sum((cf.controls+1)*cf.factors.shape[0]*cf.n*cf.periods/(cf.freq[0]*cf.factors))/60) + ' minutes (total sample time)')
 for h in range(cf.factors.shape[0]):
     print('Sampling for factor ' + str(cf.factors[h]))
     freq = cf.freq * cf.factors[h]
     sampleTime = cf.periods*math.ceil(1/freq[0]) # Sample time is dependent on the lowest frequency of the current factor and is always a specific amount of periods of the slowest frequency of the input waves   
-    data = np.zeros((cf.controls+1, cf.n, sampleTime)) # Create output data array per factor, since each factor has its own sample time (see inputs)  
+    data = np.zeros((cf.controls+1, cf.n, sampleTime*cf.fs)) # Create output data array per factor, since each factor has its own sample time (see inputs)  
     
     for g in range(cf.controls + 1):
         print('Sampling sines for electrode ' + str(g + 1) + ' (8 = all elecrodes)')
         for i in range(cf.n):
             print('Iteration ' + str(i+1) + '/' + str(cf.n) + '...')        
-            dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(inputs[h,g,:,:], cf.fs) * cf.gainFactor
-            data[g,i,:] = dataRamped[0, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)]   # Cut off the ramping up and down part
             
-            # Lock-in technique to determine gradients
-            x_ref = np.arange(0.0, sampleTime, 1/cf.fs)
-            freq = cf.freq * cf.factors[h]    
-            for j in range(cf.controls): # For each control electrode, calculate the gradient (7 out of 8 times only 1 of the 7 controls is interesting)
-              y_ref1 = np.sin(freq[j] * 2.0*np.pi*x_ref)           # Reference signal 1 (phase = 0)
-              y_ref2 = np.sin(freq[j] * 2.0*np.pi*x_ref + np.pi/2) # Reference signal 2 (phase = pi/2)
-                
-              y1_out = y_ref1*(data[g,i,:] - np.mean(data[g,i,:]))
-              y2_out = y_ref2*(data[g,i,:] - np.mean(data[g,i,:]))
-                 
-              amp1 = np.mean(y1_out) 
-              amp2 = np.mean(y2_out)
-              IVgrad[h,g,i,j] = 2*np.sqrt(amp1**2 + amp2**2) / cf.waveAmplitude[j] # Amplitude of output wave (nA) / amplitude of input wave (V)
-              phases[h,g,i,j] = np.arctan2(amp2,amp1)*180/np.pi
-              sign[h,g,i,j] = 1 if abs(phases[h,g,i,j]) < cf.phase_thres else -1
-              
+            if cf.device == 'chip':
+                dataRamped = InstrumentImporter.nidaqIO.IO_cDAQ(inputs[h][g,:,:], cf.fs) * cf.gainFactor
+                data[g,i,:] = dataRamped[0, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)]   # Cut off the ramping up and down part
+            elif cf.device == 'NN':
+                data[g,i,:] = net.outputs(torch.from_numpy(inputs[h][g,:,:].T).to(torch.float)) + np.random.normal(0,0.5,data[g,i,:].shape[0])     
+            
+            # Lock-in technique to determine gradients              
+            IVgrad[h,g,i,:], phases[h,g,i,:] = cf.lock_in_gradient(data[g,i,:], freq, cf.waveAmplitude, cf.fs, cf.phase_thres)
+            
     # Add output data from current factor to outputs list           
     outputs += [data]       
-    print('Saving...')
-    SaveLib.saveExperiment(cf.configSrc, saveDirectory,
-                             controls = controls,
-                             inputs = inputs,
-                             output = outputs,
-                             factors = cf.factors,
-                             fs = cf.fs,
-                             waveAmplitude = cf.waveAmplitude,
-                             IVgrad = IVgrad,
-                             phases = phases,
-                             sign = sign)
     
+    if cf.device == 'chip': # We don't want to save every time we use the NN to test for bugs
+        print('Saving...')
+        SaveLib.saveExperiment(cf.configSrc, saveDirectory,
+                                 controls = controls,
+                                 inputs = inputs,
+                                 output = outputs,
+                                 factors = cf.factors,
+                                 fs = cf.fs,
+                                 waveAmplitude = cf.waveAmplitude,
+                                 IVgrad = IVgrad,
+                                 phases = phases)   
+
+if cf.verbose:
+    IVmeans = np.mean(IVgrad,axis=2)
+    IVstds = np.std(IVgrad,axis=2)
+    for i in range(7):
+        plt.figure(3)
+        plt.errorbar(cf.factors, IVmeans[:,i,i], yerr = IVstds[:,i,i], marker=".", ls='',capsize = 2)
+        plt.plot(cf.factors, IVmeans[:,7,i],'k')
+        plt.plot(cf.factors, IVmeans[:,7,i] + IVstds[:,7,i],'k--')
+        plt.plot(cf.factors, IVmeans[:,7,i] - IVstds[:,7,i],'k--')
+        plt.figure(4)
+        plt.plot(cf.factors, (1-IVmeans[:,i,i]/IVmeans[:,7,i])*100)
+        
+        plt.figure(3)
+        plt.yscale('log')
+        plt.xlabel('factors')
+        plt.ylabel('mean gradient')
+        
+        plt.figure(4)
+        plt.xlabel('factors (lowest freq)')
+        plt.ylabel('difference single electrode vs all electrodes (%)')
+    plt.show()
+
 if cf.device == 'chip':
     InstrumentImporter.reset(0, 0)  
