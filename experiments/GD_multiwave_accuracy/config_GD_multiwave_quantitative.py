@@ -4,7 +4,7 @@ import os
 
 class experiment_config(config_class):
     '''
-    This is the config for testing the accuracy of multiwave versus single wave
+    This is the config for testing the accuracy of multiwave versus single wave for multiple random inputs
     
     '''
     def __init__(self):
@@ -13,26 +13,26 @@ class experiment_config(config_class):
         self.device = 'chip' # Specifies whether the experiment is used on the NN or on the physical device. Is either 'chip' or 'NN'
         self.main_dir = r'..\\..\\test\\'
         self.NN_name = 'checkpoint3000_02-07-23h47m.pt'
-        self.verbose = True
+        self.verbose = False
         #######################
         # Physical parameters #
         #######################
 
         self.controls = 7
-        self.factors = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-        self.periods = 10        
-        self.staticControls = np.random.random(self.controls)*1.8 - 1.2 # np.array([-0.6573, -0.2496, -0.8808, -0.9312, -0.2018, -0.3696, -0.6226]) #
+        self.periods = 10
+        self.sets = 500
+        self.staticControls = np.random.random((self.sets, self.controls))*1.8 - 1.2 
 
-        self.freq = np.array([2,5,3,9,13,19,23])  # np.array([2,4,3,5,6,7,8]) #
+        self.freq = 5* np.array([2,5,3,9,13,19,23]) # np.array([2,4,3,5,6,7,8]) # np.array([2,5,3,9,13,19,23]) # 
         self.fs = 2000
-        self.n = 10               # Amount of iterations
+        #self.n = 1               # Amount of iterations
 
         self.amplification = 100
         self.postgain = 1
         
         self.waveAmplitude = 0.01*np.array([4,3,3,2,2,1,1])#np.array([0.07, 0.05, 0.05, 0.03, 0.03, 0.005, 0.005])   # Amplitude of the waves used in the controls
-        self.rampT = 0.5           # time to ramp up and ramp down the voltages at start and end of a measurement.
-        self.name = 'CV_random_p10_f_1-10_fs_2000_f_2-23Hz_inverse_f2_f3_low_amp'
+        self.rampT = 0.3           # time to ramp up and ramp down the voltages at start and end of a measurement.
+        self.name = 's500_fs_2000_f_5x2-23Hz_inverse_f2_f3_low_amp'
         #                        Summing module S2d      Matrix module           device
         # For the first array: 7 is always the output, 0 corresponds to ao0, 1 to ao1 etc.
         self.electrodeSetup = [[0,1,2,3,4,5,6,7],[1,3,5,6,11,13,15,17],[5,6,7,8,1,2,3,4]]
@@ -44,7 +44,7 @@ class experiment_config(config_class):
         ###################
           
         self.phase_thres = 90 # in degrees
-        self.filepath =  r'D:\\data\\Mark\\GD\\multiwave_accuracy\\'
+        self.filepath =  r'D:\\data\\Mark\\GD\\multiwave_quantitative\\'
     
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
         self.gainFactor = self.amplification/self.postgain
