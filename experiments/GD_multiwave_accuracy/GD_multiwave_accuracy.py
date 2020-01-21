@@ -60,12 +60,12 @@ if cf.device == 'NN':
 # Since the sample time decreases as the factor for the sample frequencies increases,
 # The size of the arrays for different F will vary. Therefore, we use a list which contains
 # arrays for the different values for F.
-inputs = np.zeros((cf.factors.shape[0], cf.controls+1, cf.controls, int(cf.fs*(2*cf.rampT + cf.periods/(cf.factors[0]*cf.freq[0])))  ))
-outputs = np.zeros((cf.factors.shape[0], cf.controls+1, cf.n, int(cf.fs*cf.periods/(cf.factors[0]*cf.freq[0]))))
+inputs = np.zeros((cf.factors.shape[0], cf.controls+1, cf.controls, int(cf.fs*(2*cf.rampT + cf.periods/(cf.factors[0]*min(cf.freq))))  ))
+outputs = np.zeros((cf.factors.shape[0], cf.controls+1, cf.n, int(cf.fs*cf.periods/(cf.factors[0]*min(cf.freq)))))
 
 for h in range(cf.factors.shape[0]):
     freq = cf.freq * cf.factors[h]
-    sampleTime = cf.periods/freq[0] # Sample time is dependent on the lowest frequency of the current factor and is always a specific amount of periods of the slowest frequency of the input waves
+    sampleTime = cf.periods/min(freq) # Sample time is dependent on the lowest frequency of the current factor and is always a specific amount of periods of the slowest frequency of the input waves
     t = np.arange(0.0, sampleTime, 1/cf.fs)
     
     pre_inputs = np.ones(cf.controls+1)[:,np.newaxis,np.newaxis]*(np.array(controls[:,np.newaxis] * np.ones(int(sampleTime * cf.fs)) ))[np.newaxis,:] # DC component [C+1, C, L]
@@ -85,11 +85,11 @@ for h in range(cf.factors.shape[0]):
 
         
 # Data acquisition loop
-print('Estimated time required for experiment: ' + str(np.sum((cf.controls+1)*cf.n*cf.periods/(cf.freq[0]*cf.factors))/60 + (cf.controls+1)*cf.n*cf.factors.shape[0]*(2*cf.rampT + 0.2)/60) + ' minutes (total sample time)')
+print('Estimated time required for experiment: ' + str(np.sum((cf.controls+1)*cf.n*cf.periods/(min(cf.freq)*cf.factors))/60 + (cf.controls+1)*cf.n*cf.factors.shape[0]*(2*cf.rampT + 0.2)/60) + ' minutes (total sample time)')
 for h in range(cf.factors.shape[0]):
     print('Sampling for factor ' + str(cf.factors[h]))
     freq = cf.freq * cf.factors[h]
-    sampleTime = cf.periods/freq[0] # Sample time is dependent on the lowest frequency of the current factor and is always a specific amount of periods of the slowest frequency of the input waves   
+    sampleTime = cf.periods/min(freq) # Sample time is dependent on the lowest frequency of the current factor and is always a specific amount of periods of the slowest frequency of the input waves   
     
     for g in range(cf.controls + 1):
         print('Sampling sines for electrode ' + str(g + 1) + ' (8 = all electrodes)')

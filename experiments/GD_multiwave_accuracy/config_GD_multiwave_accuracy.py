@@ -21,18 +21,18 @@ class experiment_config(config_class):
         self.controls = 7
         self.factors = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         self.periods = 10        
-        self.staticControls = np.random.random(self.controls)*1.8 - 1.2 # np.array([-0.6573, -0.2496, -0.8808, -0.9312, -0.2018, -0.3696, -0.6226]) #
+        self.staticControls =   np.random.random(self.controls)*1.8 - 1.2 # np.array([0.0962, -0.288, 0.1098, -1.0326, -0.5506, -0.8635, -0.628386]) # np.random.random(self.controls)*1.8 - 1.2 #
 
-        self.freq = np.array([2,5,3,9,13,19,23])  # np.array([2,4,3,5,6,7,8]) #
+        self.freq = np.array([2,5,3,9,13,19,23])[::-1]  # np.array([2,4,3,5,6,7,8]) #
         self.fs = 2000
         self.n = 10               # Amount of iterations
 
         self.amplification = 100
         self.postgain = 1
         
-        self.waveAmplitude = 0.01*np.array([4,3,3,2,2,1,1])#np.array([0.07, 0.05, 0.05, 0.03, 0.03, 0.005, 0.005])   # Amplitude of the waves used in the controls
+        self.waveAmplitude = 0.01*np.array([7,5,5,3,3,1,1])#np.array([0.07, 0.05, 0.05, 0.03, 0.03, 0.005, 0.005])   # Amplitude of the waves used in the controls
         self.rampT = 0.5           # time to ramp up and ramp down the voltages at start and end of a measurement.
-        self.name = 'CV_random_p10_f_1-10_fs_2000_f_2-23Hz_inverse_f2_f3_low_amp'
+        self.name = 'CVrandom_p10_f_1-10_fs_2000_f_2-23Hz_inverse_f2_f3_inverse_freqs'
         #                        Summing module S2d      Matrix module           device
         # For the first array: 7 is always the output, 0 corresponds to ao0, 1 to ao1 etc.
         self.electrodeSetup = [[0,1,2,3,4,5,6,7],[1,3,5,6,11,13,15,17],[5,6,7,8,1,2,3,4]]

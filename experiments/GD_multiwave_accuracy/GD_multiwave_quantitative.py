@@ -56,7 +56,7 @@ if cf.device == 'NN':
     net = staNNet(cf.main_dir + cf.NN_name)
     
 # Generate inputs and outputs for experiment
-t = np.arange(0.0, cf.periods/cf.freq[0], 1/cf.fs)
+t = np.arange(0.0, cf.periods/min(cf.freq), 1/cf.fs)
 if cf.device == 'chip':
     inputs = np.zeros((cf.sets, cf.controls+1, cf.controls, t.shape[0] + int(2*cf.fs*cf.rampT)))
 elif cf.device == 'NN':
@@ -79,7 +79,7 @@ for h in range(cf.sets):
         inputs[h,:,:,:] = pre_inputs
     
 # Data acquisition loop
-print('Estimated time required for experiment: ' + str(np.sum((cf.controls+1)*cf.sets*cf.periods/cf.freq[0])/60 + (cf.controls+1)*cf.sets*(2*cf.rampT + 0.2)/60) + ' minutes (total sample time)')
+print('Estimated time required for experiment: ' + str(np.sum((cf.controls+1)*cf.sets*cf.periods/min(cf.freq))/60 + (cf.controls+1)*cf.sets*(2*cf.rampT + 0.2)/60) + ' minutes (total sample time)')
 for h in range(cf.sets):
     print('Sampling for set ' + str(h+1))
     
