@@ -20,22 +20,26 @@ cf = config.experiment_config()
 
 if cf.device == 'chip':
     from SkyNEt.instruments import InstrumentImporter
+    # Initialize save directory
+    saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 elif cf.device == 'NN':
     import torch
 
-# Initialize save directory
-saveDirectory = SaveLib.createSaveDirectory(cf.filepath, cf.name)
 
 # Initialize input and target
-t = cf.InputGen()[0]  # Time array
-x = np.asarray(cf.InputGen()[1:3])  # Array with P and Q signal
-w = cf.InputGen()[3]  # Weight array
+#TOOD: create general problem loader and specify problem in config file
+t = cf.InputGen[0]  # Time array
+x = cf.InputGen[1]  # Array with input signals [inputs x time signal]
+w = cf.InputGen[2]  # Weight array
 
-target = cf.gainFactor * cf.targetGen()[1]  # Target signal
+target = cf.gainFactor * cf.InputGen[3]  # Target signal
 
 # Initialize arrays
 controls = np.zeros((cf.n + 1, cf.controls)) # array that keeps track of the controls used per iteration
 controls[0,:] = np.random.random(cf.controls) * (cf.CVrange[:,1] - cf.CVrange[:,0]) + cf.CVrange[:,0] # First (random) controls 
+m = np.zeros((cf.n+1,cf.controls))
+v = np.zeros((cf.n+1,cf.controls))
+
 inputs = np.zeros((cf.n + 1, cf.controls + cf.inputs, x.shape[1] + int(2 * cf.fs * cf.rampT)))
 data = np.zeros((cf.n + 1, x.shape[1])) # '+1' bacause at the end of iterating the solution is measured without sine waves on top of the DC signal
 IVgrad = np.zeros((cf.n + 1, cf.inputCases, cf.controls)) # dI_out/dV_in
@@ -82,7 +86,7 @@ for i in range(cf.n + 1):
         data[i,:] = net.outputs(torch.from_numpy(inputs[i,:,int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)].T).to(torch.float))
 
     # Calculate dE/dI   
-    EIgrad[i,:] = cf.gradFunct(data[i], target, w) 
+    EIgrad[i,:] = cf.gradFunct(data[i], target, w) #TODO: create minibatch GD
     
     # Split the input cases into different samples for determining gradients
     data_split = np.zeros((cf.inputCases, int(cf.fs*cf.signallength/cf.inputCases)))
@@ -90,25 +94,24 @@ for i in range(cf.n + 1):
     sign = np.zeros((cf.inputCases, controls.shape[1]))
     
     # Lock-in technique to determine gradients
-    x_ref = np.arange(0.0, cf.signallength, 1/cf.fs)
+    ##x_ref = np.arange(0.0, cf.signallength, 1/cf.fs)
     for k in range(cf.inputCases):
         data_split[k] = data[i, round(k*cf.fs*(cf.edgelength + cf.signallength/cf.inputCases)) : round(cf.fs*(k*cf.edgelength + (k+1)*cf.signallength/cf.inputCases))]
         target_split[k] = target[round(k*cf.fs*(cf.edgelength + cf.signallength/cf.inputCases)) : round(cf.fs*(k*cf.edgelength + (k+1)*cf.signallength/cf.inputCases))]
           
         IVgrad[i,k,:] = cf.lock_in_gradient(data_split[k], cf.freq, cf.A_in)
         EVgrad[i] += np.mean(EIgrad[i, int(k*cf.signallength*cf.fs//cf.inputCases):int((k+1)*cf.signallength*cf.fs//cf.inputCases)][:,np.newaxis] * IVgrad[i,k,:], axis=0)
- 
+    
+    
     if i < cf.n-1:
-        # Update scheme
-        controls[i+1,:] = controls[i, :] - cf.eta * EVgrad[i]
-        
+        controls[i+1,:], m[i+1], v[i+1] = cf.optimizer(i, controls[i,:], EVgrad[i], cf.eta, m[i], v[i], cf.beta_1, cf.beta_2)
         # Make sure that the controls stay within the specified range
         for j in range(controls.shape[1]):
             controls[i+1, j] = min(cf.CVrange[j, 1], controls[i+1, j])
             controls[i+1, j] = max(cf.CVrange[j, 0], controls[i+1, j])
     elif i == cf.n-1:
         controls[i+1,:] = controls[i, :] # Keep same controls, last measure is last iteration but without sine waves
-    
+
     # If output is clipped, reinitializee:
     if abs(np.mean(data[i,:])) > 3.5 * cf.amplification/cf.postgain:
         controls[i+1,:] = np.random.random(cf.controls) * (cf.CVrange[:,1] - cf.CVrange[:,0]) + cf.CVrange[:,0]
