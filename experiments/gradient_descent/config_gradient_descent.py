@@ -1,5 +1,6 @@
 import numpy as np
 from SkyNEt.config.config_class import config_class
+import SkyNEt.experiments.gradient_descent.functionalities as fncts
 import os
 
 class experiment_config(config_class):
@@ -14,49 +15,61 @@ class experiment_config(config_class):
         self.device = 'NN' # Specifies whether the experiment is used on the NN or on the physical device. Is either 'chip' or 'NN'
         self.main_dir = r'..\\..\\test\\'
         self.NN_name = 'checkpoint3000_02-07-23h47m.pt'
+        
+        self.fs = 1000
+        self.edgelength = 0.01  #in seconds
+        self.inputCases = 16     #amount of cases measured (4 in the case of Boolean logic)
+        self.signallength = self.inputCases * 0.4 #(10/self.freq[0])*self.inputCases  # total signal in seconds (10 periods of slowest frequency)
+        
+        self.InputGen = fncts.featureExtractor(1,self.signallength,self.edgelength,self.fs) #self.BoolInput
+        self.targetGen = fncts.featureExtractor(1,self.signallength,self.edgelength,self.fs) #self.XOR
+        
+        self.name = 'name'
+        
         #######################
         # Physical parameters #
         #######################
-
-        self.controls = 5
-        self.inputs = 2
-        self.freq = 8*np.array([1,2,3,4,5])  #
-        self.fs = 1000
+        self.controls = 3
+        self.inputs = 4
+        self.freq = 5*np.array([5,9,13])#5*np.array([5,9,13,19,23])  #      
         self.n = 50               # Amount of iterations
         self.amplification = 100
         self.postgain = 1
         self.inputScaling = 1.8
         self.inputOffset = -1.2
-        self.CVrange = np.array([[-1.2, .8],[-1.2, .8],[-1.2, -.8],[-0.8, 0.8],[-0.8, 0.8]])   # Range for the control voltages
+        self.CVrange =  np.array([[-1.2,0.6],[-0.8, 0.5],[-0.8,0.5]])#np.array([[-1.2, .6],[-1.2, .6],[-1.2, .6],[-0.7, 0.3],[-0.7, 0.3]])   # Range for the control voltages        
+        self.A_in = np.array([0.07, 0.01, 0.01])#np.array([0.07, 0.03, 0.03, 0.01, 0.01])   # Amplitude of the waves used in the controls
+              
+        self.inputIndex = [1,2,3,4] # Electrodes that will be used as boolean input
         
-        self.A_in = np.array([0.07, 0.03, 0.03, 0.005, 0.005])   # Amplitude of the waves used in the controls
         self.rampT = 0.3     # time to ramp up and ramp down the voltages at start and end of a measurement.
-        self.targetGen = self.XOR
-        self.name = 'name'
+        self.phase_thres = 90 # in degrees 
+        
+        #############################
+        # hyper parameters optimizer#
+        #############################
+        self.optimizer = self.basicGD
+        self.beta_1 = 0.9
+        self.beta_2 = 0.9 #0.75
+        self.eta = 1E-3          # Learn rate  ~1E-3 for NMSE
+        self.gradFunct =  self.NMSE_grad # self.cor_sigmoid_grad # 
+        self.errorFunct = self.NMSE_loss # self.cor_sigmoid_loss #
+        
+        ###################
+        # rest parameters #
+        ###################
+                         
         #                        Summing module S2d      Matrix module           device
         # For the first array: 7 is always the output, 0 corresponds to ao0, 1 to ao1 etc.
         self.electrodeSetup = [[0,1,2,3,4,5,6,7],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
         
         self.controlLabels = ['ao0','ao1','ao2','ao3','ao4','ao5']
-        self.inputIndex = [1,2] # Electrodes that will be used as boolean input
-        
-        ###################
-        # rest parameters #
-        ###################
-        
-        self.signallength = 0.125*4  #in seconds
-        self.edgelength = 0.01  #in seconds
-        self.inputCases = 4     #amount of cases measured (4 in the case of Boolean logic)
-        
-        self.phase_thres = 90 # in degrees
-        self.eta = 3E-2          # Learn rate 
-        self.gradFunct =  self.cor_sigmoid_grad
-        self.errorFunct = self.cor_sigmoid_loss
+
 
         self.filepath =  r'filepath'    
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
         self.gainFactor = self.amplification/self.postgain
-
+    
 
     def lock_in_gradient(self, output, freq, A_in, fs=1000, phase_thres=90): 
         ''' This function calculates the gradients of the output with respect to
@@ -84,7 +97,34 @@ class experiment_config(config_class):
         sign = 2*(abs(phase_out) < phase_thres) - 1
         
         return sign * A_out/A_in
-        
+
+    ###########################################################################
+    ############################### Optimizers ################################
+    ###########################################################################
+    
+    def basicGD(self, step, controls, gradients, learn_rate, *args):
+        # The '*args' is required for generality, e.g. the Adam optimizer contains more arguments, so in main code we need to fill in more args.
+        # If we then switch to basicGD, the excessive arguments are stored in *args.
+    
+        return controls - learn_rate * gradients, 0, 0 # 0 are dummies for m and v, which are not used in basicGD
+    
+    def Adam(self, step, controls, gradients, learn_rate, m, v, beta_1 = 0.9, beta_2 = 0.999, eps = 10E-8):
+        # Initialize first and second moment vector
+        if step == 0:
+            m = np.zeros(gradients.shape[0])
+            v = np.zeros(gradients.shape[0])
+        m = beta_1 * m + (1-beta_1) * gradients     # Update biased first moment estimate
+        v = beta_2 * v + (1-beta_2) * gradients**2  # Update biased second raw moment estimate
+        if step != 0:
+            m = m/(1 - beta_1**step)   # Compute bias-corrected first moment estimate
+            v = v/(1- beta_2**step)  # Compute bias-corrected second raw moment estimate
+        controls = controls - learn_rate * m/(np.sqrt(v) + eps) # Update parameters            
+        return controls, m, v
+    
+    ###########################################################################
+    ############################# Cost functions ##############################
+    ###########################################################################
+    
     def MSE_loss(self,x,t,w):
         return np.sum(((x - t) * w)**2)/np.sum(w)
 
@@ -95,6 +135,18 @@ class experiment_config(config_class):
         x = x[w.astype(int)==1] # Remove all datapoints where w = 0
         t = t[w.astype(int)==1]
         return 0.5 * (x - t) 
+    
+    def NMSE_loss(self,x,t,w):
+        return np.sum(((x - t) * w)**2)/(np.sum(w) * (max(x)-min(x)))
+
+    def NMSE_grad(self, x, t, w):
+        ''' Calculates the normalized mean squared error loss given the gradient of the 
+        output w.r.t. the input voltages. This function calculates the error
+        for each control separately '''      
+        x = x[w.astype(int)==1] # Remove all datapoints where w = 0
+        t = t[w.astype(int)==1]
+        return 0.5 * (x - t) / (max(x)-min(x))
+        
         
     def cor_separation_loss(self, x, t, w):
         x = x[w.astype(int)==1] # Remove all datapoints where w = 0
@@ -116,7 +168,7 @@ class experiment_config(config_class):
         x_high_min = np.min(x[(t == self.gainFactor)])
         x_low_max = np.max(x[(t == 0)])
         return -d_corr/(abs(x_high_min-x_low_max)/2)**.5 
-    
+
     
     def cor_loss(self, x, t, w):
         x = x[w.astype(int)==1] # Remove all datapoints where w = 0
@@ -157,7 +209,9 @@ class experiment_config(config_class):
         d_sigmoid = sigmoid*(1-sigmoid)
         
         return (d_corr * sigmoid - ((x == x_high_min).astype(int) - (x == x_low_max).astype(int)) * d_sigmoid * (1.1 - corr)) / sigmoid **2 
+   
     
+    '''
     def cor_sigmoid_grad2(self, x, t, w):
         x = x[w.astype(int)==1] # Remove all datapoints where w = 0
         t = t[w.astype(int)==1]
@@ -170,5 +224,5 @@ class experiment_config(config_class):
         sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -5)/3)) +0.05
 
         
-        return d_corr / sigmoid
-    
+        return d_corr / sigmoid   
+    '''
