@@ -71,11 +71,11 @@ class experiment_config(config_class):
         self.device = 'nidaq'  # Either nidaq or adwin
 
         # Define experiment
-        self.postgain = 100
-        self.amplification = 1
-        self.TargetGen = self.AND
-        self.generations = 50
-        self.generange = [[-900,900], [-900, 900], [-900, 900], [-900, 900], [-900, 900], [0.1, 0.8]]
+        self.postgain = 1
+        self.amplification = 100
+        self.TargetGen = self.NAND
+        self.generations = 25
+        self.generange = [[-900,600], [-900, 600], [-900, 600], [-900, 600], [-900, 600], [0.1, 0.6]]
 
 
         # Specify either partition or genomes
@@ -90,12 +90,16 @@ class experiment_config(config_class):
         ################################################
 
         ################# Save settings ################
-        self.filepath = r'D:\data\Mark\Evolutioncheck\\'
+        self.filepath = r'D:\data\Mark\Evolution\\'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
 
         #                       Summing module S2d              Matrix module       on chip
-        self.electrodeSetup = [[1,2,'ao0',3,'ao1',4,5,'out'],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
-        self.name = 'AND_10M_100dc'
+
+        self.electrodeSetup = [['inp1','inp2',1,2,3,4,5],[5,11,6,3,13,1,15],[5,6,7,8,1,2,3,4]]
+        
+        self.Fitness = self.cor_sigmoid_fitness
+
+        self.name = 'NAND'
 
         ################################################
         ################# OFF-LIMITS ###################
@@ -119,3 +123,13 @@ class experiment_config(config_class):
     #####################################################
     # Optionally define new methods here that you wish to use in your experiment.
     # These can be e.g. new fitness functions or input/output generators.
+
+
+    def cor_sigmoid_fitness(self, x, t, w):
+        x = x[w.astype(int)==1] # Remove all datapoints where w = 0
+        t = t[w.astype(int)==1]
+        corr = np.mean((x-np.mean(x))*(t-np.mean(t)))/(np.std(x)*np.std(t)+1E-12)
+        x_high_min = np.min(x[(t > 0)])
+        x_low_max = np.max(x[(t == 0)])
+        sigmoid = 1/(1 +  np.e**(-(x_high_min - x_low_max -5)/3)) + 0.05
+        return (corr) * sigmoid 

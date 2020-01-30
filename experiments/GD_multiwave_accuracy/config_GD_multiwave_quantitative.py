@@ -44,7 +44,7 @@ class experiment_config(config_class):
         ###################
           
         self.phase_thres = 90 # in degrees
-        self.filepath =  r'D:\\data\\Mark\\GD\\multiwave_quantitative\\'
+        self.filepath =  r'D:\\data\\Mark\\GD\\multiwave_quantitative\new_chip\\'
     
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
         self.gainFactor = self.amplification/self.postgain

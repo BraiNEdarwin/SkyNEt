@@ -72,7 +72,7 @@ for i in range(cf.generations):
         for avgIndex in range(cf.fitnessavg):
             # Feed input to measurement device
             if(cf.device == 'nidaq'):
-                output = InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs)
+                output = InstrumentImporter.nidaqIO.IO(x_scaled, cf.fs) * cf.amplification
             elif(cf.device == 'adwin'):
                 adw = InstrumentImporter.adwinIO.initInstrument()
                 output = InstrumentImporter.adwinIO.IO(adw, x_scaled, cf.fs)
@@ -83,7 +83,7 @@ for i in range(cf.generations):
             PlotBuilder.currentGenomeEvolution(mainFig, genePool.pool[j])
 
             # Train output
-            outputAvg[avgIndex] = cf.amplification * np.asarray(output)  # empty for now, as we have only one output node
+            outputAvg[avgIndex] = np.asarray(output)  # empty for now, as we have only one output node
 
             # Calculate fitness
             fitnessTemp[j, avgIndex]= cf.Fitness(outputAvg[avgIndex],

@@ -26,15 +26,15 @@ class experiment_config(config_class):
         self.amplification = 100
         self.gain_info = '10MV/A'
         self.postgain = 1
-        self.amplitude = np.array([0.9, 0.9, 0.9, 0.9, 0.9, 0.5, 0.5]) # Maximum amount of voltage for the inputs
-        self.offset = np.array([-0.3,-0.3,-0.3,-0.3,-0.3,-0.2,-0.2]) # Optional offset for the sine waves
+        self.amplitude = np.array([0.8,0.8,0.8,0.8,0.8,0.8,0.8])#np.array([0.9, 0.9, 0.9, 0.9, 0.9, 0.5, 0.5]) # Maximum amount of voltage for the inputs
+        self.offset = np.array([-0.2,-0.2,-0.2,-0.2,-0.2,-0.2,-0.2])#np.array([-0.3,-0.3,-0.3,-0.3,-0.3,-0.2,-0.2]) # Optional offset for the sine waves
 
         #                               Summing module S2d      Matrix module           device
         self.electrodeSetup = [['ao5','ao3','ao1','ao0','a02','ao4','ao6','out'],[1,3,5,6,11,13,15,17],[5,6,7,8,1,2,3,4]]
 
         # Save settings
-        self.filepath = r'D:\data\Mark\wave_search\\'        
-        self.name = 'consistency_check'
+        self.filepath = r'D:\data\Mark\wave_search\new_chip\\'        
+        self.name = 'input_range'
         self.configSrc = os.path.dirname(os.path.abspath(__file__))        
         self.inputData = self.generateSineWave
 

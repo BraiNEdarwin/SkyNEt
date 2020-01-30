@@ -28,9 +28,9 @@ class experiment_config(config_class):
         self.amplification = 100
         self.postgain = 1
         
-        self.waveAmplitude = 0.01*np.array([7,5,5,3,3,1,1]) #np.array([0.07, 0.05, 0.05, 0.03, 0.03, 0.005, 0.005])   # Amplitude of the waves used in the controls
+        self.waveAmplitude = 0.01*np.array([4,3,3,2,2,1,1]) #np.array([0.07, 0.05, 0.05, 0.03, 0.03, 0.005, 0.005])   # Amplitude of the waves used in the controls
         self.rampT = 1           # time to ramp up and ramp down the voltages at start and end of a measurement.
-        self.name = 'CV_11_30_1948_T_005-10s_fs_5x2-23Hz_inverse_f2_f3_inverse_freqs'
+        self.name = 'CV_11_30_1948_T_005-10s_fs_5x2-23Hz_inverse_f2_f3_inverse_freqs_low_amp'
         #                        Summing module S2d      Matrix module           device
         # For the first array: 7 is always the output, 0 corresponds to ao0, 1 to ao1 etc.
         self.electrodeSetup = [[0,1,2,3,4,5,6,7],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
