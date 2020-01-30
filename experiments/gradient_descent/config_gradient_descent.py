@@ -12,35 +12,37 @@ class experiment_config(config_class):
     def __init__(self):
         super().__init__() 
         
-        self.device = 'NN' # Specifies whether the experiment is used on the NN or on the physical device. Is either 'chip' or 'NN'
+        self.device = 'chip' # Specifies whether the experiment is used on the NN or on the physical device. Is either 'chip' or 'NN'
         self.main_dir = r'..\\..\\test\\'
         self.NN_name = 'checkpoint3000_02-07-23h47m.pt'
         
-        self.fs = 1000
-        self.edgelength = 0.01  #in seconds
-        self.inputCases = 16     #amount of cases measured (4 in the case of Boolean logic)
+        self.fs = 5000
+        self.edgelength = 0.03  #in seconds
+        self.inputCases = 4     #amount of cases measured (4 in the case of Boolean logic)
         self.signallength = self.inputCases * 0.4 #(10/self.freq[0])*self.inputCases  # total signal in seconds (10 periods of slowest frequency)
         
-        self.InputGen = fncts.featureExtractor(1,self.signallength,self.edgelength,self.fs) #self.BoolInput
-        self.targetGen = fncts.featureExtractor(1,self.signallength,self.edgelength,self.fs) #self.XOR
+        self.task = fncts.booleanLogic('XNOR',self.signallength,self.edgelength,self.fs) #fncts.featureExtractor(1,self.signallength,self.edgelength,self.fs) 
         
-        self.name = 'name'
+        self.name = 'XNOR_cor_sigmoid'
         
+        self.verbose = True
+        self.initializations = 1
+
         #######################
         # Physical parameters #
         #######################
-        self.controls = 3
-        self.inputs = 4
-        self.freq = 5*np.array([5,9,13])#5*np.array([5,9,13,19,23])  #      
+        self.controls = 5
+        self.inputs = 2
+        self.freq = 5*np.array([5,9,13,19,23])  #  5*np.array([5,9,13])#    
         self.n = 50               # Amount of iterations
         self.amplification = 100
         self.postgain = 1
         self.inputScaling = 1.8
         self.inputOffset = -1.2
-        self.CVrange =  np.array([[-1.2,0.6],[-0.8, 0.5],[-0.8,0.5]])#np.array([[-1.2, .6],[-1.2, .6],[-1.2, .6],[-0.7, 0.3],[-0.7, 0.3]])   # Range for the control voltages        
-        self.A_in = np.array([0.07, 0.01, 0.01])#np.array([0.07, 0.03, 0.03, 0.01, 0.01])   # Amplitude of the waves used in the controls
+        self.CVrange =  np.array([[-1.2, .6],[-1.2, .6],[-1.2, .6],[-1.2, 0.6],[-1.2, 0.6]]) #np.array([[-1.2,0.6],[-0.8, 0.5],[-0.8,0.5]])   # Range for the control voltages        
+        self.A_in = np.array([0.05, 0.02, 0.02, 0.01, 0.01])#np.array([0.07, 0.01, 0.01])#   # Amplitude of the waves used in the controls
               
-        self.inputIndex = [1,2,3,4] # Electrodes that will be used as boolean input
+        self.inputIndex = [1,2] # Electrodes that will be used as boolean input
         
         self.rampT = 0.3     # time to ramp up and ramp down the voltages at start and end of a measurement.
         self.phase_thres = 90 # in degrees 
@@ -51,9 +53,9 @@ class experiment_config(config_class):
         self.optimizer = self.basicGD
         self.beta_1 = 0.9
         self.beta_2 = 0.9 #0.75
-        self.eta = 1E-3          # Learn rate  ~1E-3 for NMSE
-        self.gradFunct =  self.NMSE_grad # self.cor_sigmoid_grad # 
-        self.errorFunct = self.NMSE_loss # self.cor_sigmoid_loss #
+        self.eta = 6E-2          # Learn rate  ~1E-3 for NMSE
+        self.gradFunct =  self.cor_sigmoid_grad # self.NMSE_grad # 
+        self.errorFunct = self.cor_sigmoid_loss # self.NMSE_loss # 
         
         ###################
         # rest parameters #
@@ -61,12 +63,12 @@ class experiment_config(config_class):
                          
         #                        Summing module S2d      Matrix module           device
         # For the first array: 7 is always the output, 0 corresponds to ao0, 1 to ao1 etc.
-        self.electrodeSetup = [[0,1,2,3,4,5,6,7],[1,3,5,7,11,13,15,17],[5,6,7,8,1,2,3,4]]
+        self.electrodeSetup = [[0,1,2,3,4,5,6,7],[1,3,5,6,11,13,15,17],[5,6,7,8,1,2,3,4]]
         
-        self.controlLabels = ['ao0','ao1','ao2','ao3','ao4','ao5']
+        self.controlLabels = ['ao5','ao3','ao1','ao0','ao2','ao4','out']
 
 
-        self.filepath =  r'filepath'    
+        self.filepath =  r'D:\data\Mark\GD\logic_gates\new_chip\\'    
         self.configSrc = os.path.dirname(os.path.abspath(__file__))
         self.gainFactor = self.amplification/self.postgain
     
