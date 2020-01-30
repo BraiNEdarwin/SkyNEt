@@ -25,14 +25,11 @@ if cf.device == 'chip':
 elif cf.device == 'NN':
     import torch
 
-
 # Initialize input and target
-#TOOD: create general problem loader and specify problem in config file
-t = cf.InputGen[0]  # Time array
-x = cf.InputGen[1]  # Array with input signals [inputs x time signal]
-w = cf.InputGen[2]  # Weight array
-
-target = cf.gainFactor * cf.InputGen[3]  # Target signal
+t = cf.task[0]  # Time array
+x = cf.task[1]  # Array with input signals [inputs x time signal]
+w = cf.task[2]  # Weight array
+target = cf.gainFactor * cf.task[3]  # Target signal
 
 # Initialize arrays
 controls = np.zeros((cf.n + 1, cf.controls)) # array that keeps track of the controls used per iteration
@@ -40,10 +37,10 @@ controls[0,:] = np.random.random(cf.controls) * (cf.CVrange[:,1] - cf.CVrange[:,
 m = np.zeros((cf.n+1,cf.controls))
 v = np.zeros((cf.n+1,cf.controls))
 
-inputs = np.zeros((cf.n + 1, cf.controls + cf.inputs, x.shape[1] + int(2 * cf.fs * cf.rampT)))
+inputs = np.zeros((cf.n + 1, cf.controls + cf.inputs, x.shape[1] + int(2 * cf.fs * cf.rampT))) # [iterations x input electrodes x signallength]
 data = np.zeros((cf.n + 1, x.shape[1])) # '+1' bacause at the end of iterating the solution is measured without sine waves on top of the DC signal
 IVgrad = np.zeros((cf.n + 1, cf.inputCases, cf.controls)) # dI_out/dV_in
-EIgrad = np.zeros((cf.n + 1, int(np.sum(w)))) # gradient using cost function and the output (dE/dI)
+EIgrad = np.zeros((cf.n + 1, int(np.sum(w)))) # gradient using cost function and the output (dE/dI). Grad for each datapoint (disregarding ramps)
 EVgrad = np.zeros((cf.n + 1, cf.controls)) # gradient from cost function to control voltage (dE/dV)
 error = np.ones(cf.n + 1)
 x_scaled = x * cf.inputScaling + cf.inputOffset # Note that in the current script the inputs cannot be controlled by the algorithm but are constant
@@ -66,9 +63,13 @@ for i in range(cf.n + 1):
     inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] = controls[i,:][:,np.newaxis] * np.ones(x.shape[1])    
     # For all except last iteration add sine waves on top of DC voltages
     if i != cf.n:
-        inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] = inputs[i, indices, int(cf.fs*cf.rampT):-int(cf.fs*cf.rampT)] + np.sin(2 * np.pi * cf.freq[:,np.newaxis] * t) * cf.A_in[:,np.newaxis]
+        for case in range(cf.inputCases): # The sine waves for each input case start from phase = 0. During ramping there is no sine wave.
+            start = int(cf.fs*cf.rampT + case*cf.fs*(cf.edgelength + cf.signallength/cf.inputCases)) # start sine wave for this input case
+            stop = int(cf.fs*cf.rampT + cf.fs*(case*cf.edgelength + (case+1)*cf.signallength/cf.inputCases)) # stop sine wave for this input case  
+            t_single_case = np.arange(0,(stop-start)/cf.fs,1/cf.fs)              
+            inputs[i, indices, start:stop] = inputs[i, indices, start:stop] + np.sin(2 * np.pi * cf.freq[:,np.newaxis] * t_single_case) * cf.A_in[:,np.newaxis]
     
-    # Add (boolean) input at the correct index of the input matrix:
+    # Add input at the correct index of the input matrix:
     for j in range(len(cf.inputIndex)):
         inputs[i,cf.inputIndex[j],:] = np.concatenate((np.zeros(int(cf.fs*cf.rampT)), x_scaled[j,:], np.zeros(int(cf.fs*cf.rampT))))
     
@@ -98,8 +99,8 @@ for i in range(cf.n + 1):
     for k in range(cf.inputCases):
         data_split[k] = data[i, round(k*cf.fs*(cf.edgelength + cf.signallength/cf.inputCases)) : round(cf.fs*(k*cf.edgelength + (k+1)*cf.signallength/cf.inputCases))]
         target_split[k] = target[round(k*cf.fs*(cf.edgelength + cf.signallength/cf.inputCases)) : round(cf.fs*(k*cf.edgelength + (k+1)*cf.signallength/cf.inputCases))]
-          
-        IVgrad[i,k,:] = cf.lock_in_gradient(data_split[k], cf.freq, cf.A_in)
+        
+        IVgrad[i,k,:] = cf.lock_in_gradient(data_split[k], cf.freq, cf.A_in) 
         EVgrad[i] += np.mean(EIgrad[i, int(k*cf.signallength*cf.fs//cf.inputCases):int((k+1)*cf.signallength*cf.fs//cf.inputCases)][:,np.newaxis] * IVgrad[i,k,:], axis=0)
     
     

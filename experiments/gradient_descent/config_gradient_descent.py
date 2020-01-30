@@ -18,29 +18,29 @@ class experiment_config(config_class):
         
         self.fs = 1000
         self.edgelength = 0.01  #in seconds
-        self.inputCases = 16     #amount of cases measured (4 in the case of Boolean logic)
+        self.inputCases = 4     #amount of cases measured (4 in the case of Boolean logic)
         self.signallength = self.inputCases * 0.4 #(10/self.freq[0])*self.inputCases  # total signal in seconds (10 periods of slowest frequency)
         
-        self.InputGen = fncts.featureExtractor(1,self.signallength,self.edgelength,self.fs) #self.BoolInput
-        self.targetGen = fncts.featureExtractor(1,self.signallength,self.edgelength,self.fs) #self.XOR
+        self.task = fncts.booleanLogic('XOR',self.signallength,self.edgelength,self.fs) #fncts.featureExtractor(1,self.signallength,self.edgelength,self.fs) 
+        #self.targetGen = fncts.booleanLogic('XOR',self.signallength,self.edgelength,self.fs) #fncts.featureExtractor(1,self.signallength,self.edgelength,self.fs) #
         
         self.name = 'name'
         
         #######################
         # Physical parameters #
         #######################
-        self.controls = 3
-        self.inputs = 4
-        self.freq = 5*np.array([5,9,13])#5*np.array([5,9,13,19,23])  #      
+        self.controls = 5
+        self.inputs = 2
+        self.freq = 5*np.array([5,9,13,19,23])  #  5*np.array([5,9,13])#    
         self.n = 50               # Amount of iterations
         self.amplification = 100
         self.postgain = 1
         self.inputScaling = 1.8
         self.inputOffset = -1.2
-        self.CVrange =  np.array([[-1.2,0.6],[-0.8, 0.5],[-0.8,0.5]])#np.array([[-1.2, .6],[-1.2, .6],[-1.2, .6],[-0.7, 0.3],[-0.7, 0.3]])   # Range for the control voltages        
-        self.A_in = np.array([0.07, 0.01, 0.01])#np.array([0.07, 0.03, 0.03, 0.01, 0.01])   # Amplitude of the waves used in the controls
+        self.CVrange =  np.array([[-1.2, .6],[-1.2, .6],[-1.2, .6],[-0.7, 0.3],[-0.7, 0.3]]) #np.array([[-1.2,0.6],[-0.8, 0.5],[-0.8,0.5]])   # Range for the control voltages        
+        self.A_in = np.array([0.07, 0.03, 0.03, 0.01, 0.01])#np.array([0.07, 0.01, 0.01])#   # Amplitude of the waves used in the controls
               
-        self.inputIndex = [1,2,3,4] # Electrodes that will be used as boolean input
+        self.inputIndex = [1,2] # Electrodes that will be used as boolean input
         
         self.rampT = 0.3     # time to ramp up and ramp down the voltages at start and end of a measurement.
         self.phase_thres = 90 # in degrees 
