@@ -12,7 +12,7 @@ class experiment_config(config_class):
     def __init__(self):
         super().__init__() 
         
-        self.device = 'chip' # Specifies whether the experiment is used on the NN or on the physical device. Is either 'chip' or 'NN'
+        self.device = 'NN' # Specifies whether the experiment is used on the NN or on the physical device. Is either 'chip' or 'NN'
         self.main_dir = r'..\\..\\test\\'
         self.NN_name = 'checkpoint3000_02-07-23h47m.pt'
         
@@ -21,12 +21,13 @@ class experiment_config(config_class):
         self.inputCases = 4     #amount of cases measured (4 in the case of Boolean logic)
         self.signallength = self.inputCases * 0.4 #(10/self.freq[0])*self.inputCases  # total signal in seconds (10 periods of slowest frequency)
         
-        self.task = fncts.booleanLogic('XNOR',self.signallength,self.edgelength,self.fs) #fncts.featureExtractor(1,self.signallength,self.edgelength,self.fs) 
-        
-        self.name = 'XNOR_cor_sigmoid'
+        self.labels = ['AND','OR','NOR']
+        self.initializations = 10
+        self.task = fncts.booleanLogic # fncts.featureExtractor #
+        self.stop_thres = 0.4 # stopping criterium for loss fuction
+        self.name = 'cor_sigmoid'
         
         self.verbose = True
-        self.initializations = 1
 
         #######################
         # Physical parameters #
@@ -34,7 +35,7 @@ class experiment_config(config_class):
         self.controls = 5
         self.inputs = 2
         self.freq = 5*np.array([5,9,13,19,23])  #  5*np.array([5,9,13])#    
-        self.n = 50               # Amount of iterations
+        self.n = 10               # Amount of iterations
         self.amplification = 100
         self.postgain = 1
         self.inputScaling = 1.8
@@ -212,6 +213,37 @@ class experiment_config(config_class):
         
         return (d_corr * sigmoid - ((x == x_high_min).astype(int) - (x == x_low_max).astype(int)) * d_sigmoid * (1.1 - corr)) / sigmoid **2 
    
+    def cross_entropy_loss(self, x, t, w):
+        '''
+        P_high: predicted probability for all points to be labelled as 'high'
+        Q: true distribution
+        '''
+        x = x[w.astype(int)==1] # Remove all datapoints where w = 0
+        t = t[w.astype(int)==1]
+        length = len(t)
+        
+        Q_low = np.sum(t.astype(bool)==0)/length
+        Q_high = 1 - Q_low
+        
+        P_high = np.sum(np.exp(x[t.astype(bool)]))/np.sum(np.exp(x))
+        P_low = 1 - P_high
+        
+        return np.mean(- Q_high * np.log(P_high) - Q_low * np.log(P_low))
+    
+    
+    def cross_entropy_grad(self, x, t, w):
+        '''
+        P_high: predicted probability for all points to be labelled as 'high'
+        Q: true distribution
+        '''
+        x = x[w.astype(int)==1] # Remove all datapoints where w = 0
+        t = t[w.astype(int)==1]
+        length = len(t)
+        
+        Q_low = np.sum(t.astype(bool)==0)/length
+        Q_high = 1 - Q_low
+        
+        return - Q_high * np.exp(t)/np.sum(np.exp(t) + np.exp(x)) + Q_low * np.exp(x)/np.sum(np.exp(t) + np.exp(x))
     
     '''
     def cor_sigmoid_grad2(self, x, t, w):
