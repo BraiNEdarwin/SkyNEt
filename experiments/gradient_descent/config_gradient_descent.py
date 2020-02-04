@@ -21,10 +21,10 @@ class experiment_config(config_class):
         self.inputCases = 4     #amount of cases measured (4 in the case of Boolean logic)
         self.signallength = self.inputCases * 0.4 #(10/self.freq[0])*self.inputCases  # total signal in seconds (10 periods of slowest frequency)
         
-        self.labels = ['AND','OR','NOR']
-        self.initializations = 10
+        self.labels = ['XOR']
+        self.initializations = 1
         self.task = fncts.booleanLogic # fncts.featureExtractor #
-        self.stop_thres = 0.4 # stopping criterium for loss fuction
+        self.stop_thres = 0.1 #0.8 # stopping criterium for loss fuction
         self.name = 'cor_sigmoid'
         
         self.verbose = True
@@ -41,7 +41,7 @@ class experiment_config(config_class):
         self.inputScaling = 1.8
         self.inputOffset = -1.2
         self.CVrange =  np.array([[-1.2, .6],[-1.2, .6],[-1.2, .6],[-1.2, 0.6],[-1.2, 0.6]]) #np.array([[-1.2,0.6],[-0.8, 0.5],[-0.8,0.5]])   # Range for the control voltages        
-        self.A_in = np.array([0.05, 0.02, 0.02, 0.01, 0.01])#np.array([0.07, 0.01, 0.01])#   # Amplitude of the waves used in the controls
+        self.A_in = np.array([0.07, 0.03, 0.03, 0.01, 0.01])#np.array([0.07, 0.01, 0.01])#   # Amplitude of the waves used in the controls
               
         self.inputIndex = [1,2] # Electrodes that will be used as boolean input
         
@@ -54,7 +54,7 @@ class experiment_config(config_class):
         self.optimizer = self.basicGD
         self.beta_1 = 0.9
         self.beta_2 = 0.9 #0.75
-        self.eta = 6E-2          # Learn rate  ~1E-3 for NMSE
+        self.eta = 1E-2          # Learn rate  ~1E-3 for NMSE
         self.gradFunct =  self.cor_sigmoid_grad # self.NMSE_grad # 
         self.errorFunct = self.cor_sigmoid_loss # self.NMSE_loss # 
         
@@ -215,35 +215,26 @@ class experiment_config(config_class):
    
     def cross_entropy_loss(self, x, t, w):
         '''
-        P_high: predicted probability for all points to be labelled as 'high'
-        Q: true distribution
+        P_high: predicted probability of output being labelled as 'high'
+        t: true distribution
         '''
         x = x[w.astype(int)==1] # Remove all datapoints where w = 0
         t = t[w.astype(int)==1]
-        length = len(t)
-        
-        Q_low = np.sum(t.astype(bool)==0)/length
-        Q_high = 1 - Q_low
-        
-        P_high = np.sum(np.exp(x[t.astype(bool)]))/np.sum(np.exp(x))
-        P_low = 1 - P_high
-        
-        return np.mean(- Q_high * np.log(P_high) - Q_low * np.log(P_low))
-    
-    
+            
+        return np.mean((1 - t>0) * x + np.log(1 + np.exp(-x))) # t must be 0 or 1, NOT 10, 100, ... so therefore we use the 'trick' t>0 to convert to 0 and 1
+
     def cross_entropy_grad(self, x, t, w):
         '''
-        P_high: predicted probability for all points to be labelled as 'high'
-        Q: true distribution
+        P_high: predicted probability of output being labelled as 'high'
+        t: true distribution
         '''
         x = x[w.astype(int)==1] # Remove all datapoints where w = 0
         t = t[w.astype(int)==1]
-        length = len(t)
-        
-        Q_low = np.sum(t.astype(bool)==0)/length
-        Q_high = 1 - Q_low
-        
-        return - Q_high * np.exp(t)/np.sum(np.exp(t) + np.exp(x)) + Q_low * np.exp(x)/np.sum(np.exp(t) + np.exp(x))
+        #return - t * 1/(np.exp(x) + 1) + (1-t) * np.exp(x)/(np.exp(x) + 1)
+    
+        return 1 - t>0 - 1/(1 + np.exp(-x))
+    
+    
     
     '''
     def cor_sigmoid_grad2(self, x, t, w):

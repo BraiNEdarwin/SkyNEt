@@ -52,6 +52,50 @@ def featureExtractor(feature, signallength, edgelength=0.01, fs=1000):
     
     return t, x, W, target
 
+def featureExtractorAlt(feature, signallength, edgelength=0.01, fs=1000):
+    '''
+    Alternative encoding for the 2x2 feature extractor.
+    2 bit info is stored in a single input.
+    For example, create mapping -1 + f1 + f2 such that both input 1 and input 2 contain:
+        f1 f2 (1, 0.5)
+        0,  0 --->  -1V
+        0,  1 --->  -0.5V
+        1,  0 --->   0V
+        1,  1 --->   0.5V
+       
+    inputs:
+        feature:        which of the 16 features is being learned (number 0 to 15).
+        signallength:   length of total signal.
+        edgelength:     
+    
+    outputs:
+        t:  time signal
+        x:  [2 x many] inputs
+        W:  [many] weights (1 for inputs, 0 for edges)
+        
+    '''
+    assert feature >= 0, "Feature number must be 0 or higher"
+    assert feature < 16, "Feature number must be 15 or lower"
+    
+    signallength = signallength/16 # since Boolean logic works with total signal length, we divide by 16 for a single feature input
+    
+    samples = 16 * round(fs * signallength) + 15 * round(fs * edgelength)
+    t = np.linspace(0, samples/fs, samples)
+    x = np.zeros((2, samples))
+    W = np.ones(samples,dtype=bool)
+    target = np.zeros(samples)
+    edges = np.zeros(samples,dtype=bool)
+    
+    x[0] = np.asarray(GenWaveform([-1,-1,-1,-1,-.5,-.5,-.5,-.5,0,0,0,0,.5,.5,.5,.5],[round(fs * signallength)],[round(fs * edgelength)]))
+    x[1] = np.asarray(GenWaveform([-1,-.5,0,.5,-1,-.5,0,.5,-1,-.5,0,.5,-1,-.5,0,.5],[round(fs * signallength)],[round(fs * edgelength)]))
+
+    for i in range(1,16):
+        edges[int(fs*(i*signallength + (i-1)*edgelength)):int(fs*((i)*signallength + i*edgelength))] = True  
+    W[edges] = 0 
+    
+    target[round(fs*(feature*signallength + max(0,(feature-1))*edgelength)):round(fs*((feature+1)*signallength + (feature)*edgelength))] = 1
+    
+    return t, x, W, target
 
 def booleanLogic(gate, signallength, edgelength=0.01, fs=1000):
     '''

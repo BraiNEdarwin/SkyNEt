@@ -12,7 +12,9 @@ import SkyNEt.experiments.gradient_descent.config_gradient_descent as config
 import SkyNEt.modules.SaveLib as SaveLib
 import SkyNEt.modules.PlotBuilder as PlotBuilder
 
+import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 # Initialize config object
 cf = config.experiment_config()
@@ -35,6 +37,7 @@ for label in cf.labels:
     cf.exp_name = str(label) + '_' + cf.name
        
     for exps in range(cf.initializations):
+      Tstart = time.time()
       if stop_crit == True:
         print('Stopping criterium met, stopping label.')
         break
@@ -137,7 +140,7 @@ for label in cf.labels:
               controls[i+1,:] = controls[i, :] # Keep same controls, last measure is last iteration but without sine waves
     
           # If output is clipped, reinitializee:
-          if abs(np.mean(data[i,:])) > 3.4 * cf.amplification/cf.postgain:
+          if abs(np.mean(data[i,:])) > 3.3 * cf.amplification/cf.postgain:
               controls[i+1,:] = np.random.random(cf.controls) * (cf.CVrange[:,1] - cf.CVrange[:,0]) + cf.CVrange[:,0]
               print('Output clipped, reinitializing ...')
           
@@ -183,7 +186,9 @@ for label in cf.labels:
                                  EIgrad = EIgrad)
       if cf.verbose:    
         PlotBuilder.finalMain(mainFig)
-    
-      if cf.device == 'chip':
-          InstrumentImporter.reset(0, 0) 
+      Tstop = time.time()
+      print('Time elapsed for single initialization: ' + str(Tstop - Tstart) + 's')
+      
+if cf.device == 'chip':
+    InstrumentImporter.reset(0, 0) 
     
