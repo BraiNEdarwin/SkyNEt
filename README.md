@@ -1,5 +1,5 @@
 # SkyNEt
-
+NOTE: we have moved to our brainspy repository. This repository will not be maintained anymore. Please visit [BraiNEdarwin](https://github.com/BraiNEdarwin) for the latest version. 
 This repository houses a collection of functions and scripts used by 
 the Darwin team of the 
 [NanoElectronics](https://www.utwente.nl/en/eemcs/ne/) group at the 
